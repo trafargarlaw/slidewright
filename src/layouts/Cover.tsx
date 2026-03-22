@@ -17,7 +17,7 @@ const Container = styled.div`
   background: linear-gradient(135deg, #05192D 0%, #0A2540 100%);
   color: white;
 
-  h1, h2, h3, p, li, span, code {
+  h1, h2, h3, p, li, span {
     color: white;
   }
 

@@ -36,7 +36,11 @@ saturday_sales <- 3800
 sunday_sales <- 3600
 ```
 
+<!-- step -->
+
 7 variables to manage, hard to calculate across all days, and what about 30 days... or 365?
+
+<!-- step -->
 
 > There must be a better way to keep these numbers together!
 
@@ -151,23 +155,50 @@ Without commas, R thinks you're writing one giant confusing number!
 > Commas are like saying "and" - 3.50 **and** 4.50 **and** 5.00
 
 ---
+layout: two-cols
+---
 
-## Vectors Can Hold Any Amount of Numbers
+## Vectors Can Hold Any Numbers!
 
-```r {1-2|4-5|7-10|all}
-# Small - just 2 numbers
+The `c()` function works with any amount of numbers:
+
+<!-- step -->
+
+
+**Small** - just 2 numbers:
+
+```r
 weekend_sales <- c(3800, 3600)
-
-# Medium - 5 numbers
-prices <- c(3.50, 4.50, 5.00, 4.00, 3.00)
-
-# Large - as many as you want
-monthly_sales <- c(2840, 3200, 2900, 3500, 4100,
-  3800, 3600, 2950, 3100, 3350, 4200, 3900,
-  3700, 3850, 4150, 3950, 3650, 3450)
+```
+```
+[1] 3800 3600
 ```
 
-No matter how many values - the pattern is always the same!
+<!-- step -->
+
+::right::
+
+**Medium** - 5 numbers:
+
+```r
+prices <- c(3.50, 4.50, 5.00, 4.00, 3.00)
+```
+```
+[1] 3.50 4.50 5.00 4.00 3.00
+```
+
+<!-- step -->
+
+**Large** - as many as you want:
+
+```r
+monthly_sales <- c(2840, 3200, 2900, 3500, 4100,
+  3800, 3600, 2950, 3100, 3350, ...)
+```
+
+<!-- step -->
+
+> No matter how many values - the pattern is the same!
 
 ---
 layout: section

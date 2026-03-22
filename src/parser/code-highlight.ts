@@ -2,7 +2,6 @@ import type { HighlightStep } from '../types'
 
 /**
  * Parse highlight meta from code blocks, e.g. {1|3-5|all}
- * Returns an array of highlight steps.
  */
 export function parseHighlightMeta(meta: string): HighlightStep[] {
   const match = meta.match(/\{([^}]+)\}/)
@@ -36,11 +35,28 @@ export function parseHighlightMeta(meta: string): HighlightStep[] {
 }
 
 /**
- * Compute click assignments for a slide's markdown content.
- * Returns total click count and a map from source line number to click index.
+ * Split markdown into step segments by <!-- step --> markers.
+ * The first segment (before any marker) is always visible (step 0).
  */
-export function computeClickMap(markdown: string): {
-  totalClicks: number
+export function parseSteps(
+  markdown: string,
+): { content: string; isInitial: boolean }[] {
+  const parts = markdown.split(/<!--\s*step(?:\s+\d+)?\s*-->/)
+  return parts
+    .map((content, i) => ({
+      content: content.trim(),
+      isInitial: i === 0,
+    }))
+    .filter((s) => s.content.length > 0)
+}
+
+/**
+ * Count code highlight steps in a markdown string.
+ * Returns a map from source line to click info, and total internal clicks.
+ * Only tracks code blocks with highlight meta (not list items).
+ */
+export function computeCodeClicks(markdown: string): {
+  totalSteps: number
   lineToClick: Map<number, number>
   lineToStepCount: Map<number, number>
 } {
@@ -73,12 +89,38 @@ export function computeClickMap(markdown: string): {
         inCodeBlock = false
         codeMeta = ''
       }
-    } else if (!inCodeBlock && line.match(/^\s*[-*+]\s/)) {
-      lineToClick.set(lineNum, nextClick)
-      lineToStepCount.set(lineNum, 1)
-      nextClick++
     }
   }
 
-  return { totalClicks: nextClick - 1, lineToClick, lineToStepCount }
+  return { totalSteps: nextClick - 1, lineToClick, lineToStepCount }
 }
+
+/**
+ * Compute total maxClicks for a slide's markdown content.
+ * Accounts for step markers and code highlight steps.
+ */
+export function computeTotalSlideClicks(markdown: string): number {
+  const segments = parseSteps(markdown)
+  let maxClick = 0
+
+  for (const seg of segments) {
+    const { totalSteps } = computeCodeClicks(seg.content)
+
+    if (seg.isInitial) {
+      // Step 0: first code highlight is the initial state (free), rest need clicks
+      maxClick += Math.max(0, totalSteps - 1)
+    } else {
+      // Step N: 1 click to appear, first code highlight coincides with appear
+      if (totalSteps > 0) {
+        maxClick += totalSteps // appear + (totalSteps - 1) extra = totalSteps
+      } else {
+        maxClick += 1 // just appear
+      }
+    }
+  }
+
+  return maxClick
+}
+
+// Keep old name as alias for backward compat
+export const computeClickMap = computeCodeClicks

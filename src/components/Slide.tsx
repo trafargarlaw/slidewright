@@ -3,7 +3,7 @@ import styled from 'styled-components'
 import { layouts } from '../layouts'
 import { SlideContent } from './SlideContent'
 import { ClickContext } from '../hooks/useClicks'
-import { computeClickMap } from '../parser/code-highlight'
+import { computeTotalSlideClicks } from '../parser/code-highlight'
 import type { SlideInfo } from '../types'
 
 interface SlideProps {
@@ -15,19 +15,14 @@ export function Slide({ slide, currentClick }: SlideProps) {
   const layoutName = slide.frontmatter.layout || 'default'
   const Layout = layouts[layoutName] || layouts.default
 
-  const clickMapData = useMemo(
-    () => computeClickMap(slide.content),
+  const totalClicks = useMemo(
+    () => computeTotalSlideClicks(slide.content),
     [slide.content],
   )
 
   const clickContextValue = useMemo(
-    () => ({
-      currentClick,
-      totalClicks: clickMapData.totalClicks,
-      lineToClick: clickMapData.lineToClick,
-      lineToStepCount: clickMapData.lineToStepCount,
-    }),
-    [currentClick, clickMapData],
+    () => ({ currentClick, totalClicks }),
+    [currentClick, totalClicks],
   )
 
   // TwoCols handles its own content splitting and rendering
@@ -54,7 +49,7 @@ export function Slide({ slide, currentClick }: SlideProps) {
 
 /** Returns total click count for a slide's content */
 export function getSlideClicks(content: string): number {
-  return computeClickMap(content).totalClicks
+  return computeTotalSlideClicks(content)
 }
 
 const SlideContainer = styled.div`

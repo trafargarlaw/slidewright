@@ -25,7 +25,7 @@ export function ShikiProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     createHighlighter({
-      themes: ['github-dark'],
+      themes: ['github-light'],
       langs: [...PRELOAD_LANGS],
     }).then(setHighlighter)
   }, [])

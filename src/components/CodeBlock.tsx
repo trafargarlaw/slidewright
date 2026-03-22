@@ -24,7 +24,7 @@ export function CodeBlock({ code, language, meta, startClick, stepCount }: CodeB
     try {
       return highlighter.codeToTokens(code, {
         lang: language as any,
-        theme: 'github-dark',
+        theme: 'github-light',
       })
     } catch {
       return null
@@ -33,7 +33,7 @@ export function CodeBlock({ code, language, meta, startClick, stepCount }: CodeB
 
   // Determine which step is active based on click state
   let activeStepIndex = -1
-  if (hasSteps && startClick > 0 && stepCount > 0) {
+  if (hasSteps && stepCount > 0) {
     const relativeClick = currentClick - startClick
     if (relativeClick >= 0) {
       activeStepIndex = Math.min(relativeClick, steps.length - 1)
@@ -82,12 +82,12 @@ export function CodeBlock({ code, language, meta, startClick, stepCount }: CodeB
 
 const Pre = styled.pre`
   background: ${({ theme }) => theme.colors.codeBg};
-  border-radius: ${({ theme }) => theme.radii.lg};
-  padding: ${({ theme }) => theme.spacing.lg};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: 16px 20px;
   overflow-x: auto;
-  font-size: 14px;
-  line-height: 1.7;
-  margin: ${({ theme }) => theme.spacing.md} 0;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: ${({ theme }) => theme.spacing.sm} 0;
 `
 
 const Code = styled.code`

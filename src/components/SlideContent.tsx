@@ -8,7 +8,7 @@ import { visit } from 'unist-util-visit'
 import styled from 'styled-components'
 import { CodeBlock } from './CodeBlock'
 import { useClicks } from '../hooks/useClicks'
-import { computeClickMap } from '../parser/code-highlight'
+import { parseSteps, computeCodeClicks } from '../parser/code-highlight'
 import type { Components } from 'react-markdown'
 
 function remarkPreserveMeta() {
@@ -20,15 +20,9 @@ function remarkPreserveMeta() {
         node.data.hProperties['data-meta'] = node.meta
       }
       if (node.position) {
-        node.data.hProperties['data-source-line'] = String(node.position.start.line)
-      }
-    })
-
-    visit(tree, 'listItem', (node: any) => {
-      if (node.position) {
-        node.data = node.data || {}
-        node.data.hProperties = node.data.hProperties || {}
-        node.data.hProperties['data-source-line'] = String(node.position.start.line)
+        node.data.hProperties['data-source-line'] = String(
+          node.position.start.line,
+        )
       }
     })
   }
@@ -42,13 +36,94 @@ interface SlideContentProps {
   clickOffset?: number
 }
 
+interface ProcessedSegment {
+  content: string
+  isInitial: boolean
+  appearClick: number
+  codeClickOffset: number
+  localCodeClicks: ReturnType<typeof computeCodeClicks>
+}
+
+function processSegments(
+  markdown: string,
+  baseOffset: number,
+): { segments: ProcessedSegment[]; totalClicks: number } {
+  const rawSegments = parseSteps(markdown)
+  const segments: ProcessedSegment[] = []
+  let maxClick = baseOffset
+
+  for (const seg of rawSegments) {
+    const localCode = computeCodeClicks(seg.content)
+
+    if (seg.isInitial) {
+      // Step 0: always visible, code highlights start at maxClick
+      const codeClickOffset = maxClick
+      segments.push({
+        content: seg.content,
+        isInitial: true,
+        appearClick: -1,
+        codeClickOffset,
+        localCodeClicks: localCode,
+      })
+      maxClick += Math.max(0, localCode.totalSteps - 1)
+    } else {
+      // Step N: appears on next click
+      maxClick += 1
+      const appearClick = maxClick
+      segments.push({
+        content: seg.content,
+        isInitial: false,
+        appearClick,
+        codeClickOffset: appearClick,
+        localCodeClicks: localCode,
+      })
+      maxClick += Math.max(0, localCode.totalSteps - 1)
+    }
+  }
+
+  return { segments, totalClicks: maxClick - baseOffset }
+}
+
 export function SlideContent({ markdown, clickOffset = 0 }: SlideContentProps) {
   const { currentClick } = useClicks()
 
-  // Compute click map from THIS markdown (not the full slide content)
-  // so that line numbers from remark AST always match our map
-  const localClickMap = useMemo(() => computeClickMap(markdown), [markdown])
+  const { segments } = useMemo(
+    () => processSegments(markdown, clickOffset),
+    [markdown, clickOffset],
+  )
 
+  return (
+    <MarkdownWrapper>
+      {segments.map((seg, i) => {
+        const visible = seg.isInitial || currentClick >= seg.appearClick
+
+        return (
+          <StepWrapper key={i} $visible={visible}>
+            <SegmentMarkdown
+              markdown={seg.content}
+              codeClickOffset={seg.codeClickOffset}
+              localCodeClicks={seg.localCodeClicks}
+              currentClick={currentClick}
+            />
+          </StepWrapper>
+        )
+      })}
+    </MarkdownWrapper>
+  )
+}
+
+/** Render a single step segment's markdown */
+function SegmentMarkdown({
+  markdown,
+  codeClickOffset,
+  localCodeClicks,
+  currentClick,
+}: {
+  markdown: string
+  codeClickOffset: number
+  localCodeClicks: ReturnType<typeof computeCodeClicks>
+  currentClick: number
+}) {
   const components: Components = useMemo(
     () => ({
       code({ node: _, className, children, ...props }: any) {
@@ -60,53 +135,35 @@ export function SlideContent({ markdown, clickOffset = 0 }: SlideContentProps) {
 
         if (match) {
           const localClickIndex = sourceLine
-            ? localClickMap.lineToClick.get(sourceLine)
+            ? localCodeClicks.lineToClick.get(sourceLine)
             : undefined
           const localStepCount = sourceLine
-            ? localClickMap.lineToStepCount.get(sourceLine)
+            ? localCodeClicks.lineToStepCount.get(sourceLine)
             : undefined
+
+          // startClick = codeClickOffset + localClickIndex - 1
+          // so that localClickIndex=1 maps to codeClickOffset
+          const startClick =
+            localClickIndex != null
+              ? codeClickOffset + localClickIndex - 1
+              : 0
 
           return (
             <CodeBlock
               language={match[1]}
               code={String(children).replace(/\n$/, '')}
               meta={meta}
-              startClick={localClickIndex != null ? clickOffset + localClickIndex : 0}
+              startClick={startClick}
               stepCount={localStepCount ?? 0}
             />
           )
         }
 
-        return (
-          <InlineCode className={className}>
-            {children}
-          </InlineCode>
-        )
+        return <InlineCode className={className}>{children}</InlineCode>
       },
 
       pre({ children }: any) {
         return <>{children}</>
-      },
-
-      li({ node: _, children, ...props }: any) {
-        const { 'data-source-line': sourceLineStr, ...restProps } = props
-        const sourceLine = sourceLineStr
-          ? parseInt(sourceLineStr, 10)
-          : undefined
-        const localClickIndex = sourceLine
-          ? localClickMap.lineToClick.get(sourceLine)
-          : undefined
-        const effectiveClick = localClickIndex != null
-          ? clickOffset + localClickIndex
-          : undefined
-
-        const visible = effectiveClick == null || currentClick >= effectiveClick
-
-        return (
-          <AnimatedLi {...restProps} $visible={visible}>
-            {children}
-          </AnimatedLi>
-        )
       },
 
       h1({ node: _, children, ...props }: any) {
@@ -127,6 +184,9 @@ export function SlideContent({ markdown, clickOffset = 0 }: SlideContentProps) {
       ol({ node: _, children, ...props }: any) {
         return <Ol {...props}>{children}</Ol>
       },
+      li({ node: _, children, ...props }: any) {
+        return <Li {...props}>{children}</Li>
+      },
       blockquote({ node: _, children, ...props }: any) {
         return <Blockquote {...props}>{children}</Blockquote>
       },
@@ -141,25 +201,30 @@ export function SlideContent({ markdown, clickOffset = 0 }: SlideContentProps) {
         )
       },
     }),
-    [currentClick, localClickMap, clickOffset],
+    [currentClick, localCodeClicks, codeClickOffset],
   )
 
   return (
-    <MarkdownWrapper>
-      <ReactMarkdown
-        remarkPlugins={remarkPlugins}
-        rehypePlugins={rehypePlugins}
-        components={components}
-      >
-        {markdown}
-      </ReactMarkdown>
-    </MarkdownWrapper>
+    <ReactMarkdown
+      remarkPlugins={remarkPlugins}
+      rehypePlugins={rehypePlugins}
+      components={components}
+    >
+      {markdown}
+    </ReactMarkdown>
   )
 }
 
 const MarkdownWrapper = styled.div`
   width: 100%;
   color: ${({ theme }) => theme.colors.foreground};
+`
+
+const StepWrapper = styled.div<{ $visible: boolean }>`
+  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
+  transform: translateY(${({ $visible }) => ($visible ? '0' : '8px')});
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: ${({ $visible }) => ($visible ? 'auto' : 'none')};
 `
 
 const H1 = styled.h1`
@@ -207,14 +272,11 @@ const Ol = styled.ol`
   margin-bottom: ${({ theme }) => theme.spacing.md};
 `
 
-const AnimatedLi = styled.li<{ $visible: boolean }>`
+const Li = styled.li`
   font-size: 1.1em;
   line-height: 1.7;
   margin-bottom: ${({ theme }) => theme.spacing.sm};
   color: ${({ theme }) => theme.colors.secondaryText};
-  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
-  transform: translateX(${({ $visible }) => ($visible ? '0' : '-8px')});
-  transition: opacity 0.3s ease, transform 0.3s ease;
 `
 
 const InlineCode = styled.code`

@@ -12,17 +12,17 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: ${({ theme }) => theme.colors.codeBg};
-  color: ${({ theme }) => theme.colors.codeText};
+  background: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme }) => theme.colors.foreground};
 
   h1, h2, h3 {
-    color: ${({ theme }) => theme.colors.codeText};
+    color: ${({ theme }) => theme.colors.foreground};
     font-size: 1.2em;
     margin-bottom: ${({ theme }) => theme.spacing.md};
   }
 
   p {
-    color: rgba(255, 255, 255, 0.6);
+    color: ${({ theme }) => theme.colors.secondaryText};
   }
 
   pre {

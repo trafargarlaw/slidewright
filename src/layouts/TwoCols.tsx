@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import styled from 'styled-components'
 import { SlideContent } from '../components/SlideContent'
-import { computeClickMap } from '../parser/code-highlight'
+import { computeTotalSlideClicks } from '../parser/code-highlight'
 
 interface TwoColsLayoutProps {
   markdown: string
@@ -9,7 +9,10 @@ interface TwoColsLayoutProps {
 
 export function TwoColsLayout({ markdown }: TwoColsLayoutProps) {
   const [left, right] = splitColumns(markdown)
-  const leftClicks = useMemo(() => computeClickMap(left).totalClicks, [left])
+  const leftClicks = useMemo(
+    () => computeTotalSlideClicks(left),
+    [left],
+  )
 
   return (
     <Container>
