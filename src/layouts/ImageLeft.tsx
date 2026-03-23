@@ -1,9 +1,9 @@
-import styled from 'styled-components'
-import type { ReactNode } from 'react'
+import styled from "styled-components";
+import type { ReactNode } from "react";
 
 interface ImageLeftLayoutProps {
-  children: ReactNode
-  image?: string
+  children: ReactNode;
+  image?: string;
 }
 
 export function ImageLeftLayout({ children, image }: ImageLeftLayoutProps) {
@@ -16,7 +16,7 @@ export function ImageLeftLayout({ children, image }: ImageLeftLayoutProps) {
       )}
       <Content>{children}</Content>
     </Container>
-  )
+  );
 }
 
 const Container = styled.div`
@@ -25,14 +25,14 @@ const Container = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
   overflow: hidden;
-`
+`;
 
 const Content = styled.div`
   padding: ${({ theme }) => theme.slide.padding};
   display: flex;
   flex-direction: column;
   justify-content: center;
-`
+`;
 
 const ImageSide = styled.div`
   width: 100%;
@@ -44,4 +44,4 @@ const ImageSide = styled.div`
     height: 100%;
     object-fit: cover;
   }
-`
+`;

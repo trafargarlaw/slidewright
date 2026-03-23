@@ -1,8 +1,8 @@
-import styled from 'styled-components'
-import type { ReactNode } from 'react'
+import styled from "styled-components";
+import type { ReactNode } from "react";
 
 export function CenterLayout({ children }: { children: ReactNode }) {
-  return <Container>{children}</Container>
+  return <Container>{children}</Container>;
 }
 
 const Container = styled.div`
@@ -14,4 +14,4 @@ const Container = styled.div`
   align-items: center;
   justify-content: center;
   text-align: center;
-`
+`;

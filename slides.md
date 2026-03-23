@@ -21,6 +21,8 @@ layout: section
 - Real-world project: Bean There Cafe Weekly Sales Tracker
 
 ---
+layout: default
+---
 
 ## The Problem - Too Many Variables
 
@@ -125,7 +127,6 @@ This vector has **7 elements** - the 7 numbers inside it
 ---
 layout: two-cols
 ---
-
 ## The Comma Rule
 
 Inside `c()`, you **must** separate values with commas.
@@ -157,19 +158,18 @@ Without commas, R thinks you're writing one giant confusing number!
 ---
 layout: two-cols
 ---
-
 ## Vectors Can Hold Any Numbers!
 
 The `c()` function works with any amount of numbers:
 
 <!-- step -->
 
-
 **Small** - just 2 numbers:
 
 ```r
 weekend_sales <- c(3800, 3600)
 ```
+
 ```
 [1] 3800 3600
 ```
@@ -183,6 +183,7 @@ weekend_sales <- c(3800, 3600)
 ```r
 prices <- c(3.50, 4.50, 5.00, 4.00, 3.00)
 ```
+
 ```
 [1] 3.50 4.50 5.00 4.00 3.00
 ```
@@ -203,7 +204,6 @@ monthly_sales <- c(2840, 3200, 2900, 3500, 4100,
 ---
 layout: section
 ---
-
 ## Another New Tool
 
 The `length()` function - counts how many elements are in a vector
@@ -211,7 +211,6 @@ The `length()` function - counts how many elements are in a vector
 ---
 layout: two-cols
 ---
-
 ## The `length()` Function
 
 Counts how many elements are in a vector.
@@ -222,7 +221,7 @@ Counts how many elements are in a vector.
 length(your_vector)
 ```
 
-Like asking: *"How many items are in this list?"*
+Like asking: _"How many items are in this list?"_
 
 ::right::
 
@@ -245,7 +244,6 @@ It counted 3 elements!
 ---
 layout: code
 ---
-
 ## Using `length()` with Sarah's Data
 
 Sarah wants to verify she has all 7 days:
@@ -269,7 +267,6 @@ print(days)
 ---
 layout: two-cols
 ---
-
 ## Combining Vectors
 
 You can use `c()` to combine **existing vectors** together!
@@ -304,7 +301,6 @@ print(full_week)
 ---
 layout: code
 ---
-
 ## Adding to an Existing Vector
 
 ```r {1-3|5-7|all}
@@ -324,15 +320,13 @@ We combined the old `sales` (3 values) with 2 new numbers, then stored it back i
 ---
 layout: section
 ---
-
 ## Vector Math
 
 R's superpower - calculations on **entire vectors** at once
 
 ---
-layout: code
+layout: default
 ---
-
 ## Vectorization in Action
 
 ```r {1-2|4-5|7-8|all}
@@ -346,20 +340,19 @@ price <- 3.50
 revenues <- quantities * price
 ```
 
-```r
-print(revenues)  # [1] 157.5 182.0 133.0
+```
+Output: [1] 157.5 182.0 133.0
 ```
 
-- 45 * 3.50 = 157.5
-- 52 * 3.50 = 182.0
-- 38 * 3.50 = 133.0
+- 45 \* 3.50 = 157.5
+- 52 \* 3.50 = 182.0
+- 38 \* 3.50 = 133.0
 
 > R multiplied **each** quantity by 3.50 automatically - this is **vectorization**!
 
 ---
 layout: two-cols
 ---
-
 ## Common Mistakes
 
 ### Forgetting `c()`
@@ -392,12 +385,11 @@ sales <- c(2840 3200 2900)
 sales <- c(2840, 3200, 2900)
 ```
 
-Commas tell R *"this is a new value"*.
+Commas tell R _"this is a new value"_.
 
 ---
 layout: code
 ---
-
 ## Real-World Example - Three Products
 
 ```r {1-2|4-5|7-8|10-12|all}
@@ -418,7 +410,6 @@ print(mocha_sold)      # [1] 38 40 35 42 45
 ---
 layout: center
 ---
-
 ## Before and After Vectors
 
 **Before** (Lesson 1): Single numbers, separate variables, messy, can't scale
@@ -430,9 +421,25 @@ You've unlocked a major programming concept - **this is the foundation of all da
 ---
 layout: cover
 ---
-
 # End of Lesson 2
 
 You now know `c()` to create vectors and `length()` to count elements
 
-Next up: accessing individual elements inside vectors
+## Next up: accessing individual elements inside vectors
+
+---
+layout: code
+---
+
+## Sarah's Weekly Sales Vector
+
+```r {1-2|4|all}
+weekly_sales <- c(2840, 3200, 2900, 3500, 4100, 3800, 3600)
+print(weekly_sales)
+```
+
+Output:
+
+```
+[1] 2840 3200 2900 3500 4100 3800 3600
+```

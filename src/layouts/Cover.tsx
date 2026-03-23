@@ -1,8 +1,8 @@
-import styled from 'styled-components'
-import type { ReactNode } from 'react'
+import styled from "styled-components";
+import type { ReactNode } from "react";
 
 export function CoverLayout({ children }: { children: ReactNode }) {
-  return <Container>{children}</Container>
+  return <Container>{children}</Container>;
 }
 
 const Container = styled.div`
@@ -14,14 +14,26 @@ const Container = styled.div`
   align-items: center;
   justify-content: center;
   text-align: center;
-  background: linear-gradient(135deg, #05192D 0%, #0A2540 100%);
+  background: linear-gradient(135deg, #05192d 0%, #0a2540 100%);
   color: white;
 
-  h1, h2, h3, p, li, span {
+  h1,
+  h2,
+  h3,
+  p,
+  li,
+  span,
+  code {
     color: white;
   }
 
   p {
     color: rgba(255, 255, 255, 0.7);
   }
-`
+
+  code {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+`;

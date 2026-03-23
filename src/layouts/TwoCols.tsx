@@ -1,18 +1,15 @@
-import { useMemo } from 'react'
-import styled from 'styled-components'
-import { SlideContent } from '../components/SlideContent'
-import { computeTotalSlideClicks } from '../parser/code-highlight'
+import { useMemo } from "react";
+import styled from "styled-components";
+import { SlideContent } from "../components/SlideContent";
+import { computeTotalSlideClicks } from "../parser/code-highlight";
 
 interface TwoColsLayoutProps {
-  markdown: string
+  markdown: string;
 }
 
 export function TwoColsLayout({ markdown }: TwoColsLayoutProps) {
-  const [left, right] = splitColumns(markdown)
-  const leftClicks = useMemo(
-    () => computeTotalSlideClicks(left),
-    [left],
-  )
+  const [left, right] = splitColumns(markdown);
+  const leftClicks = useMemo(() => computeTotalSlideClicks(left), [left]);
 
   return (
     <Container>
@@ -23,14 +20,17 @@ export function TwoColsLayout({ markdown }: TwoColsLayoutProps) {
         <SlideContent markdown={right} clickOffset={leftClicks} />
       </Column>
     </Container>
-  )
+  );
 }
 
 function splitColumns(markdown: string): [string, string] {
-  const marker = '::right::'
-  const idx = markdown.indexOf(marker)
-  if (idx === -1) return [markdown, '']
-  return [markdown.slice(0, idx).trim(), markdown.slice(idx + marker.length).trim()]
+  const marker = "::right::";
+  const idx = markdown.indexOf(marker);
+  if (idx === -1) return [markdown, ""];
+  return [
+    markdown.slice(0, idx).trim(),
+    markdown.slice(idx + marker.length).trim(),
+  ];
 }
 
 const Container = styled.div`
@@ -41,11 +41,11 @@ const Container = styled.div`
   grid-template-columns: 1fr 1fr;
   gap: ${({ theme }) => theme.spacing.xl};
   align-items: center;
-`
+`;
 
 const Column = styled.div`
   height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
-`
+`;

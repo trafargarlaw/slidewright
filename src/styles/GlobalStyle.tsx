@@ -1,4 +1,4 @@
-import { createGlobalStyle } from 'styled-components'
+import { createGlobalStyle } from "styled-components";
 
 export const GlobalStyle = createGlobalStyle`
   *, *::before, *::after {
@@ -11,7 +11,7 @@ export const GlobalStyle = createGlobalStyle`
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: #15202B;
+    background: #e8e8e8;
     font-family: ${({ theme }) => theme.fonts.body};
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -19,11 +19,13 @@ export const GlobalStyle = createGlobalStyle`
 
   #root {
     display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
   code, pre {
     font-family: ${({ theme }) => theme.fonts.mono};
   }
-`
+
+  .ai-edit-changed-line {
+    background: rgba(3, 239, 98, 0.12) !important;
+  }
+`;

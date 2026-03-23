@@ -1,12 +1,12 @@
-import styled from 'styled-components'
+import styled from "styled-components";
 
 interface NavigationProps {
-  slideIndex: number
-  totalSlides: number
-  currentClick: number
-  maxClicks: number
-  onNext: () => void
-  onPrev: () => void
+  slideIndex: number;
+  totalSlides: number;
+  currentClick: number;
+  maxClicks: number;
+  onNext: () => void;
+  onPrev: () => void;
 }
 
 export function Navigation({
@@ -17,7 +17,7 @@ export function Navigation({
   onNext,
   onPrev,
 }: NavigationProps) {
-  const progress = ((slideIndex + 1) / totalSlides) * 100
+  const progress = ((slideIndex + 1) / totalSlides) * 100;
 
   return (
     <NavContainer>
@@ -36,7 +36,8 @@ export function Navigation({
           {slideIndex + 1} / {totalSlides}
           {maxClicks > 0 && (
             <ClickInfo>
-              {' '}({currentClick}/{maxClicks})
+              {" "}
+              ({currentClick}/{maxClicks})
             </ClickInfo>
           )}
         </SlideInfo>
@@ -48,28 +49,24 @@ export function Navigation({
         </NavButton>
       </Controls>
     </NavContainer>
-  )
+  );
 }
 
 const NavContainer = styled.div`
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-`
+  flex-shrink: 0;
+`;
 
 const ProgressBar = styled.div`
   height: 3px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.08);
   width: 100%;
-`
+`;
 
 const ProgressFill = styled.div`
   height: 100%;
   background: ${({ theme }) => theme.colors.primary};
   transition: width 0.3s ease;
-`
+`;
 
 const Controls = styled.div`
   display: flex;
@@ -77,14 +74,13 @@ const Controls = styled.div`
   justify-content: center;
   gap: ${({ theme }) => theme.spacing.lg};
   padding: ${({ theme }) => theme.spacing.sm} 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
-`
+  background: ${({ theme }) => theme.colors.background};
+`;
 
 const NavButton = styled.button`
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(0, 0, 0, 0.5);
   cursor: pointer;
   padding: ${({ theme }) => theme.spacing.xs};
   border-radius: ${({ theme }) => theme.radii.sm};
@@ -93,18 +89,18 @@ const NavButton = styled.button`
   transition: color 0.2s;
 
   &:hover {
-    color: white;
+    color: rgba(0, 0, 0, 0.85);
   }
-`
+`;
 
 const SlideInfo = styled.span`
   font-family: ${({ theme }) => theme.fonts.mono};
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(0, 0, 0, 0.45);
   min-width: 80px;
   text-align: center;
-`
+`;
 
 const ClickInfo = styled.span`
-  color: rgba(255, 255, 255, 0.4);
-`
+  color: rgba(0, 0, 0, 0.3);
+`;

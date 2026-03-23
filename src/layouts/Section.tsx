@@ -1,5 +1,5 @@
-import styled from 'styled-components'
-import type { ReactNode } from 'react'
+import styled from "styled-components";
+import type { ReactNode } from "react";
 
 export function SectionLayout({ children }: { children: ReactNode }) {
   return (
@@ -7,7 +7,7 @@ export function SectionLayout({ children }: { children: ReactNode }) {
       <Accent />
       <Content>{children}</Content>
     </Container>
-  )
+  );
 }
 
 const Container = styled.div`
@@ -19,7 +19,7 @@ const Container = styled.div`
   align-items: flex-start;
   justify-content: center;
   background: ${({ theme }) => theme.colors.surface};
-`
+`;
 
 const Accent = styled.div`
   width: 60px;
@@ -27,8 +27,8 @@ const Accent = styled.div`
   background: ${({ theme }) => theme.colors.primary};
   border-radius: 2px;
   margin-bottom: ${({ theme }) => theme.spacing.lg};
-`
+`;
 
 const Content = styled.div`
   max-width: 70%;
-`
+`;
