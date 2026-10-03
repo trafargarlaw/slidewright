@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import styled, { useTheme } from "styled-components";
+import { styled, useTheme } from "styled-components";
 import { Slide, getSlideClicks } from "./Slide";
 import { Navigation } from "./Navigation";
 import { useNavigation } from "../hooks/useNavigation";

@@ -10,6 +10,7 @@ import { ThemeProvider } from "styled-components";
 import { theme } from "../styles/theme";
 import { GlobalStyle } from "../styles/GlobalStyle";
 import { ShikiProvider } from "../context/ShikiContext";
+import { TooltipProvider } from "../components/ui/tooltip";
 import appCss from "../styles/global.css?url";
 
 export const Route = createRootRoute({
@@ -63,9 +64,11 @@ function RootComponent() {
     <RootDocument>
       <ThemeProvider theme={theme}>
         <GlobalStyle />
-        <ShikiProvider>
-          <Outlet />
-        </ShikiProvider>
+        <TooltipProvider>
+          <ShikiProvider>
+            <Outlet />
+          </ShikiProvider>
+        </TooltipProvider>
       </ThemeProvider>
     </RootDocument>
   );

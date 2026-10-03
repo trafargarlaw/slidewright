@@ -8,7 +8,8 @@ import rehypeSanitize from "rehype-sanitize";
 import { defaultSchema } from "hast-util-sanitize";
 import type { Schema } from "hast-util-sanitize";
 import { visit } from "unist-util-visit";
-import styled from "styled-components";
+import { styled } from "styled-components";
+import { resolveImage } from "@/lib/image-registry";
 import { CodeBlock } from "./CodeBlock";
 import { useClicks } from "../hooks/useClicks";
 import { parseSteps, computeCodeClicks } from "../parser/code-highlight";
@@ -42,7 +43,7 @@ const sanitizeSchema: Schema = {
   tagNames: [...(defaultSchema.tagNames || []), "mark"],
   attributes: {
     ...defaultSchema.attributes,
-    "*": [...(defaultSchema.attributes?.["*"] || []), "style", "className"],
+    "*": [...(defaultSchema.attributes?.["*"] || []), "style", "className", "dataPasteId"],
     mark: ["at"],
     code: [
       ...(Array.isArray(defaultSchema.attributes?.code)
@@ -229,7 +230,9 @@ function SegmentMarkdown({
         return <Blockquote {...props}>{children}</Blockquote>;
       },
       img({ node: _, src, alt, ...props }: any) {
-        return <Img src={src} alt={alt} {...props} />;
+        const pasteId = props["data-paste-id"];
+        const resolvedSrc = pasteId ? resolveImage(pasteId) : src;
+        return <Img {...props} src={resolvedSrc} alt={alt} />;
       },
       a({ node: _, children, href, ...props }: any) {
         return (

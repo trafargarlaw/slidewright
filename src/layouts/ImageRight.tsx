@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import { styled } from "styled-components";
 import type { ReactNode } from "react";
 
 interface ImageRightLayoutProps {

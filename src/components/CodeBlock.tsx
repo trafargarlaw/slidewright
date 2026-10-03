@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import styled from "styled-components";
+import { styled } from "styled-components";
 import { useShiki } from "../context/ShikiContext";
 import { useClicks } from "../hooks/useClicks";
 import { parseHighlightMeta } from "../parser/code-highlight";

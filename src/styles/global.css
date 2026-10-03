@@ -128,3 +128,21 @@
     @apply font-sans;
     }
 }
+
+/* Prevent Tailwind base resets from leaking into slide preview content */
+.slidev-slides * {
+  border-color: initial;
+  outline-color: initial;
+}
+
+/* Force the AI prompt InputGroup to expand for the textarea */
+.ai-prompt-wrapper [data-slot="input-group"] {
+  height: auto !important;
+  flex-direction: column;
+}
+
+.ai-prompt-wrapper [data-slot="input-group"] textarea {
+  min-height: 5.5rem;
+  max-height: 12rem;
+  field-sizing: content;
+}

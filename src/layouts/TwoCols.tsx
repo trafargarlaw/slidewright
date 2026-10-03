@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import styled from "styled-components";
+import { styled } from "styled-components";
 import { SlideContent } from "../components/SlideContent";
 import { computeTotalSlideClicks } from "../parser/code-highlight";
 

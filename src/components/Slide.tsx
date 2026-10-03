@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import styled from "styled-components";
+import { styled } from "styled-components";
 import { layouts } from "../layouts";
 import { SlideContent } from "./SlideContent";
 import { ClickContext } from "../hooks/useClicks";

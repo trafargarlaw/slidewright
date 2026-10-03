@@ -1,7 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { Editor } from "../components/Editor";
 import { initUnocss } from "../styles/unocss";
-import slidesData from "virtual:slides";
 
 initUnocss();
 
@@ -10,5 +9,9 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  return <Editor defaultValue={slidesData.raw} />;
+  return (
+    <ClientOnly>
+      <Editor defaultValue={""} />
+    </ClientOnly>
+  );
 }

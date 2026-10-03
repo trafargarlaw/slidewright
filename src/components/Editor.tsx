@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import MonacoEditor, { type OnMount } from "@monaco-editor/react";
+import { Editor as MonacoEditor, type OnMount } from "@monaco-editor/react";
 import type { editor } from "monaco-editor";
-import styled from "styled-components";
+import { styled } from "styled-components";
 import { Deck } from "./Deck";
 import { CheatSheet } from "./CheatSheet";
+import { registerImage } from "@/lib/image-registry";
 import {
   parseSlides,
   getSlideStartLines,
@@ -13,6 +14,40 @@ import {
   registerCompletion,
   type CompletionRegistration
 } from 'monacopilot';
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
+
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  PromptInput,
+  PromptInputTextarea,
+  PromptInputSubmit,
+  PromptInputBody,
+  PromptInputFooter,
+  PromptInputTools,
+  PromptInputButton,
+  type PromptInputMessage,
+} from "@/components/ai-elements/prompt-input";
+import { Shimmer } from "@/components/ai-elements/shimmer";
+import {
+  Reasoning,
+  ReasoningTrigger,
+  ReasoningContent,
+} from "@/components/ai-elements/reasoning";
+
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { CheckIcon, XIcon, SparklesIcon, CommandIcon, ChevronDownIcon } from "lucide-react";
 
 
 function computeChangedLines(original: string, proposed: string): number[] {
@@ -27,15 +62,52 @@ function computeChangedLines(original: string, proposed: string): number[] {
   return changed;
 }
 
-function cleanAiResponse(text: string): string {
-  let cleaned = text.trim();
-  const fenceMatch = cleaned.match(/^```\w*\n([\s\S]*)\n```$/);
-  if (fenceMatch) cleaned = fenceMatch[1].trim();
-  // Strip any reasoning/commentary before the actual slide content.
-  // The file must start with `---` (first slide separator).
-  const slideStart = cleaned.indexOf("---");
-  if (slideStart > 0) cleaned = cleaned.slice(slideStart);
-  return cleaned;
+function applySearchReplace(original: string, response: string): string {
+  // Strip wrapping code fences (with optional language tag like ```diff, ```markdown)
+  const cleaned = response.replace(/^```[^\n]*\n?/, "").replace(/\n?```\s*$/, "");
+
+  const blocks: { search: string; replace: string }[] = [];
+  const regex =
+    /<<<<<<< SEARCH\n([\s\S]*?)\n?=======\n([\s\S]*?)\n>>>>>>> REPLACE/g;
+  let match;
+  while ((match = regex.exec(cleaned)) !== null) {
+    blocks.push({ search: match[1], replace: match[2] });
+  }
+
+  console.log("[applySearchReplace]", {
+    originalLen: original.length,
+    responseLen: response.length,
+    cleanedLen: cleaned.length,
+    blocksFound: blocks.length,
+    responseFirst200: response.slice(0, 200),
+    responseLast200: response.slice(-200),
+    cleanedFirst200: cleaned.slice(0, 200),
+    searchTexts: blocks.map((b) => b.search.slice(0, 80)),
+  });
+
+  if (blocks.length === 0) return original; // no valid blocks — no change
+
+  let result = original;
+  for (const block of blocks) {
+    if (block.search === "") {
+      // Empty SEARCH = replace entire file (create from scratch)
+      result = block.replace;
+    } else {
+      const idx = result.indexOf(block.search);
+      if (idx !== -1) {
+        result =
+          result.slice(0, idx) +
+          block.replace +
+          result.slice(idx + block.search.length);
+      } else {
+        console.warn("[applySearchReplace] SEARCH text not found in original:", {
+          search: block.search.slice(0, 100),
+        });
+      }
+    }
+  }
+
+  return result;
 }
 
 function renderScriptWithClicks(text: string) {
@@ -49,6 +121,92 @@ function renderScriptWithClicks(text: string) {
   );
 }
 
+
+/** Extract reasoning/text from the last assistant message's parts */
+function extractMessageParts(messages: UIMessage[]) {
+  const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+  if (!lastAssistant) return { reasoningText: "", streamText: "", isReasoningStreaming: false };
+
+  let reasoningText = "";
+  let streamText = "";
+  let isReasoningStreaming = false;
+
+  for (const part of lastAssistant.parts) {
+    if (part.type === "reasoning") {
+      reasoningText += part.text;
+      if (part.state === "streaming") isReasoningStreaming = true;
+    } else if (part.type === "text") {
+      streamText += part.text;
+    }
+  }
+
+  return { reasoningText, streamText, isReasoningStreaming };
+}
+
+function AiStreamPanel({
+  messages,
+  isStreaming,
+}: {
+  messages: UIMessage[];
+  isStreaming: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const preRef = useRef<HTMLPreElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const { reasoningText, streamText, isReasoningStreaming } = extractMessageParts(messages);
+
+  // Auto-scroll the panel and pre element to bottom as content arrives
+  useEffect(() => {
+    if (panelRef.current) {
+      panelRef.current.scrollTop = panelRef.current.scrollHeight;
+    }
+    if (open && preRef.current) {
+      preRef.current.scrollTop = preRef.current.scrollHeight;
+    }
+  }, [streamText, reasoningText, open]);
+
+  return (
+    <div ref={panelRef} className="max-h-[300px] overflow-y-auto border-b border-border px-3 py-2 space-y-2">
+      {reasoningText && (
+        <Reasoning isStreaming={isReasoningStreaming}>
+          <ReasoningTrigger />
+          <ReasoningContent className="max-h-[120px] overflow-y-auto">{reasoningText}</ReasoningContent>
+        </Reasoning>
+      )}
+      <Collapsible open={open} onOpenChange={setOpen}>
+        <div className="flex items-center gap-2">
+          <SparklesIcon className="size-4 shrink-0 text-muted-foreground" />
+          {isStreaming ? (
+            <Shimmer as="span" className="text-sm" duration={1.5}>
+              Generating edit...
+            </Shimmer>
+          ) : (
+            <span className="text-sm text-muted-foreground">Applying changes...</span>
+          )}
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="icon-xs" className="ml-auto">
+              <ChevronDownIcon
+                className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`}
+              />
+            </Button>
+          </CollapsibleTrigger>
+        </div>
+        <CollapsibleContent>
+          {streamText && (
+            <pre
+              ref={preRef}
+              className="mt-2 max-h-[120px] overflow-auto rounded-md bg-muted p-2 font-mono text-[11px] leading-relaxed text-muted-foreground"
+            >
+              {streamText}
+            </pre>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
+  );
+}
+
 interface EditorProps {
   defaultValue: string;
   onChange?: (markdown: string) => void;
@@ -58,24 +216,101 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
   console.log("Editor");
   const completionRef = useRef<CompletionRegistration | null>(null);
   const [markdown, setMarkdown] = useState(defaultValue);
-  const [activeTab, setActiveTab] = useState<
-    "markdown" | "script" | "cheatsheet"
-  >("markdown");
+  const [activeTab, setActiveTab] = useState<string>("markdown");
   const [cursorNav, setCursorNav] = useState<
     { slideIndex: number; seq: number } | undefined
   >(undefined);
   const [displayedSlideIndex, setDisplayedSlideIndex] = useState(0);
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const ignoreCursorRef = useRef(false);
   const [aiInstruction, setAiInstruction] = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
   const [aiPending, setAiPending] = useState<{
     original: string;
     proposed: string;
   } | null>(null);
-  const aiInputRef = useRef<HTMLInputElement>(null);
   const decorationsRef = useRef<editor.IEditorDecorationsCollection | null>(
     null,
   );
+  // Ref to hold editor state for useChat callbacks (avoids stale closures)
+  const aiEditContextRef = useRef<{
+    code: string;
+    selection?: { text: string; startLine: number; endLine: number };
+  }>({ code: "" });
+
+  const {
+    messages: aiMessages,
+    setMessages: setAiMessages,
+    sendMessage,
+    status: aiStatus,
+  } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/ai-edit",
+      body: () => ({
+        code: aiEditContextRef.current.code,
+        selection: aiEditContextRef.current.selection,
+      }),
+    }),
+    onFinish: (event) => {
+      console.log("[onFinish]", {
+        isAbort: event.isAbort,
+        isError: event.isError,
+        isDisconnect: event.isDisconnect,
+        finishReason: event.finishReason,
+        partsCount: event.message.parts.length,
+        partTypes: event.message.parts.map((p) => p.type),
+      });
+
+      const ed = editorRef.current;
+      if (!ed) {
+        console.warn("[onFinish] editorRef is null");
+        return;
+      }
+
+      // Extract text from the finished message
+      const text = event.message.parts
+        .filter((p): p is { type: "text"; text: string } => p.type === "text")
+        .map((p) => p.text)
+        .join("");
+
+      console.log("[onFinish] extracted text length:", text.length, "first 300:", text.slice(0, 300));
+
+      const code = aiEditContextRef.current.code;
+      const proposed = applySearchReplace(code, text);
+
+      if (proposed === code) {
+        console.warn("[onFinish] proposed === code, no changes applied");
+        return;
+      }
+
+      setAiPending({ original: code, proposed });
+      ignoreCursorRef.current = true;
+      const pos = ed.getPosition();
+      ed.setValue(proposed);
+      if (pos) ed.setPosition(pos);
+      ignoreCursorRef.current = false;
+
+      const changed = computeChangedLines(code, proposed);
+      decorationsRef.current = ed.createDecorationsCollection(
+        changed.map((line) => ({
+          range: {
+            startLineNumber: line,
+            startColumn: 1,
+            endLineNumber: line,
+            endColumn: 1,
+          },
+          options: {
+            isWholeLine: true,
+            className: "ai-edit-changed-line",
+          },
+        })),
+      );
+
+      ed.updateOptions({ readOnly: true });
+    },
+  });
+
+  const aiLoading = aiStatus === "submitted" || aiStatus === "streaming";
+  const aiStreaming = aiStatus === "streaming";
 
   const slides = useMemo(() => parseSlides(markdown).slides, [markdown]);
 
@@ -84,7 +319,6 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
   displayedSlideIndexRef.current = displayedSlideIndex;
   const [scriptText, setScriptText] = useState("");
   const scriptFocusedRef = useRef(false);
-  const ignoreCursorRef = useRef(false);
 
   // Sync script text from parsed slides —
   // always sync UNLESS user is actively typing in the script textarea
@@ -404,87 +638,98 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
       label: "AI Edit",
       keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK],
       run: () => {
-        aiInputRef.current?.focus();
+        // Focus the prompt input textarea
+        const textarea = document.querySelector<HTMLTextAreaElement>(
+          '[data-slot="prompt-textarea"]'
+        );
+        textarea?.focus();
       },
     });
   }, []);
 
   useEffect(() => {
     return () => {
-      completionRef.current?.deregister()
+      completionRef.current?.deregister();
     }
   }, [])
-  console.log(completionRef.current);
 
-  const handleAiSubmit = useCallback(async () => {
-    const ed = editorRef.current;
-    if (!ed || !aiInstruction.trim() || aiLoading) return;
+  // Paste image into editor → insert <img src="data:..." />
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const ed = editorRef.current;
+      if (!ed || !ed.hasTextFocus()) return;
 
-    const code = ed.getModel()?.getValue() || "";
-    const selection = ed.getSelection();
-    let selectionData:
-      | { text: string; startLine: number; endLine: number }
-      | undefined;
+      const items = e.clipboardData?.items;
+      if (!items) return;
 
-    if (selection && !selection.isEmpty()) {
-      selectionData = {
-        text: ed.getModel()?.getValueInRange(selection) || "",
-        startLine: selection.startLineNumber,
-        endLine: selection.endLineNumber,
-      };
-    }
+      let imageItem: DataTransferItem | null = null;
+      for (const item of items) {
+        if (item.type.startsWith("image/")) {
+          imageItem = item;
+          break;
+        }
+      }
+      if (!imageItem) return;
 
-    setAiLoading(true);
-    try {
-      const res = await fetch("/api/ai-edit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code,
-          instruction: aiInstruction,
-          selection: selectionData,
-        }),
-      });
+      e.preventDefault();
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const file = imageItem.getAsFile();
+      if (!file) return;
 
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      // Register blob URL and use short ID in markdown
+      // TODO: replace with real upload — e.g. const url = await uploadImage(file);
+      const blobUrl = URL.createObjectURL(file);
+      const id = registerImage(blobUrl);
+      const imgTag = `<img data-paste-id="${id}" />`;
+      const position = ed.getPosition();
+      if (!position) return;
 
-      const proposed = cleanAiResponse(data.code);
-      if (proposed === code) return;
-
-      setAiPending({ original: code, proposed });
-      ignoreCursorRef.current = true;
-      const pos = ed.getPosition();
-      ed.setValue(proposed);
-      if (pos) ed.setPosition(pos);
-      ignoreCursorRef.current = false;
-
-      const changed = computeChangedLines(code, proposed);
-      decorationsRef.current = ed.createDecorationsCollection(
-        changed.map((line) => ({
+      ed.executeEdits("paste-image", [
+        {
           range: {
-            startLineNumber: line,
-            startColumn: 1,
-            endLineNumber: line,
-            endColumn: 1,
+            startLineNumber: position.lineNumber,
+            startColumn: position.column,
+            endLineNumber: position.lineNumber,
+            endColumn: position.column,
           },
-          options: {
-            isWholeLine: true,
-            className: "ai-edit-changed-line",
-          },
-        })),
-      );
+          text: imgTag,
+        },
+      ]);
+    };
 
-      ed.updateOptions({ readOnly: true });
-    } catch (err) {
-      console.error("AI edit failed:", err);
-    } finally {
-      setAiLoading(false);
+    document.addEventListener("paste", handlePaste, true);
+    return () => document.removeEventListener("paste", handlePaste, true);
+  }, []);
+
+  const handleAiSubmit = useCallback(
+    (message: PromptInputMessage) => {
+      const ed = editorRef.current;
+      if (!ed || !message.text?.trim() || aiLoading) return;
+
+      // Snapshot editor state into ref for the transport callback
+      const code = ed.getModel()?.getValue() || "";
+      const selection = ed.getSelection();
+      let selectionData:
+        | { text: string; startLine: number; endLine: number }
+        | undefined;
+
+      if (selection && !selection.isEmpty()) {
+        selectionData = {
+          text: ed.getModel()?.getValueInRange(selection) || "",
+          startLine: selection.startLineNumber,
+          endLine: selection.endLineNumber,
+        };
+      }
+
+      aiEditContextRef.current = { code, selection: selectionData };
+
+      // Clear previous conversation and send new message
+      setAiMessages([]);
       setAiInstruction("");
-    }
-  }, [aiInstruction, aiLoading]);
+      sendMessage({ text: message.text });
+    },
+    [aiLoading, sendMessage, setAiMessages],
+  );
 
   const handleAcceptEdit = useCallback(() => {
     const ed = editorRef.current;
@@ -493,7 +738,8 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
       decorationsRef.current?.clear();
     }
     setAiPending(null);
-  }, []);
+    setAiMessages([]);
+  }, [setAiMessages]);
 
   const handleRejectEdit = useCallback(() => {
     const ed = editorRef.current;
@@ -507,7 +753,8 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
       decorationsRef.current?.clear();
     }
     setAiPending(null);
-  }, [aiPending]);
+    setAiMessages([]);
+  }, [aiPending, setAiMessages]);
 
   useEffect(() => {
     if (!aiPending) return;
@@ -521,151 +768,173 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
   return (
     <EditorContainer>
       <EditorPanel>
-        <PanelHeader>
-          <TabBar>
-            <Tab
-              $active={activeTab === "markdown"}
-              onClick={() => setActiveTab("markdown")}
-            >
-              Markdown
-            </Tab>
-            <Tab
-              $active={activeTab === "script"}
-              onClick={() => setActiveTab("script")}
-            >
-              Script
-            </Tab>
-            <Tab
-              $active={activeTab === "cheatsheet"}
-              onClick={() => setActiveTab("cheatsheet")}
-            >
-              Cheat Sheet
-            </Tab>
-          </TabBar>
-          <SlideCount>
-            Slide {displayedSlideIndex + 1} / {slides.length}
-          </SlideCount>
-        </PanelHeader>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full overflow-hidden gap-0">
+          <div className="flex items-center justify-between px-3 py-1.5 bg-background border-b border-border shrink-0">
+            <TabsList variant="line" className="h-7">
+              <TabsTrigger value="markdown" className="text-xs px-2">
+                Markdown
+              </TabsTrigger>
+              <TabsTrigger value="script" className="text-xs px-2">
+                Script
+              </TabsTrigger>
+              <TabsTrigger value="cheatsheet" className="text-xs px-2">
+                Cheat Sheet
+              </TabsTrigger>
+            </TabsList>
+            <Badge variant="secondary" className="font-mono text-[11px]">
+              {displayedSlideIndex + 1} / {slides.length}
+            </Badge>
+          </div>
 
-        <MonacoWrapper
-          style={{ display: activeTab === "markdown" ? undefined : "none" }}
-        >
-          <MonacoEditor
-            defaultValue={defaultValue}
-            language="slidev-md"
-            onChange={handleChange}
-            onMount={handleMount}
-            options={{
-              fontSize: 13,
-              lineHeight: 20,
-              fontFamily:
-                "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
-              minimap: { enabled: false },
-              wordWrap: "on",
-              lineNumbers: "on",
-              renderLineHighlight: "line",
-              scrollBeyondLastLine: false,
-              padding: { top: 12, bottom: 12 },
-              suggestOnTriggerCharacters: true,
-              tabSize: 2,
-              folding: true,
-              foldingStrategy: "indentation",
-              bracketPairColorization: { enabled: true },
-              guides: { indentation: true },
-              overviewRulerBorder: false,
-              hideCursorInOverviewRuler: true,
-              scrollbar: {
-                verticalScrollbarSize: 8,
-                horizontalScrollbarSize: 8,
-              },
-            }}
-          />
-        </MonacoWrapper>
-
-        {activeTab === "markdown" && (
-          <AIEditBar>
-            {aiPending ? (
-              <>
-                <AIEditStatus>AI edit proposed — review changes</AIEditStatus>
-                <AIEditButton $variant="accept" onClick={handleAcceptEdit}>
-                  Accept
-                </AIEditButton>
-                <AIEditButton $variant="reject" onClick={handleRejectEdit}>
-                  Reject (Esc)
-                </AIEditButton>
-              </>
-            ) : (
-              <>
-                <AIEditInput
-                  ref={aiInputRef}
-                  value={aiInstruction}
-                  onChange={(e) => setAiInstruction(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleAiSubmit();
-                    }
-                    if (e.key === "Escape") {
-                      e.currentTarget.blur();
-                      editorRef.current?.focus();
-                    }
-                  }}
-                  placeholder={
-                    aiLoading
-                      ? "Generating edit..."
-                      : "Ask AI to edit... (\u2318K)"
-                  }
-                  disabled={aiLoading}
-                />
-                {!aiLoading && (
-                  <AIEditSubmit
-                    onClick={handleAiSubmit}
-                    disabled={!aiInstruction.trim()}
-                  >
-                    Edit
-                  </AIEditSubmit>
-                )}
-                {aiLoading && <AIEditSpinner />}
-              </>
-            )}
-          </AIEditBar>
-        )}
-
-        {activeTab === "script" && (
-          <ScriptView>
-            <ScriptContainer>
-              <ScriptHighlight aria-hidden="true">
-                {scriptText
-                  ? renderScriptWithClicks(scriptText)
-                  : <ScriptPlaceholder>Write what you'd say presenting this slide...</ScriptPlaceholder>}
-              </ScriptHighlight>
-              <ScriptTextarea
-                value={scriptText}
-                onChange={handleScriptChange}
-                onFocus={() => {
-                  scriptFocusedRef.current = true;
+          <TabsContent value="markdown" className="flex-1 flex flex-col overflow-hidden m-0">
+            <MonacoWrapper>
+              <MonacoEditor
+                defaultValue={defaultValue}
+                language="slidev-md"
+                onChange={handleChange}
+                onMount={handleMount}
+                options={{
+                  fontSize: 13,
+                  lineHeight: 20,
+                  fontFamily:
+                    "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
+                  minimap: { enabled: false },
+                  wordWrap: "on",
+                  lineNumbers: "on",
+                  renderLineHighlight: "line",
+                  scrollBeyondLastLine: false,
+                  padding: { top: 12, bottom: 12 },
+                  suggestOnTriggerCharacters: true,
+                  tabSize: 2,
+                  folding: true,
+                  foldingStrategy: "indentation",
+                  bracketPairColorization: { enabled: true },
+                  guides: { indentation: true },
+                  overviewRulerBorder: false,
+                  hideCursorInOverviewRuler: true,
+                  scrollbar: {
+                    verticalScrollbarSize: 8,
+                    horizontalScrollbarSize: 8,
+                  },
                 }}
-                onBlur={() => {
-                  scriptFocusedRef.current = false;
-                }}
-                onScroll={(e) => {
-                  const highlight = e.currentTarget.previousElementSibling;
-                  if (highlight) highlight.scrollTop = e.currentTarget.scrollTop;
-                }}
-                dir="auto"
-                placeholder=""
               />
-            </ScriptContainer>
-          </ScriptView>
-        )}
+            </MonacoWrapper>
 
-        {activeTab === "cheatsheet" && <CheatSheet />}
+            {/* AI Edit Bar */}
+            <div className="border-t border-border bg-background shrink-0">
+              {aiPending && (
+                <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
+                  <SparklesIcon className="size-4 text-muted-foreground" />
+                  <span className="flex-1 text-sm text-muted-foreground">
+                    AI edit proposed — review changes
+                  </span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={handleAcceptEdit}
+                      >
+                        <CheckIcon className="size-3.5" />
+                        Accept
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Apply changes</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleRejectEdit}
+                      >
+                        <XIcon className="size-3.5" />
+                        Reject
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Discard changes (Esc)
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              )}
+              {aiLoading && (
+                <AiStreamPanel
+                  messages={aiMessages}
+                  isStreaming={aiStreaming}
+                />
+              )}
+              <div className="px-3 py-2 ai-prompt-wrapper">
+                <PromptInput onSubmit={handleAiSubmit}>
+                  <PromptInputBody>
+                    <PromptInputTextarea
+                      data-slot="prompt-textarea"
+                      value={aiInstruction}
+                      onChange={(e) => setAiInstruction(e.currentTarget.value)}
+                      placeholder="Ask AI to edit your slides..."
+                      className="text-sm"
+                      disabled={aiLoading}
+                    />
+                  </PromptInputBody>
+                  <PromptInputFooter>
+                    <PromptInputTools>
+                      <PromptInputButton
+                        tooltip={{ content: "AI Edit", shortcut: "\u2318K" }}
+                        variant="ghost"
+                        size="icon-xs"
+                      >
+                        <CommandIcon className="size-3" />
+                      </PromptInputButton>
+                    </PromptInputTools>
+                    <PromptInputSubmit
+                      disabled={!aiInstruction.trim() || aiLoading}
+                    />
+                  </PromptInputFooter>
+                </PromptInput>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="script" className="flex-1 flex flex-col overflow-hidden m-0">
+            <ScriptView>
+              <ScriptContainer>
+                <ScriptHighlight aria-hidden="true">
+                  {scriptText
+                    ? renderScriptWithClicks(scriptText)
+                    : <ScriptPlaceholder>Write what you'd say presenting this slide...</ScriptPlaceholder>}
+                </ScriptHighlight>
+                <ScriptTextarea
+                  value={scriptText}
+                  onChange={handleScriptChange}
+                  onFocus={() => {
+                    scriptFocusedRef.current = true;
+                  }}
+                  onBlur={() => {
+                    scriptFocusedRef.current = false;
+                  }}
+                  onScroll={(e) => {
+                    const highlight = e.currentTarget.previousElementSibling;
+                    if (highlight) highlight.scrollTop = e.currentTarget.scrollTop;
+                  }}
+                  dir="auto"
+                  placeholder=""
+                />
+              </ScriptContainer>
+            </ScriptView>
+          </TabsContent>
+
+          <TabsContent value="cheatsheet" className="flex-1 overflow-hidden m-0">
+            <CheatSheet />
+          </TabsContent>
+        </Tabs>
       </EditorPanel>
 
       <PreviewPanel>
-        <PanelHeader>
-          <PanelTitle>Preview</PanelTitle>
-        </PanelHeader>
+        <div className="flex items-center justify-between px-4 py-2 bg-background border-b border-border shrink-0">
+          <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
+            Preview
+          </span>
+        </div>
         <PreviewArea>
           <Deck
             slides={slides}
@@ -698,58 +967,6 @@ const PreviewPanel = styled.div`
   display: flex;
   flex-direction: column;
   overflow: hidden;
-`;
-
-const PanelHeader = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 16px;
-  background: ${({ theme }) => theme.colors.background};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  flex-shrink: 0;
-`;
-
-const PanelTitle = styled.span`
-  font-family: ${({ theme }) => theme.fonts.body};
-  font-size: 13px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.foreground};
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-`;
-
-const TabBar = styled.div`
-  display: flex;
-  gap: 0;
-`;
-
-const Tab = styled.button<{ $active: boolean }>`
-  background: none;
-  border: none;
-  border-bottom: 2px solid
-    ${({ $active, theme }) => ($active ? theme.colors.primary : "transparent")};
-  padding: 0 12px 4px;
-  margin-right: 4px;
-  font-family: ${({ theme }) => theme.fonts.body};
-  font-size: 13px;
-  font-weight: 600;
-  color: ${({ $active, theme }) =>
-    $active ? theme.colors.foreground : theme.colors.secondaryText};
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
-
-  &:hover {
-    color: ${({ theme }) => theme.colors.foreground};
-  }
-`;
-
-const SlideCount = styled.span`
-  font-family: ${({ theme }) => theme.fonts.mono};
-  font-size: 12px;
-  color: ${({ theme }) => theme.colors.secondaryText};
 `;
 
 const MonacoWrapper = styled.div`
@@ -837,106 +1054,4 @@ const PreviewArea = styled.div`
   flex-direction: column;
   background: #e8e8e8;
   overflow: hidden;
-`;
-
-const AIEditBar = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  background: ${({ theme }) => theme.colors.background};
-  border-top: 1px solid ${({ theme }) => theme.colors.border};
-  flex-shrink: 0;
-`;
-
-const AIEditInput = styled.input`
-  flex: 1;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: 6px 10px;
-  font-family: ${({ theme }) => theme.fonts.body};
-  font-size: 13px;
-  color: ${({ theme }) => theme.colors.foreground};
-  background: ${({ theme }) => theme.colors.surface};
-  outline: none;
-  transition: border-color 0.15s;
-
-  &:focus {
-    border-color: ${({ theme }) => theme.colors.accent};
-  }
-
-  &:disabled {
-    opacity: 0.6;
-  }
-
-  &::placeholder {
-    color: ${({ theme }) => theme.colors.secondaryText};
-  }
-`;
-
-const AIEditSubmit = styled.button`
-  padding: 6px 14px;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  background: ${({ theme }) => theme.colors.accent};
-  color: white;
-  font-family: ${({ theme }) => theme.fonts.body};
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s;
-
-  &:hover:not(:disabled) {
-    opacity: 0.85;
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
-`;
-
-const AIEditButton = styled.button<{ $variant: "accept" | "reject" }>`
-  padding: 6px 14px;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  font-family: ${({ theme }) => theme.fonts.body};
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s;
-  background: ${({ $variant, theme }) =>
-    $variant === "accept" ? theme.colors.primary : "transparent"};
-  color: ${({ $variant, theme }) =>
-    $variant === "accept"
-      ? theme.colors.foreground
-      : theme.colors.secondaryText};
-  border: ${({ $variant, theme }) =>
-    $variant === "reject" ? `1px solid ${theme.colors.border}` : "none"};
-
-  &:hover {
-    opacity: 0.85;
-  }
-`;
-
-const AIEditStatus = styled.span`
-  flex: 1;
-  font-family: ${({ theme }) => theme.fonts.body};
-  font-size: 13px;
-  color: ${({ theme }) => theme.colors.secondaryText};
-`;
-
-const AIEditSpinner = styled.div`
-  width: 18px;
-  height: 18px;
-  border: 2px solid ${({ theme }) => theme.colors.border};
-  border-top-color: ${({ theme }) => theme.colors.accent};
-  border-radius: 50%;
-  animation: ai-spin 0.6s linear infinite;
-
-  @keyframes ai-spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
 `;

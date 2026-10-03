@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { generateText } from "ai";
+import { streamText } from "ai";
 import { gateway } from "@ai-sdk/gateway";
 
 const SYSTEM_PROMPT = `You are an expert presentation editor for a Slidev-style slide deck system. You modify markdown files that follow a specific slide-based format. You deeply understand presentation design — how to structure content for maximum clarity and visual impact.
@@ -264,30 +264,73 @@ When creating or editing slides, follow these principles:
 9. **two-cols needs balance.** Both columns should have roughly equal content. An empty column looks broken.
 10. **Code slides should breathe.** Use the \`code\` layout and don't add too much surrounding text — let the code be the focus.
 
-# OUTPUT RULES — CRITICAL
+# OUTPUT FORMAT — SEARCH/REPLACE BLOCKS
 
-Your response must be ONLY the raw file content. Nothing else. No exceptions.
+Return ONLY search/replace blocks that describe the exact changes. Do NOT return the full file.
 
-- ❌ Do NOT include any reasoning, analysis, or explanation before or after the file content.
-- ❌ Do NOT say "Here's the modified file" or "I changed X because Y" or "Problem identified".
-- ❌ Do NOT wrap in code fences (\`\`\`markdown ... \`\`\`) or any other wrapper.
-- ❌ Do NOT include a preamble, summary, or commentary of any kind.
-- ✅ The very first character of your response must be \`---\` (the first slide separator).
-- ✅ Return the COMPLETE file with all slides, even ones you didn't change.
+Each block uses this format:
 
-Additional rules:
-1. If a selected text range is provided, focus changes on that section but return the FULL file.
-2. Match the existing style, tone, and indentation of the document.
-3. Keep changes minimal and targeted to the instruction — don't rewrite slides that don't need changes.
-4. Ensure every slide has valid frontmatter (if it had frontmatter before) and proper \`---\` separators.
-5. Never remove or merge slides unless explicitly asked to.
-6. When adding new slides, choose appropriate layouts based on the content type.`;
+\`\`\`
+<<<<<<< SEARCH
+exact existing text to find
+=======
+replacement text
+>>>>>>> REPLACE
+\`\`\`
+
+## Rules
+
+1. **SEARCH must be an exact, verbatim substring** of the current file. Copy it character-for-character including whitespace and newlines.
+2. **SEARCH must be unique** — it should match exactly one location in the file. Include enough surrounding context (a few lines before/after the change) to ensure uniqueness.
+3. **REPLACE is the full replacement** for the matched region. It can be longer, shorter, or empty (to delete content).
+4. Use **multiple blocks** for changes in different parts of the file. Order them from top to bottom.
+5. Do NOT overlap blocks — each block should target a distinct section.
+6. Do NOT include any commentary, explanation, or text outside the blocks.
+7. **To add a new slide**, use a SEARCH block that matches the \`---\` separator and surrounding content where the new slide should be inserted, then include the new slide in REPLACE.
+8. **To delete a slide**, match the full slide content in SEARCH and set REPLACE to empty or just the separator.
+9. Match the existing style, tone, and indentation of the document.
+10. Keep changes minimal and targeted to the instruction.
+11. Ensure every slide has valid frontmatter and proper \`---\` separators.
+12. Never remove or merge slides unless explicitly asked to.
+13. When adding new slides, choose appropriate layouts based on the content type.
+
+## Example
+
+If the instruction is "change the title to Hello World" and the file contains:
+
+\`\`\`
+---
+layout: cover
+---
+
+# My Presentation
+\`\`\`
+
+Your response should be:
+
+<<<<<<< SEARCH
+# My Presentation
+=======
+# Hello World
+>>>>>>> REPLACE`;
 
 export const Route = createFileRoute("/api/ai-edit")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { code, instruction, selection } = await request.json();
+        const { messages, code, selection } = await request.json();
+
+        // Extract the latest user message text from useChat's message format
+        const lastUserMsg = [...messages].reverse().find(
+          (m: { role: string }) => m.role === "user",
+        );
+        const instruction =
+          lastUserMsg?.parts
+            ?.filter((p: { type: string }) => p.type === "text")
+            .map((p: { text: string }) => p.text)
+            .join("") ||
+          lastUserMsg?.content ||
+          "";
 
         let userMessage = `INSTRUCTION: ${instruction}\n\n`;
         if (selection) {
@@ -295,13 +338,20 @@ export const Route = createFileRoute("/api/ai-edit")({
         }
         userMessage += `CURRENT FILE:\n${code}`;
 
-        const result = await generateText({
+        const result = streamText({
           model: gateway("zai/glm-5"),
           system: SYSTEM_PROMPT,
           prompt: userMessage,
+          providerOptions: {
+            zai: {
+              thinking: {
+                type: "enabled",
+              },
+            },
+          },
         });
 
-        return Response.json({ code: result.text });
+        return result.toUIMessageStreamResponse({ sendReasoning: true });
       },
     },
   },
