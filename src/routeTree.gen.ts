@@ -10,22 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiCodeCompletionRouteImport } from './routes/api/code-completion'
 import { Route as ApiAiEditRouteImport } from './routes/api/ai-edit'
+import { Route as ApiCodeCompletionRouteImport } from './routes/api/code-completion'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiCodeCompletionRoute = ApiCodeCompletionRouteImport.update({
-  id: '/api/code-completion',
-  path: '/api/code-completion',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiAiEditRoute = ApiAiEditRouteImport.update({
   id: '/api/ai-edit',
   path: '/api/ai-edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCodeCompletionRoute = ApiCodeCompletionRouteImport.update({
+  id: '/api/code-completion',
+  path: '/api/code-completion',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -68,18 +68,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/code-completion': {
-      id: '/api/code-completion'
-      path: '/api/code-completion'
-      fullPath: '/api/code-completion'
-      preLoaderRoute: typeof ApiCodeCompletionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/ai-edit': {
       id: '/api/ai-edit'
       path: '/api/ai-edit'
       fullPath: '/api/ai-edit'
       preLoaderRoute: typeof ApiAiEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/code-completion': {
+      id: '/api/code-completion'
+      path: '/api/code-completion'
+      fullPath: '/api/code-completion'
+      preLoaderRoute: typeof ApiCodeCompletionRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

@@ -1,5 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { streamText } from "ai";
+import {
+  createUIMessageStreamResponse,
+  streamText,
+  toUIMessageStream,
+} from "ai";
 import { gateway } from "@ai-sdk/gateway";
 
 const SYSTEM_PROMPT = `You are an expert presentation editor for a Slidev-style slide deck system. You modify markdown files that follow a specific slide-based format. You deeply understand presentation design — how to structure content for maximum clarity and visual impact.
@@ -340,7 +344,7 @@ export const Route = createFileRoute("/api/ai-edit")({
 
         const result = streamText({
           model: gateway("zai/glm-5"),
-          system: SYSTEM_PROMPT,
+          instructions: SYSTEM_PROMPT,
           prompt: userMessage,
           providerOptions: {
             zai: {
@@ -351,7 +355,12 @@ export const Route = createFileRoute("/api/ai-edit")({
           },
         });
 
-        return result.toUIMessageStreamResponse({ sendReasoning: true });
+        return createUIMessageStreamResponse({
+          stream: toUIMessageStream({
+            stream: result.stream,
+            sendReasoning: true,
+          }),
+        });
       },
     },
   },

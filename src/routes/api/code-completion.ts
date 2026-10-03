@@ -7,7 +7,7 @@ const copilot = new CompletionCopilot(undefined, {
     model: async (prompt) => {
         const { text } = await generateText({
             model: 'mistral/codestral',
-            system: prompt.context,
+            instructions: prompt.context,
             prompt: `${prompt.instruction}\n\n${prompt.fileContent}`,
           });
         return {

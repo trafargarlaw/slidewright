@@ -9,6 +9,6 @@ export default defineConfig({
     typeCheck: true,
   },
   rules: {
-    "eslint/no-unused-vars": "error",
+    "eslint/no-unused-vars": ["error", { ignoreRestSiblings: true }],
   },
 });
