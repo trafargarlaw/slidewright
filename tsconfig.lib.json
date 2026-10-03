@@ -7,6 +7,7 @@
     "jsx": "react-jsx",
     "declaration": true,
     "emitDeclarationOnly": true,
+    "rootDir": "src",
     "outDir": "dist/lib",
     "strict": true,
     "skipLibCheck": true,
