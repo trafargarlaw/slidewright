@@ -1,7 +1,13 @@
+/* The deck's styles sit between Tailwind's base and utilities: they win over
+   preflight, and utility classes still win over them. */
+@layer theme, base, react-slides, components, utilities;
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+
+@source "../../node_modules/streamdown/dist/*.js";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -129,10 +135,12 @@
     }
 }
 
-/* Prevent Tailwind base resets from leaking into slide preview content */
-.slidev-slides * {
-  border-color: initial;
-  outline-color: initial;
+/* Keep the app's border and outline colours out of slide content */
+@layer base {
+  [data-slide] * {
+    border-color: currentColor;
+    outline-color: currentColor;
+  }
 }
 
 /* Force the AI prompt InputGroup to expand for the textarea */

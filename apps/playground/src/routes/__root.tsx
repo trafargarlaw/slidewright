@@ -9,9 +9,9 @@ import {
 import { ThemeProvider } from "styled-components";
 import { theme } from "../styles/theme";
 import { GlobalStyle } from "../styles/GlobalStyle";
-import { ShikiProvider } from "../context/ShikiContext";
 import { TooltipProvider } from "../components/ui/tooltip";
 import appCss from "../styles/global.css?url";
+import deckCss from "@react-slides/react/styles.css?url";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -31,6 +31,10 @@ export const Route = createRootRoute({
       {
         rel: "stylesheet",
         href: appCss,
+      },
+      {
+        rel: "stylesheet",
+        href: deckCss,
       },
       {
         rel: "icon",
@@ -65,9 +69,7 @@ function RootComponent() {
       <ThemeProvider theme={theme}>
         <GlobalStyle />
         <TooltipProvider>
-          <ShikiProvider>
-            <Outlet />
-          </ShikiProvider>
+          <Outlet />
         </TooltipProvider>
       </ThemeProvider>
     </RootDocument>

@@ -1,12 +1,8 @@
 import { createGlobalStyle } from "styled-components";
 
+// Unlayered rules here beat every cascade layer, including the deck's, so
+// resets belong in Tailwind's base layer (global.css), not here.
 export const GlobalStyle = createGlobalStyle`
-  *, *::before, *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-
   html, body, #root {
     width: 100%;
     height: 100%;
@@ -19,10 +15,6 @@ export const GlobalStyle = createGlobalStyle`
 
   #root {
     display: flex;
-  }
-
-  code, pre {
-    font-family: ${({ theme }) => theme.fonts.mono};
   }
 
   .ai-edit-changed-line {

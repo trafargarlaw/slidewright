@@ -24,36 +24,34 @@ export const Route = createFileRoute('/api/code-completion')({
                     body,
                     options: {
                         customPrompt: (completionMetadata) => ({
-                            context: `You are completing code inside a Slidev-style presentation markdown file. The file uses a custom format where slides are separated by \`---\` lines.
+                            context: `You are completing a slide deck written as one Markdown file. Slides are separated by \`---\` lines.
 
 SLIDE STRUCTURE:
-Each slide has an optional YAML frontmatter block followed by markdown content:
+A slide can start with a YAML frontmatter block, directly after its separator:
 ---
 layout: <layout-name>
-title: "Optional title"
-image: "url (for image-left/image-right layouts)"
 ---
 
 ## Slide Heading
 
 Content here...
 
-AVAILABLE LAYOUTS: default, cover, section, center, two-cols, image-right, image-left, code, full
+LAYOUTS: default, center, cover, section, full, two-cols, image-left, image-right
 
 SPECIAL SYNTAX:
-- \`::right::\` splits content into two columns (used with two-cols layout)
-- \`<!-- step -->\` or \`<!-- step N -->\` marks incremental reveal points
-- \`<!-- notes ... -->\` at the end of a slide defines presenter notes
-- Code blocks support line highlighting: \`\`\`lang {1|2-3|all}\`\`\` where \`|\` separates reveal steps
-- Math: inline \`$...$\` and block \`$$...$$\` (KaTeX)
-- HTML tags like \`<mark>\`, \`<mark at="2">\` for highlighted text
-- Standard markdown: headers, bold, italic, lists, blockquotes, links, inline code
+- \`<!-- step -->\` or \`<!-- step N -->\` reveals what follows on the next step
+- \`<!-- notes ... -->\` holds speaker notes
+- Code blocks: \`\`\`lang {1|2-3|all} lines title="file.ts"\`\`\` where \`|\` separates highlight steps
+- Directives: \`:::name\` ... \`:::\` wraps content (\`:::left\` and \`:::right\` are the two-cols columns); \`::name{key="value"}\` is a single line
+- Math: inline \`$...$\` and block \`$$...$$\`
+- Standard Markdown and HTML with \`class\` and \`style\`
 
 FRONTMATTER KEYS:
-- layout: slide layout type
-- title: slide title (string, quoted)
-- image: image URL for image-left/image-right layouts
-- level: heading level (number)
+- layout: slide layout
+- title: slide title
+- class: CSS classes on the slide
+- steps: number of steps on the slide
+- image, imageAlt: image for the image-left/image-right layouts
 
 The presentation content is typically educational/instructional. Complete the markdown naturally, maintaining the slide's style and topic.`,
                             instruction: `Continue the slide content naturally. If inside a code block, complete the code. If inside frontmatter (between --- lines), suggest valid YAML keys and values. If in regular markdown, continue the prose or structure. Match the existing formatting, indentation, and style. Keep completions concise — suggest one logical unit at a time (a line, a bullet, a code statement). Language context: ${completionMetadata.language}.`,

@@ -41,7 +41,7 @@ welcome.
 - [x] `core`: one parser for browser and Node, a written syntax spec, tests
 - [x] `react`: reactive `<Deck>`, layouts, step reveals, code highlighting,
       CSS-variable themes
-- [ ] Playground switched to the new packages
+- [x] Playground switched to the new packages
 
 ### 1 — Presenting (v0.1)
 

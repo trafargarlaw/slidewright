@@ -20,11 +20,6 @@ export const theme = {
     body: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     mono: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
   },
-  slide: {
-    width: 980,
-    height: 552,
-    padding: "40px 56px",
-  },
   spacing: {
     xs: "4px",
     sm: "8px",

@@ -2,14 +2,12 @@ import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { Editor as MonacoEditor, type OnMount } from "@monaco-editor/react";
 import type { editor } from "monaco-editor";
 import { styled } from "styled-components";
-import { Deck } from "./Deck";
+import { getSlideAtLine } from "@react-slides/core";
+import { Deck, type DeckPosition } from "@react-slides/react";
 import { CheatSheet } from "./CheatSheet";
 import { registerImage } from "@/lib/image-registry";
-import {
-  parseSlides,
-  getSlideStartLines,
-  updateSlideNote,
-} from "../parser/parse-slides";
+import { compileOptions } from "@/lib/compile-options";
+import { parseSource, setSlideNotes } from "@/lib/deck-source";
 import {
   registerCompletion,
   type CompletionRegistration
@@ -217,10 +215,7 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
   const completionRef = useRef<CompletionRegistration | null>(null);
   const [markdown, setMarkdown] = useState(defaultValue);
   const [activeTab, setActiveTab] = useState<string>("markdown");
-  const [cursorNav, setCursorNav] = useState<
-    { slideIndex: number; seq: number } | undefined
-  >(undefined);
-  const [displayedSlideIndex, setDisplayedSlideIndex] = useState(0);
+  const [position, setPosition] = useState<DeckPosition>({ slide: 0, step: 0 });
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const ignoreCursorRef = useRef(false);
   const [aiInstruction, setAiInstruction] = useState("");
@@ -312,7 +307,8 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
   const aiLoading = aiStatus === "submitted" || aiStatus === "streaming";
   const aiStreaming = aiStatus === "streaming";
 
-  const slides = useMemo(() => parseSlides(markdown).slides, [markdown]);
+  const deck = useMemo(() => parseSource(markdown), [markdown]);
+  const displayedSlideIndex = Math.min(position.slide, deck.slides.length - 1);
 
   // Script state
   const displayedSlideIndexRef = useRef(displayedSlideIndex);
@@ -324,9 +320,9 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
   // always sync UNLESS user is actively typing in the script textarea
   useEffect(() => {
     if (!scriptFocusedRef.current) {
-      setScriptText(slides[displayedSlideIndex]?.note || "");
+      setScriptText(deck.slides[displayedSlideIndex]?.notes ?? "");
     }
-  }, [displayedSlideIndex, slides, activeTab]);
+  }, [displayedSlideIndex, deck, activeTab]);
 
   const handleScriptChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -337,11 +333,10 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
       if (!ed) return;
 
       const currentMarkdown = ed.getModel()?.getValue() || "";
-      const newMarkdown = updateSlideNote(
-        currentMarkdown,
-        displayedSlideIndexRef.current,
-        newScript,
-      );
+      const slide =
+        parseSource(currentMarkdown).slides[displayedSlideIndexRef.current];
+      if (!slide) return;
+      const newMarkdown = setSlideNotes(currentMarkdown, slide, newScript);
 
       if (newMarkdown !== currentMarkdown) {
         const pos = ed.getPosition();
@@ -353,10 +348,6 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
     },
     [],
   );
-
-  const handleSlideChange = useCallback((index: number) => {
-    setDisplayedSlideIndex(index);
-  }, []);
 
   const handleChange = useCallback(
     (value: string | undefined) => {
@@ -370,29 +361,21 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
   const handleMount: OnMount = useCallback((editor, monaco) => {
     editorRef.current = editor;
 
-    // Sync cursor position → slide index
+    // Show the slide under the cursor. Moving within the shown slide keeps
+    // its step.
     editor.onDidChangeCursorPosition((e) => {
       if (ignoreCursorRef.current) return;
-      const line = e.position.lineNumber;
-      // Use latest boundaries via the model text (avoid stale closure)
-      const text = editor.getModel()?.getValue() || "";
-      const boundaries = getSlideStartLines(text);
-      let idx = 0;
-      for (let i = boundaries.length - 1; i >= 0; i--) {
-        if (line >= boundaries[i]) {
-          idx = i;
-          break;
-        }
-      }
-      setCursorNav((prev) => ({
-        slideIndex: idx,
-        seq: (prev?.seq ?? 0) + 1,
-      }));
+      // Parse the model text: the last render may not have it yet.
+      const deck = parseSource(editor.getModel()?.getValue() || "");
+      const slide = Math.max(0, getSlideAtLine(deck, e.position.lineNumber));
+      setPosition((prev) =>
+        prev.slide === slide ? prev : { slide, step: 0 },
+      );
     });
 
-    // Register a custom "slidev-md" language with Slidev-aware tokenization
-    monaco.languages.register({ id: "slidev-md" });
-    monaco.languages.setMonarchTokensProvider("slidev-md", {
+    // Register a "deck-md" language that knows the deck syntax
+    monaco.languages.register({ id: "deck-md" });
+    monaco.languages.setMonarchTokensProvider("deck-md", {
       tokenizer: {
         root: [
           [/^---\s*$/, { token: "meta.separator", next: "@frontmatter" }],
@@ -402,14 +385,10 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
           [/^<!--\s*notes\b/, { token: "comment.notes.bracket", next: "@notesBlock" }],
           // HTML comments
           [/<!--/, { token: "comment.html", next: "@htmlComment" }],
-          [/^::right::\s*$/, "keyword.directive"],
-          [
-            /^```\w*\s*(\{[^}]*\})?\s*$/,
-            { token: "string.code.fence", next: "@codeblock" },
-          ],
-          // Mark tags: <mark>, <mark at="2">, </mark>
-          [/<mark\b/, { token: "tag.html", next: "@htmlTag" }],
-          [/<\/mark\s*>/, "tag.html"],
+          // Directives: :::name{attrs}, a closing :::, ::name{attrs}
+          [/^:{2,}[\w-]*(\{[^}]*\})?\s*$/, "keyword.directive"],
+          // Code fences, with a language and options
+          [/^```.*$/, { token: "string.code.fence", next: "@codeblock" }],
           // HTML closing tags
           [/<\/[\w-]+\s*>/, "tag.html"],
           // HTML self-closing and opening tags
@@ -443,8 +422,8 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
           [/^#{1,6}\s.*$/, { token: "keyword.header", next: "@root" }],
           [/^<!--\s*step(?:\s+\d+)?\s*-->/, { token: "comment.step", next: "@root" }],
           [/^<!--\s*notes\b/, { token: "comment.notes.bracket", next: "@notesBlock" }],
-          [/^```\w*\s*(\{[^}]*\})?\s*$/, { token: "string.code.fence", next: "@codeblock" }],
-          [/^::right::\s*$/, { token: "keyword.directive", next: "@root" }],
+          [/^```.*$/, { token: "string.code.fence", next: "@codeblock" }],
+          [/^:{2,}[\w-]*(\{[^}]*\})?\s*$/, { token: "keyword.directive", next: "@root" }],
           [/<[\w-]+/, { token: "tag.html", next: "@htmlTag" }],
           // YAML keys (any word-char key followed by colon)
           [/^\w[\w-]*\s*:/, "keyword.frontmatter"],
@@ -467,7 +446,7 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
       },
     });
 
-    monaco.editor.defineTheme("slidev-light", {
+    monaco.editor.defineTheme("deck-light", {
       base: "vs",
       inherit: true,
       rules: [
@@ -476,7 +455,6 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
         { token: "keyword.header", foreground: "05192D", fontStyle: "bold" },
         { token: "keyword.directive", foreground: "03EF62", fontStyle: "bold" },
         { token: "keyword.frontmatter", foreground: "6C63FF" },
-        { token: "keyword.mark", foreground: "E07D00" },
         { token: "comment.step", foreground: "03EF62", fontStyle: "italic" },
         { token: "comment.notes", foreground: "576370", fontStyle: "italic" },
         { token: "comment.notes.bracket", foreground: "03EF62", fontStyle: "italic" },
@@ -506,32 +484,25 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
       },
     });
 
-    monaco.editor.setTheme("slidev-light");
+    monaco.editor.setTheme("deck-light");
 
-    // Supported layouts
+    // Built-in layouts
     const supportedLayouts = [
-      { value: "default", description: "Standard slide layout" },
-      { value: "cover", description: "Title/cover slide with dark gradient" },
-      {
-        value: "center",
-        description: "Vertically and horizontally centered content",
-      },
-      { value: "section", description: "Section header with accent bar" },
+      { value: "default", description: "Content from the top left" },
+      { value: "center", description: "Content centred" },
+      { value: "cover", description: "Title slide: large heading, subtitle" },
+      { value: "section", description: "Section divider with accent bar" },
+      { value: "full", description: "No padding" },
       {
         value: "two-cols",
-        description: "Two-column layout (use ::right:: to split)",
+        description: "Content on top, then :::left and :::right columns",
       },
-      { value: "image-right", description: "Content left, image right" },
-      { value: "image-left", description: "Image left, content right" },
-      {
-        value: "code",
-        description: "Code-focused layout with tighter padding",
-      },
-      { value: "full", description: "Full-screen layout, no padding" },
+      { value: "image-left", description: "Image (from image:) left, content right" },
+      { value: "image-right", description: "Content left, image (from image:) right" },
     ];
 
     // Frontmatter completions
-    monaco.languages.registerCompletionItemProvider("slidev-md", {
+    monaco.languages.registerCompletionItemProvider("deck-md", {
       triggerCharacters: ["\n", " ", ":"],
       provideCompletionItems(model: editor.ITextModel, position: { lineNumber: number; column: number }) {
         let inFrontmatter = false;
@@ -599,16 +570,30 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
             detail: "Slide layout (default, cover, section, center, ...)",
             insertText: "layout: ",
           },
-          { label: "title", detail: "Slide title text", insertText: "title: " },
+          {
+            label: "title",
+            detail: "Slide title, instead of the first heading",
+            insertText: "title: ",
+          },
+          {
+            label: "class",
+            detail: "CSS classes on the slide",
+            insertText: "class: ",
+          },
+          {
+            label: "steps",
+            detail: "Number of steps on the slide (number)",
+            insertText: "steps: ",
+          },
           {
             label: "image",
             detail: "Image URL (for image-left / image-right layouts)",
             insertText: "image: ",
           },
           {
-            label: "level",
-            detail: "Title heading level (number)",
-            insertText: "level: ",
+            label: "imageAlt",
+            detail: "Alt text for the layout image",
+            insertText: "imageAlt: ",
           },
         ];
 
@@ -630,7 +615,7 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
 
     completionRef.current = registerCompletion(monaco, editor, {
       endpoint: '/api/code-completion',
-      language: 'slidev-md',
+      language: 'deck-md',
     });
 
     editor.addAction({
@@ -782,7 +767,7 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
               </TabsTrigger>
             </TabsList>
             <Badge variant="secondary" className="font-mono text-[11px]">
-              {displayedSlideIndex + 1} / {slides.length}
+              {displayedSlideIndex + 1} / {deck.slides.length}
             </Badge>
           </div>
 
@@ -790,7 +775,7 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
             <MonacoWrapper>
               <MonacoEditor
                 defaultValue={defaultValue}
-                language="slidev-md"
+                language="deck-md"
                 onChange={handleChange}
                 onMount={handleMount}
                 options={{
@@ -937,9 +922,11 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
         </div>
         <PreviewArea>
           <Deck
-            slides={slides}
-            cursorNav={cursorNav}
-            onSlideChange={handleSlideChange}
+            markdown={markdown}
+            position={position}
+            onPositionChange={setPosition}
+            compileOptions={compileOptions}
+            style={{ flex: 1, minHeight: 0 }}
           />
         </PreviewArea>
       </PreviewPanel>

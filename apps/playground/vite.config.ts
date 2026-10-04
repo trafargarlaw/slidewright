@@ -1,8 +1,15 @@
-import { defineConfig } from "vite";
+import {
+  defaultClientConditions,
+  defaultServerConditions,
+  defineConfig,
+} from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import path from "path";
+
+// Resolve workspace packages to their sources, so the playground runs
+// without building them first and picks up edits immediately.
+const SOURCE_CONDITION = "@react-slides/source";
 
 export default defineConfig({
   server: {
@@ -11,7 +18,13 @@ export default defineConfig({
   plugins: [tailwindcss(), tanstackStart(), react()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "src"),
+      "@": `${import.meta.dirname}/src`,
+    },
+    conditions: [SOURCE_CONDITION, ...defaultClientConditions],
+  },
+  ssr: {
+    resolve: {
+      conditions: [SOURCE_CONDITION, ...defaultServerConditions],
     },
   },
 });
