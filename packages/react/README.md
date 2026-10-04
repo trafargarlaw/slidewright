@@ -163,6 +163,31 @@ blocker may still stop it. `presenter={false}` removes the key and the
 button; `togglePresenter()` on the deck's `ref` still opens the window, from
 a button of your own.
 
+## Printing
+
+`PrintDeck` renders every slide of a deck at full size, one after the other,
+for printing and export. Each slide prints on its own page, sized to the
+slide, with every step revealed and code at its last highlight stage:
+
+```tsx
+import { PrintDeck } from "@slidewright/react";
+
+<PrintDeck markdown={markdown} />;
+```
+
+`steps` prints a page for every step instead, so each reveal gets its own
+page. It also takes the deck's `layouts`, `components`, `compileOptions`,
+`colorScheme`, `className` and `style`.
+
+On screen the pages stack with a gap and a shadow, as a preview. When
+printed, each page breaks onto a sheet of its own: the component sets the
+printed page size to the slide size, so give it its own page rather than
+mixing it with other printed content.
+
+Code highlighting loads after the first render. A code block has
+`aria-busy="true"` until its colours are ready, so a script that prints or
+captures the pages can wait for `[aria-busy="true"]` to be gone.
+
 ## Layouts
 
 A slide picks its layout with `layout:` in its frontmatter. Built in:
@@ -354,7 +379,7 @@ adds data attributes for everything else:
 | `[data-slot]`           | Content placed in a layout slot              |
 | `[data-directive]`      | A directive, by name                         |
 | `[data-step-state]`     | Step content: `future`, `current` or `past`  |
-| `[data-code]`           | Code block figure                            |
+| `[data-code]`           | Code block figure. `aria-busy` while loading |
 | `[data-line-state]`     | Code line: `highlighted` or `dimmed`         |
 | `[data-line-diff]`      | Code line: `added` or `removed`              |
 | `[data-diff-marker]`    | The `+` or `-` before a diff line            |
@@ -364,6 +389,8 @@ adds data attributes for everything else:
 | `[data-deck-thumbnail]` | A slide in the overview. `data-current`      |
 | `[data-presenter]`      | Presenter root, alongside `data-deck`        |
 | `[data-presenter-note]` | Notes part. `data-note-state`, as for steps  |
+| `[data-deck-print]`     | `PrintDeck` root, alongside `data-deck`      |
+| `[data-deck-page]`      | A printed page. `data-page-slide`, `-step`   |
 
 Thumbnails in the overview are slides too, so slide CSS styles them the same
 way. Scope a rule to `[data-deck-viewport]` to style only the slide being

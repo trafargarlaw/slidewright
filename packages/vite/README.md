@@ -59,6 +59,16 @@ properties and style slide content with ordinary selectors:
 The theme properties and selectors are listed in the
 [`@slidewright/react` README](../react/README.md#styling).
 
+## Printing
+
+Add `?print` to the address of the deck to see every slide at full size,
+one after the other. Print the page, or save it as a PDF, from the browser:
+each slide gets its own page, sized to the slide. `?print=steps` gives each
+step its own page.
+
+To export a PDF or PNG files from the command line, use
+[`slidewright export`](../cli/README.md#export).
+
 ## Static files
 
 Files in the project's `public` folder are served at the site root, as in

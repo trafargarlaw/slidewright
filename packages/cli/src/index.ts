@@ -1,8 +1,9 @@
-import { existsSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, rmSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
-import { basename, dirname, join, relative, resolve } from "node:path";
+import { basename, dirname, extname, join, relative, resolve } from "node:path";
 import { parseArgs, styleText } from "node:util";
 import { slidewright } from "@slidewright/vite";
+import type { BrowserType } from "playwright-core";
 import {
   build,
   createServer,
@@ -16,6 +17,7 @@ const HELP = `Usage: slidewright [command] [deck] [options]
 Commands:
   dev [deck]      Present the deck. Saved edits show at once. (default)
   build [deck]    Build the deck into a static site.
+  export [deck]   Export the deck to PDF or PNG files. Needs Playwright.
 
 The deck is slides.md by default, or slides.md in the given folder.
 A style.css next to the deck loads after the default theme.
@@ -30,6 +32,12 @@ Options for build:
   --base <path>   Base path of the site (default /). Use ./ to host the
                   site from any folder.
 
+Options for export:
+  --format <fmt>  pdf (default) or png
+  --out <path>    Output file or folder (default: slides.pdf or slides-png
+                  next to the deck, named after it)
+  --steps         One page per step, not per slide
+
   -h, --help      Show this help
   -v, --version   Show the version`;
 
@@ -39,7 +47,18 @@ export type Command =
   | { name: "help" }
   | { name: "version" }
   | { name: "dev"; deck: string; port: number; host: boolean; open: boolean }
-  | { name: "build"; deck: string; outDir?: string; base: string };
+  | { name: "build"; deck: string; outDir?: string; base: string }
+  | {
+      name: "export";
+      deck: string;
+      format: ExportFormat;
+      out?: string;
+      steps: boolean;
+    };
+
+export type ExportFormat = "pdf" | "png";
+
+const COMMANDS = ["dev", "build", "export"] as const;
 
 /** A mistake on the command line, shown without a stack trace. */
 export class UsageError extends Error {}
@@ -50,13 +69,19 @@ const OPTIONS = {
   open: { type: "boolean" },
   out: { type: "string" },
   base: { type: "string" },
+  format: { type: "string" },
+  steps: { type: "boolean" },
   help: { type: "boolean", short: "h" },
   version: { type: "boolean", short: "v" },
 } as const;
 
-const COMMAND_OPTIONS: Record<"dev" | "build", (keyof typeof OPTIONS)[]> = {
+const COMMAND_OPTIONS: Record<
+  (typeof COMMANDS)[number],
+  (keyof typeof OPTIONS)[]
+> = {
   dev: ["port", "host", "open"],
   build: ["out", "base"],
+  export: ["format", "out", "steps"],
 };
 
 /** Reads the command line. Paths stay relative to the working directory. */
@@ -74,7 +99,7 @@ export function parse(args: string[]): Command {
 
   // `slidewright talk.md` presents the deck.
   const [first] = positionals;
-  const name = first === "dev" || first === "build" ? first : "dev";
+  const name = COMMANDS.find((command) => command === first) ?? "dev";
   const rest = first === name ? positionals.slice(1) : positionals;
   if (first !== undefined && first !== name && !first.endsWith(".md")) {
     throw new UsageError(`Unknown command "${first}".`);
@@ -92,6 +117,19 @@ export function parse(args: string[]): Command {
   const deck = rest[0] ?? "slides.md";
   if (name === "build") {
     return { name, deck, outDir: values.out, base: values.base ?? "/" };
+  }
+  if (name === "export") {
+    const format = values.format ?? "pdf";
+    if (format !== "pdf" && format !== "png") {
+      throw new UsageError(`--format must be pdf or png, got "${format}".`);
+    }
+    return {
+      name,
+      deck,
+      format,
+      out: values.out,
+      steps: values.steps ?? false,
+    };
   }
 
   const port = values.port === undefined ? DEFAULT_PORT : Number(values.port);
@@ -169,6 +207,10 @@ export async function run(
       );
       return undefined;
     }
+
+    case "export":
+      await exportDeck(command, config);
+      return undefined;
   }
 }
 
@@ -185,6 +227,141 @@ export async function main(args: string[]): Promise<number> {
     }
     return 1;
   }
+}
+
+/** Opens the deck's print view in Chromium and saves it as PDF or PNG. */
+async function exportDeck(
+  command: Extract<Command, { name: "export" }>,
+  config: InlineConfig,
+): Promise<void> {
+  const deck = findDeck(command.deck);
+  const chromium = loadChromium([
+    join(dirname(deck), "package.json"),
+    import.meta.url,
+  ]);
+  const name = basename(deck, extname(deck));
+  const out = resolve(
+    command.out ??
+      join(
+        dirname(deck),
+        command.format === "pdf" ? `${name}.pdf` : `${name}-png`,
+      ),
+  );
+  const start = performance.now();
+
+  const server = await createServer(
+    mergeConfig(
+      viteConfig(deck),
+      mergeConfig({ logLevel: "warn", server: { port: 0 } }, config),
+    ),
+  );
+  let count: number;
+  try {
+    await server.listen();
+    const url = new URL(server.resolvedUrls!.local[0]!);
+    url.search = command.steps ? "print=steps" : "print";
+    const browser = await chromium.launch();
+    try {
+      const page = await browser.newPage({
+        // Sharp text in images.
+        deviceScaleFactor: command.format === "png" ? 2 : 1,
+      });
+      await page.goto(url.href);
+      // Code is highlighted, images are loaded and fonts are ready.
+      await page.waitForFunction(() => {
+        const root = document.querySelector("[data-deck-print]");
+        return (
+          root !== null &&
+          root.querySelector('[aria-busy="true"]') === null &&
+          [...root.querySelectorAll("img")].every((image) => image.complete) &&
+          document.fonts.status === "loaded"
+        );
+      });
+
+      const pages = page.locator("[data-deck-page]");
+      const files = pageFiles(
+        await pages.evaluateAll((elements) =>
+          elements.map(
+            (element) =>
+              [
+                Number(element.getAttribute("data-page-slide")),
+                element.getAttribute("data-page-step"),
+              ] as const,
+          ),
+        ),
+      );
+      count = files.length;
+      if (command.format === "pdf") {
+        mkdirSync(dirname(out), { recursive: true });
+        await page.pdf({
+          path: out,
+          printBackground: true,
+          preferCSSPageSize: true,
+        });
+      } else {
+        // As printed: pages edge to edge, without the screen preview's
+        // shadows and gaps.
+        await page.emulateMedia({ media: "print" });
+        mkdirSync(out, { recursive: true });
+        // Images left from a longer deck would look like part of this one.
+        for (const file of readdirSync(out)) {
+          if (PNG_FILE.test(file)) rmSync(join(out, file));
+        }
+        for (const [index, file] of files.entries()) {
+          await pages.nth(index).screenshot({ path: join(out, file) });
+        }
+      }
+    } finally {
+      await browser.close();
+    }
+  } finally {
+    await server.close();
+  }
+
+  const seconds = ((performance.now() - start) / 1000).toFixed(1);
+  console.log(
+    `Exported ${count} ${count === 1 ? "page" : "pages"} of ${relative(process.cwd(), deck)} to ${relative(process.cwd(), out)} in ${seconds}s.`,
+  );
+}
+
+const PNG_FILE = /^\d+(-\d+)?\.png$/;
+
+/**
+ * Image names for print pages, given as [slide index, step]: `03.png` for
+ * slide 3, `03-2.png` for slide 3 with two steps revealed, as in the URL hash.
+ */
+export function pageFiles(
+  pages: readonly (readonly [number, string | null])[],
+): string[] {
+  const digits = String((pages.at(-1)?.[0] ?? 0) + 1).length;
+  return pages.map(([slide, step]) => {
+    const number = String(slide + 1).padStart(digits, "0");
+    return step === null ? `${number}.png` : `${number}-${step}.png`;
+  });
+}
+
+const PLAYWRIGHT = ["playwright-chromium", "playwright", "playwright-core"];
+
+/**
+ * Chromium from the first Playwright package found from one of `bases`: the
+ * deck's project first, then the CLI's.
+ */
+export function loadChromium(bases: string[]): BrowserType {
+  for (const base of bases) {
+    const require = createRequire(base);
+    for (const name of PLAYWRIGHT) {
+      let path: string;
+      try {
+        path = require.resolve(name);
+      } catch {
+        continue;
+      }
+      return (require(path) as { chromium: BrowserType }).chromium;
+    }
+  }
+  throw new UsageError(
+    "Export needs Playwright. Install it next to the deck with:\n  npm install --save-dev playwright-chromium",
+  );
 }
 
 function viteConfig(deck: string): InlineConfig {

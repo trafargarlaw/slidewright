@@ -895,6 +895,27 @@ const b = 2;
     );
   });
 
+  it("is busy until the language loads", async () => {
+    render(
+      <Deck
+        markdown={
+          "```python\nx = 1\n```\n\n```nosuchlang\nx\n```\n\n```\nplain\n```"
+        }
+      />,
+    );
+    const busy = () =>
+      [...document.querySelectorAll("[data-code]")].map((figure) =>
+        figure.getAttribute("aria-busy"),
+      );
+
+    expect(busy()).toEqual(["true", "true", null]);
+    await waitFor(() => expect(busy()).toEqual([null, null, null]), {
+      timeout: 10_000,
+    });
+    // Python got colours.
+    expect(document.querySelector("[data-line] span[style]")).not.toBeNull();
+  });
+
   it("marks added and removed lines", () => {
     render(<Deck markdown={"```ts diff\nlet a\n-a = 1\n+a = 2\n```"} />);
     const lines = [...document.querySelectorAll("[data-line]")];

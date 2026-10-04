@@ -68,11 +68,18 @@ function loadLanguage(lang: string): void {
   })();
 }
 
-/**
- * Tokens for a code block, one array per line, or `null` while the
- * highlighter or language is loading (and for unknown languages).
- */
-export function useTokens(code: string, lang: string): ThemedToken[][] | null {
+export interface Highlighting {
+  /**
+   * Tokens for each line, or `null` while the highlighter or language is
+   * loading, and for unknown languages.
+   */
+  tokens: ThemedToken[][] | null;
+  /** The language is still loading: colours are on their way. */
+  pending: boolean;
+}
+
+/** Syntax highlighting for a code block. */
+export function useTokens(code: string, lang: string): Highlighting {
   const name = lang.toLowerCase();
   // The server snapshot is "nothing loaded", so hydration renders plain text
   // like the server did, then upgrades.
@@ -86,8 +93,9 @@ export function useTokens(code: string, lang: string): ThemedToken[][] | null {
     if (!PLAIN_TEXT.has(name)) loadLanguage(name);
   }, [name]);
 
-  const ready = loaded !== -1 && languages.get(name) === "ready";
-  return useMemo(() => {
+  const status = loaded === -1 ? undefined : languages.get(name);
+  const ready = status === "ready";
+  const tokens = useMemo(() => {
     if (!ready || !highlighter) return null;
     try {
       return highlighter.codeToTokensBase(code, { lang: name, theme: THEME });
@@ -95,4 +103,7 @@ export function useTokens(code: string, lang: string): ThemedToken[][] | null {
       return null;
     }
   }, [ready, code, name]);
+  const pending =
+    !PLAIN_TEXT.has(name) && status !== "ready" && status !== "unsupported";
+  return { tokens, pending };
 }

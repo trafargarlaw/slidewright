@@ -1,22 +1,29 @@
 // The page script of a deck served by the plugin.
 import { parseDeck } from "@slidewright/core";
-import { Deck } from "@slidewright/react";
+import { Deck, PrintDeck } from "@slidewright/react";
 import "@slidewright/react/styles.css";
 import { createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { markdown } from "virtual:slidewright/deck";
 
+// `?print` shows every slide, one per printed page; `?print=steps` every step.
+const print = new URLSearchParams(location.search).get("print");
 const root = createRoot(document.getElementById("app")!);
 
 function render(source: string) {
   document.title = parseDeck(source).config.title ?? "Slides";
   root.render(
-    createElement(Deck, {
-      markdown: source,
-      hash: true,
-      keyboard: "global",
-      style: { height: "100%" },
-    }),
+    print === null
+      ? createElement(Deck, {
+          markdown: source,
+          hash: true,
+          keyboard: "global",
+          style: { height: "100%" },
+        })
+      : createElement(PrintDeck, {
+          markdown: source,
+          steps: print === "steps",
+        }),
   );
 }
 

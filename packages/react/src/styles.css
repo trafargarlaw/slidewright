@@ -351,6 +351,53 @@
     font-weight: 600;
   }
 
+  /* Print ------------------------------------------------------------------ */
+
+  /* Every slide at full size, one per page. On screen the pages stack with a
+     gap, as a preview. */
+  [data-deck][data-deck-print] {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    align-items: center;
+    width: auto;
+    padding: 24px;
+    aspect-ratio: auto;
+    overflow: visible;
+  }
+
+  [data-deck-page] {
+    position: relative;
+    flex: none;
+    width: var(--deck-page-width);
+    height: var(--deck-page-height);
+    overflow: hidden;
+    background: var(--deck-bg);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+  }
+
+  /* In the flow, not absolute: Chrome drops parts of absolute content when
+     it prints pages. */
+  [data-deck-page] [data-deck-canvas] {
+    position: relative;
+    top: 0;
+    left: 0;
+    transform: none;
+  }
+
+  @media print {
+    [data-deck][data-deck-print] {
+      display: block;
+      padding: 0;
+      background: none;
+    }
+
+    [data-deck-page] {
+      break-after: page;
+      box-shadow: none;
+    }
+  }
+
   /* Presenter -------------------------------------------------------------- */
 
   [data-deck][data-presenter] {

@@ -26,7 +26,7 @@ export function CodeBlock({ node, children, ...rest }: PreProps) {
   const properties = code?.properties ?? {};
   const lang = stringProperty(properties.dataLang) ?? "";
   const text = code ? textContent(code).replace(/\n$/, "") : "";
-  const tokens = useTokens(text, lang);
+  const { tokens, pending } = useTokens(text, lang);
 
   if (!code) return <pre {...rest}>{children}</pre>;
 
@@ -43,7 +43,7 @@ export function CodeBlock({ node, children, ...rest }: PreProps) {
   const changes = parseLineChanges(stringProperty(properties.dataDiff) ?? "");
 
   return (
-    <figure data-code="" {...rest}>
+    <figure data-code="" aria-busy={pending || undefined} {...rest}>
       {title ? <figcaption>{title}</figcaption> : null}
       <pre
         data-lang={lang || undefined}

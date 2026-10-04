@@ -51,7 +51,7 @@ welcome.
 - [x] Complete layout set and custom layouts
 - [x] Code: line numbers, diff and focus notation, titles
 - [x] Vite plugin and CLI (`dev`, `build`), project template
-- [ ] Export to PDF and PNG
+- [x] Export to PDF and PNG
 - [ ] Documentation site and examples
 - [ ] First release on npm, under the `@slidewright` scope
 
