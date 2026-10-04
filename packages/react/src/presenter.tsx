@@ -1,4 +1,4 @@
-import { splitNotes } from "@react-slides/core";
+import { splitNotes } from "@slidewright/core";
 import {
   memo,
   useCallback,

@@ -11,7 +11,7 @@ import { theme } from "../styles/theme";
 import { GlobalStyle } from "../styles/GlobalStyle";
 import { TooltipProvider } from "../components/ui/tooltip";
 import appCss from "../styles/global.css?url";
-import deckCss from "@react-slides/react/styles.css?url";
+import deckCss from "@slidewright/react/styles.css?url";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -24,7 +24,7 @@ export const Route = createRootRoute({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "React Slides",
+        title: "Slidewright",
       },
     ],
     links: [

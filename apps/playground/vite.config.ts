@@ -9,7 +9,7 @@ import tailwindcss from "@tailwindcss/vite";
 
 // Resolve workspace packages to their sources, so the playground runs
 // without building them first and picks up edits immediately.
-const SOURCE_CONDITION = "@react-slides/source";
+const SOURCE_CONDITION = "@slidewright/source";
 
 export default defineConfig({
   server: {

@@ -3,7 +3,7 @@ import { defineConfig } from "vitest/config";
 
 // Test against workspace sources, so tests don't need a prior build. Tests run
 // in Node, which resolves with the SSR conditions.
-const SOURCE_CONDITION = "@react-slides/source";
+const SOURCE_CONDITION = "@slidewright/source";
 
 export default defineConfig({
   resolve: {

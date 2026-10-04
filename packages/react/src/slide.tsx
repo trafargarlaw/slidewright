@@ -1,4 +1,4 @@
-import type { Slide } from "@react-slides/core";
+import type { Slide } from "@slidewright/core";
 import type { Root } from "hast";
 import { Component, useMemo, type ReactNode } from "react";
 import { SlideContext, type DirectiveComponents } from "./context";

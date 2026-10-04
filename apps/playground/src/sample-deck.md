@@ -5,7 +5,7 @@ layout: cover
 
 # Markdown in, slides out
 
-A live playground for React Slides
+A live playground for Slidewright
 
 <!-- notes
 Everything on the right is rendered from the Markdown on the left. Edit it and
@@ -47,7 +47,7 @@ layout: section
 # Walk through code
 
 ```ts {1|3-4|all} lines title="outline.ts"
-import { parseDeck } from "@react-slides/core";
+import { parseDeck } from "@slidewright/core";
 
 const deck = parseDeck(markdown);
 const outline = deck.slides.map((slide) => slide.title);

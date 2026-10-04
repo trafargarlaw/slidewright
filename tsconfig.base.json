@@ -12,6 +12,6 @@
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "skipLibCheck": true,
-    "customConditions": ["@react-slides/source"]
+    "customConditions": ["@slidewright/source"]
   }
 }

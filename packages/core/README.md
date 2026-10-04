@@ -1,4 +1,4 @@
-# @react-slides/core
+# @slidewright/core
 
 Parses Markdown decks into slides and compiles each slide into an HTML syntax
 tree ([hast](https://github.com/syntax-tree/hast)) with steps resolved. Has no
@@ -12,7 +12,7 @@ The deck format is documented in [docs/syntax.md](../../docs/syntax.md).
 ## Usage
 
 ```ts
-import { createCompiler, parseDeck } from "@react-slides/core";
+import { createCompiler, parseDeck } from "@slidewright/core";
 
 const deck = parseDeck(markdown);
 // deck.config       → headmatter settings (theme, aspectRatio, …)

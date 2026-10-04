@@ -1,4 +1,4 @@
-import type { ColorScheme, CompileOptions } from "@react-slides/core";
+import type { ColorScheme, CompileOptions } from "@slidewright/core";
 import {
   useCallback,
   useEffect,

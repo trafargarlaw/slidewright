@@ -1,4 +1,4 @@
-import { getHighlightedLines, parseHighlights } from "@react-slides/core";
+import { getHighlightedLines, parseHighlights } from "@slidewright/core";
 import type { Element, ElementContent } from "hast";
 import { Fragment, type ComponentProps, type CSSProperties } from "react";
 import type { ThemedToken } from "shiki";

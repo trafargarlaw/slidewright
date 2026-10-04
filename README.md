@@ -1,6 +1,4 @@
-# react-slides
-
-> Working name — the final package name is still to be decided.
+# Slidewright
 
 Write presentations in Markdown, render them with React.
 

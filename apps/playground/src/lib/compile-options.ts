@@ -1,4 +1,4 @@
-import type { CompileOptions } from "@react-slides/core";
+import type { CompileOptions } from "@slidewright/core";
 import rehypeKatex from "rehype-katex";
 import { rehypePastedImages } from "./image-registry";
 

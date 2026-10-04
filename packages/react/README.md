@@ -1,4 +1,4 @@
-# @react-slides/react
+# @slidewright/react
 
 Renders Markdown decks in React. Pass a string, get a presentation: one slide
 at a time, scaled to fit its container, with step reveals, syntax-highlighted
@@ -15,8 +15,8 @@ The deck format is documented in [docs/syntax.md](../../docs/syntax.md).
 ## Usage
 
 ```tsx
-import { Deck } from "@react-slides/react";
-import "@react-slides/react/styles.css";
+import { Deck } from "@slidewright/react";
+import "@slidewright/react/styles.css";
 
 export function Talk({ markdown }: { markdown: string }) {
   return <Deck markdown={markdown} />;
@@ -116,7 +116,7 @@ what the next key press shows, the notes for the current step and a timer.
 Give it the same position as the audience's deck and the two move together:
 
 ```tsx
-import { Deck, Presenter } from "@react-slides/react";
+import { Deck, Presenter } from "@slidewright/react";
 
 const [position, setPosition] = useState({ slide: 0, step: 0 });
 
@@ -184,7 +184,7 @@ A custom layout is a component. Container directives named in its `slots`
 are lifted out of the content and passed separately:
 
 ```tsx
-import type { LayoutProps } from "@react-slides/react";
+import type { LayoutProps } from "@slidewright/react";
 
 function Quote({ children, slots }: LayoutProps) {
   return (
@@ -243,16 +243,16 @@ component that throws only breaks its own slide.
 ## Styling
 
 `styles.css` contains the deck chrome, the built-in layouts and the default
-theme, all inside the `react-slides` cascade layer. Any rule in your own CSS
+theme, all inside the `slidewright` cascade layer. Any rule in your own CSS
 outside a layer wins over it.
 
 That includes resets. A global `* { margin: 0; padding: 0 }` outside a layer
 strips the slide padding and spacing, so put resets in a layer declared before
-`react-slides`. With Tailwind, declare the order before importing it, so the
+`slidewright`. With Tailwind, declare the order before importing it, so the
 preflight reset comes first and utilities still win:
 
 ```css
-@layer theme, base, react-slides, components, utilities;
+@layer theme, base, slidewright, components, utilities;
 @import "tailwindcss";
 ```
 

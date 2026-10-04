@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest in improving react-slides! This guide covers how
+Thanks for your interest in improving Slidewright! This guide covers how
 to set up the repo and what we expect from a pull request.
 
 ## Setup

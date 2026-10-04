@@ -1,5 +1,5 @@
 {
-  "name": "react-slides-monorepo",
+  "name": "slidewright-monorepo",
   "private": true,
   "workspaces": [
     "packages/*",
@@ -7,7 +7,7 @@
   ],
   "type": "module",
   "scripts": {
-    "dev": "bun run --filter @react-slides/playground dev",
+    "dev": "bun run --filter @slidewright/playground dev",
     "build": "bun run --filter '*' build",
     "test": "bun run --filter '*' test",
     "typecheck": "bun run --filter '*' typecheck",

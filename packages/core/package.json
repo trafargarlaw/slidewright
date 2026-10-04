@@ -1,5 +1,5 @@
 {
-  "name": "@react-slides/core",
+  "name": "@slidewright/core",
   "version": "0.0.0",
   "private": true,
   "description": "Parse Markdown decks into slides and compile slides to HTML syntax trees.",
@@ -11,7 +11,7 @@
   "sideEffects": false,
   "exports": {
     ".": {
-      "@react-slides/source": "./src/index.ts",
+      "@slidewright/source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }

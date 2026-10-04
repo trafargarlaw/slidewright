@@ -53,6 +53,7 @@ welcome.
 - [ ] Vite plugin and CLI (`dev`, `build`), project template
 - [ ] Export to PDF and PNG
 - [ ] Documentation site and examples
+- [ ] First release on npm, under the `@slidewright` scope
 
 ### 2 — Components and polish (v0.2)
 
@@ -67,8 +68,3 @@ welcome.
 - [ ] Redesigned editor package and playground: new UX, not a port of the
       prototype
 - [ ] Drawing and annotations, animated code transitions, PPTX export
-
-## Open decisions
-
-- **Name.** `react-slides` and the `@react-slides` npm scope are taken. All
-  packages stay `private` until a name is chosen.

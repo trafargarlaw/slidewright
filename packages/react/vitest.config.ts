@@ -4,7 +4,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     // Test against workspace sources, so tests don't need a prior build.
-    conditions: ["@react-slides/source", ...defaultClientConditions],
+    conditions: ["@slidewright/source", ...defaultClientConditions],
   },
   test: {
     environment: "jsdom",

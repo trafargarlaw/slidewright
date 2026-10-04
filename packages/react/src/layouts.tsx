@@ -1,4 +1,4 @@
-import type { Slide } from "@react-slides/core";
+import type { Slide } from "@slidewright/core";
 import type { ComponentType, ReactNode } from "react";
 
 export interface LayoutProps {

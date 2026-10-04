@@ -1,4 +1,4 @@
-import { parseDeck } from "@react-slides/core";
+import { parseDeck } from "@slidewright/core";
 import { describe, expect, it } from "vitest";
 import { setSlideNotes } from "./deck-source";
 

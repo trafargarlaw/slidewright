@@ -1,4 +1,4 @@
-import { parseDeck, type Deck, type Slide } from "@react-slides/core";
+import { parseDeck, type Deck, type Slide } from "@slidewright/core";
 
 let last: { source: string; deck: Deck } | undefined;
 

@@ -5,7 +5,7 @@ import {
   type Deck as ParsedDeck,
   type DeckConfig,
   type Slide,
-} from "@react-slides/core";
+} from "@slidewright/core";
 import type { Root } from "hast";
 import {
   useCallback,

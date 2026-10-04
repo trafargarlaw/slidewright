@@ -1,6 +1,6 @@
 /* The deck's styles sit between Tailwind's base and utilities: they win over
    preflight, and utility classes still win over them. */
-@layer theme, base, react-slides, components, utilities;
+@layer theme, base, slidewright, components, utilities;
 
 @import "tailwindcss";
 @import "tw-animate-css";

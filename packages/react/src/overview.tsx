@@ -1,4 +1,4 @@
-import type { Slide } from "@react-slides/core";
+import type { Slide } from "@slidewright/core";
 import { memo, useEffect, useRef, type CSSProperties, type Ref } from "react";
 import type { DirectiveComponents } from "./context";
 import { useElementSize } from "./element-size";

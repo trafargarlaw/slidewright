@@ -1,12 +1,12 @@
 /*
  * Deck chrome, built-in layouts and the default theme.
  *
- * Everything lives in the `react-slides` cascade layer, so any rule in your
+ * Everything lives in the `slidewright` cascade layer, so any rule in your
  * own (unlayered) CSS wins without specificity fights. To theme a deck, set
  * the `--deck-*` custom properties on `[data-deck]` or a parent element.
  */
 
-@layer react-slides {
+@layer slidewright {
   /* Theme ------------------------------------------------------------------ */
 
   [data-deck] {

@@ -1,5 +1,5 @@
 {
-  "name": "@react-slides/react",
+  "name": "@slidewright/react",
   "version": "0.0.0",
   "private": true,
   "description": "Render Markdown decks in React. Reacts to Markdown changes as you type.",
@@ -13,12 +13,12 @@
   ],
   "exports": {
     ".": {
-      "@react-slides/source": "./src/index.ts",
+      "@slidewright/source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./styles.css": {
-      "@react-slides/source": "./src/styles.css",
+      "@slidewright/source": "./src/styles.css",
       "default": "./dist/styles.css"
     }
   },
@@ -28,7 +28,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@react-slides/core": "workspace:*",
+    "@slidewright/core": "workspace:*",
     "@types/hast": "^3.0.5",
     "hast-util-to-jsx-runtime": "^2.3.6",
     "shiki": "^4.5.0"
