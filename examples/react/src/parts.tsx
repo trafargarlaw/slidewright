@@ -1,5 +1,6 @@
 import type { DirectiveComponents, Layout } from "@slidewright/react";
 import type { ReactNode } from "react";
+import "./parts.css";
 
 /** `layout: sidebar`: the content, with `:::aside` in a column beside it. */
 const Sidebar: Layout = ({ children, slots }) => (

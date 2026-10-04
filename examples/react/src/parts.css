@@ -1,0 +1,29 @@
+/* `layout: sidebar`, arranged by its name. */
+[data-layout="sidebar"] {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2em;
+}
+
+[data-layout="sidebar"] [data-part="aside"] {
+  padding-left: 1.5em;
+  border-left: 2px solid var(--deck-border);
+  color: var(--deck-muted);
+  font-size: 0.85em;
+}
+
+/* `:::callout` */
+.callout {
+  margin-bottom: 0.75em;
+  padding: 0.7em 1em;
+  border-radius: var(--deck-radius);
+  background: color-mix(in srgb, var(--deck-accent) 12%, transparent);
+}
+
+.callout[data-tone="warning"] {
+  background: color-mix(in srgb, #f59e0b 20%, transparent);
+}
+
+.callout > :last-child {
+  margin-bottom: 0;
+}

@@ -37,6 +37,6 @@ its folder into a project made with `npm create @slidewright`.
 side by side. The deck re-renders as the Markdown changes and shows the slide
 under the cursor, through a controlled `position`.
 [`react/src/parts.tsx`](react/src/parts.tsx) defines a `sidebar` layout and a
-`callout` component, and [`react/src/app.css`](react/src/app.css) arranges
+`callout` component, and [`react/src/parts.css`](react/src/parts.css) arranges
 them. See the [`@slidewright/react` README](../packages/react/README.md) for
 every prop.
