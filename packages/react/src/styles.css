@@ -1,0 +1,542 @@
+/*
+ * Deck chrome, built-in layouts and the default theme.
+ *
+ * Everything lives in the `react-slides` cascade layer, so any rule in your
+ * own (unlayered) CSS wins without specificity fights. To theme a deck, set
+ * the `--deck-*` custom properties on `[data-deck]` or a parent element.
+ */
+
+@layer react-slides {
+  /* Theme ------------------------------------------------------------------ */
+
+  [data-deck] {
+    color-scheme: light;
+
+    --deck-bg: light-dark(#ffffff, #141518);
+    --deck-fg: light-dark(#1c1c21, #ececf0);
+    --deck-muted: light-dark(#6a6a75, #9b9ba7);
+    --deck-accent: light-dark(#4f46e5, #8f8aff);
+    --deck-border: light-dark(#e3e3e9, #2b2c33);
+    --deck-surface: light-dark(#f5f5f8, #1c1d22);
+    --deck-backdrop: light-dark(#e6e6eb, #050506);
+
+    --deck-font-sans:
+      ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+    --deck-font-heading: var(--deck-font-sans);
+    --deck-font-mono:
+      ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
+      "Liberation Mono", monospace;
+    --deck-font-size: 24px;
+    --deck-line-height: 1.5;
+    --deck-padding: 56px 64px;
+    --deck-radius: 10px;
+
+    --deck-step-duration: 240ms;
+    --deck-dim-opacity: 0.32;
+
+    /* Code colours, used by the syntax highlighter. */
+    --deck-code-foreground: var(--deck-fg);
+    --deck-code-background: var(--deck-surface);
+    --deck-code-token-comment: light-dark(#6e7781, #8b949e);
+    --deck-code-token-keyword: light-dark(#cf222e, #ff7b72);
+    --deck-code-token-string: light-dark(#0a3069, #a5d6ff);
+    --deck-code-token-string-expression: light-dark(#116329, #7ee787);
+    --deck-code-token-constant: light-dark(#0550ae, #79c0ff);
+    --deck-code-token-function: light-dark(#8250df, #d2a8ff);
+    --deck-code-token-parameter: light-dark(#953800, #ffa657);
+    --deck-code-token-punctuation: light-dark(#57606a, #8b949e);
+    --deck-code-token-link: light-dark(#0969da, #58a6ff);
+  }
+
+  [data-deck][data-color-scheme="dark"] {
+    color-scheme: dark;
+  }
+
+  [data-deck][data-color-scheme="auto"] {
+    color-scheme: light dark;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-deck] {
+      --deck-step-duration: 0ms;
+    }
+  }
+
+  /* Deck ------------------------------------------------------------------- */
+
+  [data-deck] {
+    position: relative;
+    width: 100%;
+    aspect-ratio: var(--deck-aspect-ratio);
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--deck-backdrop);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  [data-deck]:focus {
+    outline: none;
+  }
+
+  [data-deck]:focus-visible {
+    outline: 2px solid var(--deck-accent);
+    outline-offset: 2px;
+  }
+
+  [data-deck-viewport] {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* Slides are laid out at a fixed size and scaled to fit, so they look the
+     same in a thumbnail, an article and a projector. */
+  [data-deck-canvas] {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--deck-canvas-width);
+    height: var(--deck-canvas-height);
+    overflow: hidden;
+    contain: layout paint;
+    transform: translate(-50%, -50%) scale(var(--deck-scale, 1));
+    background: var(--deck-bg);
+    color: var(--deck-fg);
+    font-family: var(--deck-font-sans);
+    font-size: var(--deck-font-size);
+    line-height: var(--deck-line-height);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  [data-deck-canvas]:not([data-measured]) {
+    visibility: hidden;
+  }
+
+  [data-deck-status] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Controls --------------------------------------------------------------- */
+
+  [data-deck-controls] {
+    position: absolute;
+    right: 12px;
+    bottom: 14px;
+    z-index: 1;
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    padding: 3px;
+    border: 1px solid var(--deck-border);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--deck-bg) 86%, transparent);
+    backdrop-filter: blur(8px);
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.06),
+      0 6px 16px rgb(0 0 0 / 0.08);
+    color: var(--deck-fg);
+    font: 500 13px/1 var(--deck-font-sans);
+    font-variant-numeric: tabular-nums;
+    opacity: 0;
+    transform: translateY(4px);
+    transition:
+      opacity 160ms ease,
+      transform 160ms ease;
+  }
+
+  [data-deck]:hover [data-deck-controls],
+  [data-deck]:focus-within [data-deck-controls] {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (hover: none) {
+    [data-deck-controls] {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  [data-deck-controls] button {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  [data-deck-controls] button:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--deck-fg) 9%, transparent);
+  }
+
+  [data-deck-controls] button:focus-visible {
+    outline: 2px solid var(--deck-accent);
+    outline-offset: 1px;
+  }
+
+  [data-deck-controls] button:disabled {
+    cursor: default;
+    opacity: 0.35;
+  }
+
+  [data-deck-counter] {
+    min-width: 5ch;
+    padding: 0 4px;
+    color: var(--deck-muted);
+    text-align: center;
+  }
+
+  [data-deck-progress] {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+    width: 100%;
+    height: 3px;
+    background: var(--deck-accent);
+    transform: scaleX(var(--deck-progress, 0));
+    transform-origin: left;
+    transition: transform 300ms ease;
+  }
+
+  /* Slide ------------------------------------------------------------------ */
+
+  [data-slide] {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    padding: var(--deck-padding);
+    overflow: hidden;
+  }
+
+  [data-slide] *,
+  [data-slide] *::before,
+  [data-slide] *::after {
+    box-sizing: border-box;
+  }
+
+  [data-slide] :where(h1, h2, h3, h4, h5, h6) {
+    margin: 0 0 0.5em;
+    font-family: var(--deck-font-heading);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  [data-slide] :where(h1) {
+    font-size: 2.1em;
+  }
+
+  [data-slide] :where(h2) {
+    font-size: 1.6em;
+  }
+
+  [data-slide] :where(h3) {
+    font-size: 1.25em;
+  }
+
+  [data-slide] :where(h4, h5, h6) {
+    font-size: 1em;
+  }
+
+  [data-slide] :where(p, ul, ol, dl, blockquote, table, figure, pre, hr) {
+    margin: 0 0 0.75em;
+  }
+
+  [data-slide] :where(ul, ol) {
+    padding-left: 1.3em;
+  }
+
+  [data-slide] :where(li + li) {
+    margin-top: 0.3em;
+  }
+
+  [data-slide] :where(li > ul, li > ol) {
+    margin: 0.3em 0 0;
+  }
+
+  [data-slide] :where(li)::marker {
+    color: var(--deck-muted);
+  }
+
+  [data-slide] :where(.contains-task-list) {
+    padding-left: 0;
+    list-style: none;
+  }
+
+  [data-slide] :where(.task-list-item input) {
+    margin: 0 0.5em 0 0;
+  }
+
+  [data-slide] :where(a) {
+    color: var(--deck-accent);
+    text-decoration: underline;
+    text-decoration-thickness: 0.06em;
+    text-underline-offset: 0.18em;
+  }
+
+  [data-slide] :where(strong, b) {
+    font-weight: 700;
+  }
+
+  [data-slide] :where(blockquote) {
+    padding: 0.2em 0 0.2em 1em;
+    border-left: 4px solid var(--deck-accent);
+    color: var(--deck-muted);
+  }
+
+  [data-slide] :where(blockquote > :last-child) {
+    margin-bottom: 0;
+  }
+
+  [data-slide] :where(hr) {
+    border: 0;
+    border-top: 1px solid var(--deck-border);
+  }
+
+  [data-slide] :where(img, video, svg, canvas) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  [data-slide] :where(table) {
+    border-collapse: collapse;
+    font-size: 0.85em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  [data-slide] :where(th, td) {
+    padding: 0.45em 0.9em;
+    border-bottom: 1px solid var(--deck-border);
+    text-align: left;
+  }
+
+  [data-slide] :where(th) {
+    border-bottom-width: 2px;
+    font-weight: 600;
+  }
+
+  [data-slide] :where(mark) {
+    padding: 0 0.15em;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--deck-accent) 22%, transparent);
+    color: inherit;
+  }
+
+  [data-slide] :where(kbd) {
+    padding: 0.1em 0.4em;
+    border: 1px solid var(--deck-border);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    font-family: var(--deck-font-mono);
+    font-size: 0.8em;
+  }
+
+  [data-slide] :where(:not(pre) > code) {
+    padding: 0.12em 0.35em;
+    border-radius: 6px;
+    background: var(--deck-surface);
+    font-family: var(--deck-font-mono);
+    font-size: 0.85em;
+  }
+
+  /* Maths renders as source until KaTeX support lands. */
+  [data-slide] :where(.math-display) {
+    display: block;
+    text-align: center;
+  }
+
+  /* Steps ------------------------------------------------------------------ */
+
+  [data-slide] [data-step-state] {
+    transition:
+      opacity var(--deck-step-duration) ease,
+      visibility var(--deck-step-duration);
+  }
+
+  [data-slide] [data-step-state="future"] {
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  /* Code ------------------------------------------------------------------- */
+
+  [data-slide] [data-code] {
+    margin: 0 0 0.75em;
+    overflow: hidden;
+    border: 1px solid var(--deck-border);
+    border-radius: var(--deck-radius);
+    background: var(--deck-code-background);
+    font-size: 0.72em;
+  }
+
+  [data-code] figcaption {
+    padding: 0.6em 1.2em;
+    border-bottom: 1px solid var(--deck-border);
+    color: var(--deck-muted);
+    font-family: var(--deck-font-mono);
+    font-size: 0.85em;
+  }
+
+  [data-code] pre {
+    margin: 0;
+    padding: 0.9em 1.2em;
+    overflow: auto;
+    color: var(--deck-code-foreground);
+    font-family: var(--deck-font-mono);
+    line-height: 1.6;
+    tab-size: 2;
+  }
+
+  [data-code] code {
+    font: inherit;
+  }
+
+  [data-code] [data-line] {
+    transition: opacity var(--deck-step-duration) ease;
+  }
+
+  [data-code] [data-line-state="dimmed"] {
+    opacity: var(--deck-dim-opacity);
+  }
+
+  [data-code] [data-line-numbers] {
+    counter-reset: line;
+  }
+
+  [data-code] [data-line-numbers] [data-line]::before {
+    display: inline-block;
+    min-width: 2ch;
+    margin-right: 1.4ch;
+    color: var(--deck-muted);
+    text-align: right;
+    content: counter(line);
+    counter-increment: line;
+    opacity: 0.7;
+    user-select: none;
+  }
+
+  /* Layouts ---------------------------------------------------------------- */
+
+  [data-layout="center"] {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  [data-layout="cover"] {
+    justify-content: center;
+    padding: 72px 88px;
+  }
+
+  [data-layout="cover"] :where(h1) {
+    font-size: 2.8em;
+    letter-spacing: -0.03em;
+  }
+
+  [data-layout="cover"] :where(h1 + p, h2 + p) {
+    color: var(--deck-muted);
+    font-size: 1.15em;
+  }
+
+  [data-layout="section"] {
+    justify-content: center;
+    padding: 72px 88px;
+  }
+
+  [data-layout="section"] :where(h1, h2) {
+    font-size: 2.6em;
+  }
+
+  [data-layout="section"] :where(h1, h2)::before {
+    display: block;
+    width: 1.6em;
+    height: 0.12em;
+    margin-bottom: 0.5em;
+    border-radius: 999px;
+    background: var(--deck-accent);
+    content: "";
+  }
+
+  [data-layout="full"] {
+    padding: 0;
+  }
+
+  [data-layout="two-cols"] [data-part="columns"] {
+    display: grid;
+    flex: 1;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5em;
+    min-height: 0;
+  }
+
+  [data-layout="image-left"],
+  [data-layout="image-right"] {
+    flex-direction: row;
+    padding: 0;
+  }
+
+  [data-layout^="image-"] [data-part="content"] {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    padding: var(--deck-padding);
+  }
+
+  [data-layout^="image-"] [data-part="image"] {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    background: var(--deck-surface);
+  }
+
+  [data-layout^="image-"] [data-part="image"] img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  [data-layout="image-left"] [data-part="image"] {
+    order: -1;
+  }
+
+  /* Errors ----------------------------------------------------------------- */
+
+  [data-slide-error] {
+    justify-content: center;
+    gap: 0.5em;
+  }
+
+  [data-slide-error] p {
+    margin: 0;
+    color: light-dark(#b42318, #ff8a80);
+    font-weight: 600;
+  }
+
+  [data-slide-error] pre {
+    margin: 0;
+    color: var(--deck-muted);
+    font-family: var(--deck-font-mono);
+    font-size: 0.6em;
+    white-space: pre-wrap;
+  }
+}

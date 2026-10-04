@@ -21,6 +21,7 @@ Write presentations in Markdown, render them with React.
 | Path              | What it is                                  |
 | ----------------- | ------------------------------------------- |
 | `packages/core`   | Deck parser and slide compiler (no React)   |
+| `packages/react`  | `<Deck>` component, layouts and themes      |
 | `apps/playground` | Browser editor with live preview            |
 | `docs/`           | [Syntax reference](docs/syntax.md), roadmap |
 

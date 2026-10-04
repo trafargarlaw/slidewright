@@ -39,7 +39,7 @@ welcome.
 
 - [x] Monorepo, CI, licence and contributor docs
 - [x] `core`: one parser for browser and Node, a written syntax spec, tests
-- [ ] `react`: reactive `<Deck>`, layouts, step reveals, code highlighting,
+- [x] `react`: reactive `<Deck>`, layouts, step reveals, code highlighting,
       CSS-variable themes
 - [ ] Playground switched to the new packages
 
