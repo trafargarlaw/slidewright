@@ -156,6 +156,16 @@ component that throws only breaks its own slide.
 theme, all inside the `react-slides` cascade layer. Any rule in your own CSS
 outside a layer wins over it.
 
+That includes resets. A global `* { margin: 0; padding: 0 }` outside a layer
+strips the slide padding and spacing, so put resets in a layer declared before
+`react-slides`. With Tailwind, declare the order before importing it, so the
+preflight reset comes first and utilities still win:
+
+```css
+@layer theme, base, react-slides, components, utilities;
+@import "tailwindcss";
+```
+
 Theme a deck with custom properties on `[data-deck]` or any parent:
 
 ```css

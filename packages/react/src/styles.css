@@ -260,6 +260,8 @@
 
   [data-slide] :where(ul, ol) {
     padding-left: 1.3em;
+    /* Bring markers back after resets such as Tailwind's preflight. */
+    list-style: revert;
   }
 
   [data-slide] :where(li + li) {
