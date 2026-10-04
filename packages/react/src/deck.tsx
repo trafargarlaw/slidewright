@@ -40,6 +40,7 @@ import {
 } from "./navigation";
 import { Overview } from "./overview";
 import { RenderedSlide, type CompiledEntry } from "./slide";
+import { useHashSync } from "./url-hash";
 
 export interface DeckProps {
   /**
@@ -53,6 +54,11 @@ export interface DeckProps {
   defaultPosition?: DeckPosition;
   /** Called with the new position whenever the audience navigates. */
   onPositionChange?: (position: DeckPosition) => void;
+  /**
+   * Keep the position in the URL hash (`#3`, `#3.2`), so reloads and links
+   * open on that slide. For one deck per page. Default `false`.
+   */
+  hash?: boolean;
   /** Extra layouts by name. A layout with a built-in name replaces it. */
   layouts?: Readonly<Record<string, Layout>>;
   /** Components for `:::name` and `::name` directives, by name. */
@@ -110,6 +116,7 @@ export function Deck({
   position,
   defaultPosition,
   onPositionChange,
+  hash = false,
   layouts,
   components = NO_COMPONENTS,
   compileOptions,
@@ -191,6 +198,7 @@ export function Deck({
     if (!controlled) setInternal(next);
     onPositionChange?.(next);
   }, []);
+  useHashSync(hash, current, go);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const fullscreen = useFullscreen(rootRef);

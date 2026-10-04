@@ -7,7 +7,7 @@ import {
   within,
 } from "@testing-library/react";
 import { createRef } from "react";
-import { describe, expect, it, onTestFinished, vi } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { Deck, type DeckHandle, type LayoutProps } from "../src";
 
 const text = (strings: TemplateStringsArray) =>
@@ -511,6 +511,111 @@ describe("overview", () => {
     );
     expect(within(overview()!).getAllByRole("button")).toHaveLength(2);
     expect(focused()).toBe(thumbnail("Slide 2: Two"));
+  });
+});
+
+describe("URL hash", () => {
+  afterEach(() => window.history.replaceState(null, "", "/"));
+  const setHash = (hash: string) => window.history.replaceState(null, "", hash);
+  const hash = () => window.location.hash;
+  // As the Back button or a link would: a new entry, then `hashchange`.
+  const changeHash = (hash: string) =>
+    act(() => {
+      window.history.pushState(null, "", hash);
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    });
+
+  it("opens on the slide and step in the hash", () => {
+    setHash("#2.1");
+    render(<Deck markdown={THREE_SLIDES} hash />);
+    expect(heading()).toBe("Two");
+    expect(screen.getByText("Revealed").dataset.stepState).toBe("current");
+  });
+
+  it("writes the position as the deck moves, replacing the history entry", () => {
+    window.history.replaceState({ key: "router" }, "", "/");
+    render(<Deck markdown={THREE_SLIDES} hash />);
+    const entries = window.history.length;
+
+    press("ArrowRight");
+    expect(hash()).toBe("#2");
+    press("ArrowRight");
+    expect(hash()).toBe("#2.1");
+    press("ArrowRight");
+    expect(hash()).toBe("#3");
+    expect(window.history.length).toBe(entries);
+    expect(window.history.state).toEqual({ key: "router" });
+  });
+
+  it("follows changes to the hash, such as Back or a link", () => {
+    render(<Deck markdown={THREE_SLIDES} hash />);
+    changeHash("#3");
+    expect(heading()).toBe("Three");
+    changeHash("#2.1");
+    expect(heading()).toBe("Two");
+    expect(screen.getByText("Revealed").dataset.stepState).toBe("current");
+  });
+
+  it("leaves the page's own anchors alone until the deck moves", () => {
+    setHash("#install");
+    render(<Deck markdown={THREE_SLIDES} hash />);
+    expect(heading()).toBe("One");
+    expect(hash()).toBe("#install");
+
+    changeHash("#usage");
+    expect(heading()).toBe("One");
+    press("ArrowRight");
+    expect(hash()).toBe("#2");
+  });
+
+  it("corrects a hash past the end of the deck", () => {
+    setHash("#9");
+    render(<Deck markdown={THREE_SLIDES} hash />);
+    expect(heading()).toBe("Three");
+    expect(hash()).toBe("#3");
+  });
+
+  it("keeps a controlled deck and the hash in step", () => {
+    setHash("#2");
+    const onPositionChange = vi.fn();
+    const { rerender } = render(
+      <Deck
+        markdown={THREE_SLIDES}
+        position={{ slide: 0, step: 0 }}
+        onPositionChange={onPositionChange}
+        hash
+      />,
+    );
+    expect(onPositionChange).toHaveBeenCalledWith({ slide: 1, step: 0 });
+
+    // The parent moves the deck itself, as an editor following its cursor.
+    rerender(
+      <Deck
+        markdown={THREE_SLIDES}
+        position={{ slide: 2, step: 0 }}
+        onPositionChange={onPositionChange}
+        hash
+      />,
+    );
+    expect(hash()).toBe("#3");
+  });
+
+  it("follows edits that remove the current slide", () => {
+    setHash("#3");
+    const { rerender } = render(<Deck markdown={THREE_SLIDES} hash />);
+    rerender(
+      <Deck markdown={THREE_SLIDES.replace("\n---\n\n# Three\n", "")} hash />,
+    );
+    expect(heading()).toBe("Two");
+    expect(hash()).toBe("#2");
+  });
+
+  it("is off by default", () => {
+    setHash("#3");
+    render(<Deck markdown={THREE_SLIDES} />);
+    expect(heading()).toBe("One");
+    press("ArrowRight");
+    expect(hash()).toBe("#3");
   });
 });
 

@@ -45,7 +45,7 @@ welcome.
 
 ### 1 — Presenting (v0.1)
 
-- [ ] Navigation: keyboard (scoped when embedded), touch, URL sync, overview
+- [x] Navigation: keyboard (scoped when embedded), touch, URL sync, overview
       grid, go-to-slide, fullscreen, aspect ratios
 - [ ] Presenter mode: notes, next-slide preview, timer, synced windows
 - [ ] Complete layout set and custom layouts

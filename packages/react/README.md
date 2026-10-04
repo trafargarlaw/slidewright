@@ -37,6 +37,7 @@ server; code is highlighted after hydration.
 | `position`         |           | `{ slide, step }` for a controlled deck. Use with `onPositionChange`.                                          |
 | `defaultPosition`  | `{0, 0}`  | Starting position for an uncontrolled deck.                                                                    |
 | `onPositionChange` |           | Called with the new position on every navigation.                                                              |
+| `hash`             | `false`   | Keeps the position in the URL hash. See [URL hash](#url-hash).                                                 |
 | `layouts`          |           | Extra layouts by name. A built-in name replaces the built-in layout.                                           |
 | `components`       |           | Components for `:::name` and `::name` directives, by name.                                                     |
 | `compileOptions`   |           | Sanitising and remark/rehype plugins, passed to the compiler. Keep the object stable.                          |
@@ -91,6 +92,19 @@ The fullscreen button only appears where the browser allows fullscreen:
 not on iPhones, which only allow it for videos, and in an iframe only with
 `allow="fullscreen"`. In fullscreen, the controls stay hidden until the
 pointer reaches them.
+
+## URL hash
+
+With `hash`, the URL follows the deck: `#3` is slide 3, and `#3.2` is slide 3
+with two steps revealed. Reloading the page or opening a shared link starts
+the deck there, and changing the hash, by hand or through a link such as
+`[demo](#5)` on a slide, moves the deck. A controlled deck gets the hash's
+position through `onPositionChange`.
+
+The deck replaces the history entry as it moves, so Back leaves the page
+instead of stepping back through the talk. The hash belongs to the whole
+page, so turn it on for one deck at most; the page's own anchors, such as
+`#install`, stay until the deck moves.
 
 ## Layouts
 

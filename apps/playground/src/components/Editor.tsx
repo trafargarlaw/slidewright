@@ -931,6 +931,7 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
             markdown={markdown}
             position={position}
             onPositionChange={setPosition}
+            hash
             compileOptions={compileOptions}
             style={{ flex: 1, minHeight: 0 }}
           />
