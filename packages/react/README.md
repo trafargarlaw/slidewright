@@ -2,8 +2,8 @@
 
 Renders Markdown decks in React. Pass a string, get a presentation: one slide
 at a time, scaled to fit its container, with step reveals, syntax-highlighted
-code, keyboard and touch navigation, an overview of every slide, and
-fullscreen.
+code, keyboard and touch navigation, an overview of every slide, fullscreen,
+and a presenter view with notes and a timer.
 
 The deck follows its `markdown` prop. Edit the source and the deck
 re-renders in place, staying on the current slide and step, so it works for
@@ -105,6 +105,43 @@ The deck replaces the history entry as it moves, so Back leaves the page
 instead of stepping back through the talk. The hash belongs to the whole
 page, so turn it on for one deck at most; the page's own anchors, such as
 `#install`, stay until the deck moves.
+
+## Presenter view
+
+`Presenter` is the speaker's view of a deck: the current slide, a preview of
+what the next key press shows, the notes for the current step and a timer.
+Give it the same position as the audience's deck and the two move together:
+
+```tsx
+import { Deck, Presenter } from "@react-slides/react";
+
+const [position, setPosition] = useState({ slide: 0, step: 0 });
+
+<Deck markdown={markdown} position={position} onPositionChange={setPosition} />;
+<Presenter
+  markdown={markdown}
+  position={position}
+  onPositionChange={setPosition}
+/>;
+```
+
+It takes the deck's props for the source, position, layouts, components,
+compiling, colour scheme, keyboard and styling, and the same keys, except `O`
+and `F`, which stay with the deck.
+
+The preview shows the next step of the current slide, or the next slide once
+every step is revealed. Notes divided by `[step]` lines (see
+[Notes for each step](../../docs/syntax.md#notes-for-each-step)) show in
+parts: the part for the current step is marked and scrolled into view, and
+earlier parts are dimmed. The timer starts when the presenter mounts, and can
+be paused and reset.
+
+The presenter fills the height of its container. On a page of its own, give
+it the window's height and let it take keys from anywhere:
+
+```tsx
+<Presenter markdown={markdown} keyboard="global" style={{ height: "100dvh" }} />
+```
 
 ## Layouts
 
@@ -223,6 +260,7 @@ Theme a deck with custom properties on `[data-deck]` or any parent:
 | `--deck-padding`, `--deck-radius`         | Slide padding, corner radius             |
 | `--deck-step-duration`                    | Reveal animation (0 with reduced motion) |
 | `--deck-dim-opacity`                      | Opacity of lines not highlighted in code |
+| `--deck-notes-font-size`                  | Notes text in the presenter view         |
 | `--deck-code-token-*`                     | Syntax colours (`keyword`, `string`, …)  |
 
 Colours use `light-dark()`, so a theme can define both schemes in one value.
@@ -246,10 +284,12 @@ adds data attributes for everything else:
 | `[data-deck-progress]`  | Progress bar                                 |
 | `[data-deck-overview]`  | Overview grid                                |
 | `[data-deck-thumbnail]` | A slide in the overview. `data-current`      |
+| `[data-presenter]`      | Presenter root, alongside `data-deck`        |
+| `[data-presenter-note]` | Notes part. `data-note-state`, as for steps  |
 
 Thumbnails in the overview are slides too, so slide CSS styles them the same
 way. Scope a rule to `[data-deck-viewport]` to style only the slide being
-presented.
+presented; the presenter's current slide is in one too.
 
 The slide canvas has a fixed size (`canvasWidth` in the headmatter, 980px by
 default) and is scaled to fit, so sizes in slide CSS are canvas pixels and

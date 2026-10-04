@@ -34,6 +34,7 @@
 
     --deck-step-duration: 240ms;
     --deck-dim-opacity: 0.32;
+    --deck-notes-font-size: 18px;
 
     /* Code colours, used by the syntax highlighter. */
     --deck-code-foreground: var(--deck-fg);
@@ -346,6 +347,238 @@
   [data-deck-thumbnail][data-current] [data-deck-thumbnail-number] {
     color: var(--deck-accent);
     font-weight: 600;
+  }
+
+  /* Presenter -------------------------------------------------------------- */
+
+  [data-deck][data-presenter] {
+    display: grid;
+    grid-template:
+      "current side" minmax(0, 1fr)
+      "bar bar" auto
+      / minmax(0, 3fr) minmax(16rem, 2fr);
+    gap: 12px;
+    box-sizing: border-box;
+    height: 100%;
+    min-height: 420px;
+    aspect-ratio: auto;
+    padding: 12px;
+    color: var(--deck-fg);
+    font: 15px/1.5 var(--deck-font-sans);
+  }
+
+  [data-presenter-current] {
+    display: flex;
+    flex-direction: column;
+    grid-area: current;
+    gap: 6px;
+    min-height: 0;
+    margin: 0;
+  }
+
+  [data-presenter-stage] {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* The current slide sits at the top, level with the next one. */
+  [data-presenter-stage] [data-deck-canvas] {
+    top: 0;
+    transform: translateX(-50%) scale(var(--deck-scale, 1));
+    transform-origin: 50% 0;
+  }
+
+  [data-presenter-side] {
+    display: flex;
+    flex-direction: column;
+    grid-area: side;
+    gap: 12px;
+    min-height: 0;
+  }
+
+  [data-presenter-next] {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+  }
+
+  :is([data-presenter-current], [data-presenter-next]) > figcaption {
+    color: var(--deck-muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  [data-presenter-preview],
+  [data-presenter-notes] {
+    border-radius: 8px;
+    background: var(--deck-bg);
+    box-shadow: 0 0 0 1px var(--deck-border);
+  }
+
+  [data-presenter-preview] {
+    position: relative;
+    aspect-ratio: var(--deck-aspect-ratio);
+    overflow: hidden;
+  }
+
+  [data-presenter-end] {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    margin: 0;
+    color: var(--deck-muted);
+  }
+
+  /* Positioned, so the current part can be scrolled into view. */
+  [data-presenter-notes] {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    padding: 12px;
+    overflow: auto;
+    overscroll-behavior: contain;
+    font-size: var(--deck-notes-font-size);
+    line-height: 1.55;
+  }
+
+  [data-presenter-note] {
+    padding: 4px 10px;
+    border-left: 3px solid transparent;
+    border-radius: 3px;
+    transition: opacity 160ms ease;
+  }
+
+  [data-presenter-note] + [data-presenter-note] {
+    margin-top: 6px;
+  }
+
+  [data-presenter-note][data-note-state="past"] {
+    opacity: 0.45;
+  }
+
+  [data-presenter-note][data-note-state="current"] {
+    border-left-color: var(--deck-accent);
+    background: color-mix(in srgb, var(--deck-accent) 9%, transparent);
+  }
+
+  [data-presenter-note]
+    :where(p, ul, ol, dl, blockquote, table, figure, pre, hr) {
+    margin: 0 0 0.6em;
+  }
+
+  [data-presenter-note] > :last-child {
+    margin-bottom: 0;
+  }
+
+  [data-presenter-note] :where(ul, ol) {
+    padding-left: 1.3em;
+  }
+
+  [data-presenter-note] :where(a) {
+    color: var(--deck-accent);
+  }
+
+  [data-presenter-note] :where(:not(pre) > code) {
+    padding: 0.1em 0.3em;
+    border-radius: 4px;
+    background: var(--deck-surface);
+    font-family: var(--deck-font-mono);
+    font-size: 0.88em;
+  }
+
+  [data-presenter-note-source] {
+    white-space: pre-wrap;
+  }
+
+  [data-presenter-no-notes] {
+    margin: 0;
+    padding: 4px 13px;
+    color: var(--deck-muted);
+  }
+
+  [data-presenter-bar] {
+    display: flex;
+    grid-area: bar;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    font-variant-numeric: tabular-nums;
+  }
+
+  [data-presenter-nav],
+  [data-presenter-timer] {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+  }
+
+  [data-presenter-bar] button {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  [data-presenter-bar] button:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--deck-fg) 9%, transparent);
+  }
+
+  [data-presenter-bar] button:focus-visible {
+    outline: 2px solid var(--deck-accent);
+    outline-offset: 1px;
+  }
+
+  [data-presenter-bar] button:disabled {
+    cursor: default;
+    opacity: 0.35;
+  }
+
+  [data-presenter-counter] {
+    min-width: 7ch;
+    padding: 0 6px;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  [data-presenter-timer] [role="timer"] {
+    padding: 0 8px;
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  [data-presenter-timer][data-paused] [role="timer"] {
+    color: var(--deck-muted);
+  }
+
+  /* Narrow windows, such as a phone: the slide, then the notes. */
+  @media (max-width: 720px) {
+    [data-deck][data-presenter] {
+      grid-template:
+        "current" auto
+        "side" minmax(0, 1fr)
+        "bar" auto
+        / minmax(0, 1fr);
+    }
+
+    [data-presenter-stage] {
+      flex: none;
+      aspect-ratio: var(--deck-aspect-ratio);
+    }
+
+    [data-presenter-next] {
+      display: none;
+    }
   }
 
   /* Slide ------------------------------------------------------------------ */

@@ -3,7 +3,7 @@ import { Editor as MonacoEditor, type OnMount } from "@monaco-editor/react";
 import type { editor } from "monaco-editor";
 import { styled } from "styled-components";
 import { getSlideAtLine } from "@react-slides/core";
-import { Deck, type DeckPosition } from "@react-slides/react";
+import { Deck, Presenter, type DeckPosition } from "@react-slides/react";
 import { CheatSheet } from "./CheatSheet";
 import { registerImage } from "@/lib/image-registry";
 import { compileOptions } from "@/lib/compile-options";
@@ -215,6 +215,7 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
   const completionRef = useRef<CompletionRegistration | null>(null);
   const [markdown, setMarkdown] = useState(defaultValue);
   const [activeTab, setActiveTab] = useState<string>("markdown");
+  const [previewView, setPreviewView] = useState<string>("slides");
   const [position, setPosition] = useState<DeckPosition>({ slide: 0, step: 0 });
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const ignoreCursorRef = useRef(false);
@@ -922,19 +923,37 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
 
       <PreviewPanel>
         <div className="flex items-center justify-between px-4 py-2 bg-background border-b border-border shrink-0">
-          <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
-            Preview
-          </span>
+          <Tabs value={previewView} onValueChange={setPreviewView}>
+            <TabsList variant="line" className="h-7">
+              <TabsTrigger value="slides" className="text-xs px-2">
+                Slides
+              </TabsTrigger>
+              <TabsTrigger value="presenter" className="text-xs px-2">
+                Presenter
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
         <PreviewArea>
-          <Deck
-            markdown={markdown}
-            position={position}
-            onPositionChange={setPosition}
-            hash
-            compileOptions={compileOptions}
-            style={{ flex: 1, minHeight: 0 }}
-          />
+          {previewView === "presenter" ? (
+            <Presenter
+              markdown={markdown}
+              position={position}
+              onPositionChange={setPosition}
+              hash
+              compileOptions={compileOptions}
+              style={{ flex: 1, minHeight: 0 }}
+            />
+          ) : (
+            <Deck
+              markdown={markdown}
+              position={position}
+              onPositionChange={setPosition}
+              hash
+              compileOptions={compileOptions}
+              style={{ flex: 1, minHeight: 0 }}
+            />
+          )}
         </PreviewArea>
       </PreviewPanel>
     </EditorContainer>

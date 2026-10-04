@@ -1,18 +1,9 @@
-import {
-  createCompiler,
-  parseDeck,
-  type ColorScheme,
-  type CompileOptions,
-  type Deck as ParsedDeck,
-} from "@react-slides/core";
-import type { Root } from "hast";
+import type { ColorScheme, CompileOptions } from "@react-slides/core";
 import {
   useCallback,
-  useDeferredValue,
   useEffect,
   useImperativeHandle,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -23,23 +14,27 @@ import {
   type RefObject,
 } from "react";
 import type { DirectiveComponents } from "./context";
-import { useElementSize } from "./element-size";
-import { builtinLayouts, type Layout } from "./layouts";
-import { LruCache } from "./lru";
 import {
-  clampPosition,
+  canvasProperties,
+  useCompiledDeck,
+  useDeckPosition,
+  useLayouts,
+} from "./deck-state";
+import { useElementSize } from "./element-size";
+import { Chevron, FullscreenIcon, GridIcon } from "./icons";
+import type { Layout } from "./layouts";
+import {
   getKeyCommand,
   getOverviewKeyCommand,
   getSwipeAction,
   isSwipeStart,
-  move,
   overviewColumns,
   type DeckPosition,
   type KeyLike,
   type NavigationAction,
 } from "./navigation";
 import { Overview } from "./overview";
-import { RenderedSlide, type CompiledEntry } from "./slide";
+import { RenderedSlide } from "./slide";
 import { useHashSync } from "./url-hash";
 
 export interface DeckProps {
@@ -104,7 +99,6 @@ export interface DeckHandle {
   toggleFullscreen(): void;
 }
 
-const START: DeckPosition = { slide: 0, step: 0 };
 const NO_COMPONENTS: DirectiveComponents = {};
 
 /**
@@ -128,21 +122,16 @@ export function Deck({
   style,
   ref,
 }: DeckProps) {
-  // Parsing and compiling stay off the typing path when the source changes
-  // on every keystroke.
-  const source = useDeferredValue(markdown);
-  const deck = useMemo(() => parseDeck(source), [source]);
-  const getSlide = useSlideCompiler(deck, compileOptions);
-  const getSteps = useCallback(
-    (index: number) => getSlide(index).steps,
-    [getSlide],
+  const { deck, getSlide, getSteps } = useCompiledDeck(
+    markdown,
+    compileOptions,
   );
   const slideCount = deck.slides.length;
-
-  // An uncontrolled deck remembers the requested position and clamps it on
-  // render, so deleting and re-adding a slide while editing returns to it.
-  const [internal, setInternal] = useState(defaultPosition ?? START);
-  const current = clampPosition(position ?? internal, slideCount, getSteps);
+  const { current, go: moveTo } = useDeckPosition(
+    { position, defaultPosition, onPositionChange },
+    slideCount,
+    getSteps,
+  );
   // Digits typed towards a slide number, before Enter.
   const [typed, setTyped] = useState("");
   // The slide picked in the overview, while it is open.
@@ -163,41 +152,18 @@ export function Deck({
     : null;
   const columns = overviewColumns(viewportSize?.width);
 
-  const latest = useRef({
-    current,
-    slideCount,
-    getSteps,
-    controlled: position !== undefined,
-    onPositionChange,
-    typed,
-    selected,
-    columns,
-  });
+  const latest = useRef({ current, slideCount, typed, selected, columns });
   useLayoutEffect(() => {
-    latest.current = {
-      current,
-      slideCount,
-      getSteps,
-      controlled: position !== undefined,
-      onPositionChange,
-      typed,
-      selected,
-      columns,
-    };
+    latest.current = { current, slideCount, typed, selected, columns };
   });
 
-  const go = useCallback((target: DeckPosition | NavigationAction) => {
-    const { current, slideCount, getSteps, controlled, onPositionChange } =
-      latest.current;
-    setTyped("");
-    const next =
-      typeof target === "string"
-        ? move(current, target, slideCount, getSteps)
-        : clampPosition(target, slideCount, getSteps);
-    if (next.slide === current.slide && next.step === current.step) return;
-    if (!controlled) setInternal(next);
-    onPositionChange?.(next);
-  }, []);
+  const go = useCallback(
+    (target: DeckPosition | NavigationAction) => {
+      setTyped("");
+      moveTo(target);
+    },
+    [moveTo],
+  );
   useHashSync(hash, current, go);
 
   const rootRef = useRef<HTMLDivElement>(null);
@@ -345,10 +311,7 @@ export function Deck({
     touchStart.current = null;
   };
 
-  const allLayouts = useMemo(
-    () => (layouts ? { ...builtinLayouts, ...layouts } : builtinLayouts),
-    [layouts],
-  );
+  const allLayouts = useLayouts(layouts);
 
   const slide = deck.slides[current.slide];
   const lastStep = slide ? getSteps(current.slide) : 0;
@@ -362,14 +325,7 @@ export function Deck({
       data-theme={theme}
       data-color-scheme={colorScheme ?? deck.config.colorScheme}
       className={className}
-      style={
-        {
-          "--deck-aspect-ratio": aspectRatio,
-          "--deck-canvas-width": `${canvasWidth}px`,
-          "--deck-canvas-height": `${canvasHeight}px`,
-          ...style,
-        } as CSSProperties
-      }
+      style={{ ...canvasProperties(deck.config), ...style }}
       role="region"
       aria-roledescription="slide deck"
       aria-label={title ?? "Slides"}
@@ -488,49 +444,6 @@ export function Deck({
   );
 }
 
-// Enough for every slide of a large deck plus recent edits.
-const CACHE_LIMIT = 200;
-const EMPTY_TREE: Root = { type: "root", children: [] };
-
-/**
- * Compiles slides on demand and caches them by content, so an edit only
- * recompiles the slide that changed.
- */
-function useSlideCompiler(
-  deck: ParsedDeck,
-  options: CompileOptions | undefined,
-): (index: number) => CompiledEntry {
-  const compiler = useMemo(
-    () => ({
-      compile: createCompiler(options),
-      cache: new LruCache<string, CompiledEntry>(CACHE_LIMIT),
-    }),
-    [options],
-  );
-
-  return useCallback(
-    (index: number) => {
-      const slide = deck.slides[index];
-      if (!slide) return { tree: EMPTY_TREE, steps: 0 };
-
-      const override = slide.frontmatter.steps;
-      const key = `${typeof override === "number" ? override : ""}\u0000${slide.content}`;
-      let entry = compiler.cache.get(key);
-      if (!entry) {
-        try {
-          entry = compiler.compile(slide);
-        } catch (error) {
-          // Thrown by a user plugin; show it on the slide instead.
-          entry = { tree: EMPTY_TREE, steps: 0, error };
-        }
-        compiler.cache.set(key, entry);
-      }
-      return entry;
-    },
-    [deck, compiler],
-  );
-}
-
 const subscribeToFullscreen = (onChange: () => void) => {
   document.addEventListener("fullscreenchange", onChange);
   return () => document.removeEventListener("fullscreenchange", onChange);
@@ -564,57 +477,4 @@ function useFullscreen(ref: RefObject<HTMLElement | null>) {
     }
   }, [ref]);
   return { supported, active, toggle };
-}
-
-function FullscreenIcon({ exit }: { exit: boolean }) {
-  return (
-    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-      <path
-        d={
-          exit
-            ? "M6 2.5V6H2.5M10 2.5V6h3.5M6 13.5V10H2.5M10 13.5V10h3.5"
-            : "M2.5 6V2.5H6M10 2.5h3.5V6M2.5 10v3.5H6M13.5 10v3.5H10"
-        }
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function GridIcon() {
-  return (
-    <svg
-      viewBox="0 0 16 16"
-      width="16"
-      height="16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      aria-hidden="true"
-    >
-      <rect x="2.75" y="2.75" width="4" height="4" rx="1" />
-      <rect x="9.25" y="2.75" width="4" height="4" rx="1" />
-      <rect x="2.75" y="9.25" width="4" height="4" rx="1" />
-      <rect x="9.25" y="9.25" width="4" height="4" rx="1" />
-    </svg>
-  );
-}
-
-function Chevron({ direction }: { direction: "left" | "right" }) {
-  return (
-    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-      <path
-        d={direction === "left" ? "M10 3 5 8l5 5" : "m6 3 5 5-5 5"}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
 }

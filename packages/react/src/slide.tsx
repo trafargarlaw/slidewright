@@ -102,6 +102,8 @@ export function SlideError({ error }: { error: unknown }) {
 interface BoundaryProps {
   /** Clears the error when it changes, e.g. after the slide is edited. */
   resetKey: unknown;
+  /** Shown instead of the error message. */
+  fallback?: ReactNode;
   children: ReactNode;
 }
 
@@ -123,7 +125,9 @@ export class SlideErrorBoundary extends Component<
   }
 
   override render() {
-    if (this.state.failed) return <SlideError error={this.state.error} />;
+    if (this.state.failed) {
+      return this.props.fallback ?? <SlideError error={this.state.error} />;
+    }
     return this.props.children;
   }
 }
