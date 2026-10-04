@@ -771,7 +771,13 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
             </Badge>
           </div>
 
-          <TabsContent value="markdown" className="flex-1 flex flex-col overflow-hidden m-0">
+          {/* Stay mounted while hidden: unmounting disposes Monaco, which loses
+              its text and leaves the Script tab without an editor to write to. */}
+          <TabsContent
+            value="markdown"
+            forceMount
+            className="flex-1 flex flex-col overflow-hidden m-0 data-[state=inactive]:hidden"
+          >
             <MonacoWrapper>
               <MonacoEditor
                 defaultValue={defaultValue}
