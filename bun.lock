@@ -73,6 +73,21 @@
         "vitest": "^5.0.3",
       },
     },
+    "packages/cli": {
+      "name": "@slidewright/cli",
+      "version": "0.0.0",
+      "bin": {
+        "slidewright": "./bin/slidewright.js",
+      },
+      "dependencies": {
+        "@slidewright/vite": "workspace:*",
+        "vite": "^8.3.2",
+      },
+      "devDependencies": {
+        "tsdown": "^0.23.0",
+        "vitest": "^5.0.3",
+      },
+    },
     "packages/core": {
       "name": "@slidewright/core",
       "version": "0.0.0",
@@ -579,6 +594,8 @@
     "@shikijs/vscode-textmate": ["@shikijs/vscode-textmate@10.0.2", "", {}, "sha512-83yeghZ2xxin3Nj8z1NMd/NCuca+gsYXswywDy5bHvwlWL8tpTQmzGeUuHd9FC3E/SBEMvzJRwWEOz5gGes9Qg=="],
 
     "@sindresorhus/merge-streams": ["@sindresorhus/merge-streams@4.0.0", "", {}, "sha512-tlqY9xq5ukxTUZBmoOp+m61cqwQD5pHJtFY3Mn8CA8ps6yghLH/Hw8UPdqg4OLmFW3IFlcXnQNmo/dh8HzXYIQ=="],
+
+    "@slidewright/cli": ["@slidewright/cli@workspace:packages/cli"],
 
     "@slidewright/core": ["@slidewright/core@workspace:packages/core"],
 

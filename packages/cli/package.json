@@ -1,0 +1,31 @@
+{
+  "name": "@slidewright/cli",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Present, build and export Markdown decks from the command line.",
+  "license": "MIT",
+  "bin": {
+    "slidewright": "./bin/slidewright.js"
+  },
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@slidewright/vite": "workspace:*",
+    "vite": "^8.3.2"
+  },
+  "devDependencies": {
+    "tsdown": "^0.23.0",
+    "vitest": "^5.0.3"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}
