@@ -24,6 +24,7 @@ Write presentations in Markdown, render them with React.
 | `packages/cli`    | `slidewright` command: dev, build, export   |
 | `packages/create` | `npm create @slidewright` project template  |
 | `apps/playground` | Browser editor with live preview            |
+| `examples/`       | [Example decks](examples) and a React app   |
 | `docs/`           | [Syntax reference](docs/syntax.md), roadmap |
 
 ## Development

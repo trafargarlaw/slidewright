@@ -1,0 +1,78 @@
+/*
+ * Loaded after the default theme, so these rules win over it. The theme
+ * properties are listed in packages/react/README.md#styling.
+ */
+
+/* Colours for both schemes, and fonts. */
+[data-deck] {
+  --deck-bg: light-dark(#fbf7ef, #16181d);
+  --deck-fg: light-dark(#211e18, #ede7da);
+  --deck-muted: light-dark(#6d6556, #a39b8b);
+  --deck-accent: light-dark(#b8461b, #f2925a);
+  --deck-border: light-dark(#e4dccb, #2e3038);
+  --deck-surface: light-dark(#f2ebdd, #1f2128);
+  --deck-backdrop: light-dark(#e9e2d3, #0b0c0f);
+
+  --deck-font-heading:
+    "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --deck-radius: 3px;
+}
+
+[data-slide] :where(h1, h2) {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* A layout made with CSS alone: `layout: agenda` in a slide's frontmatter. */
+[data-layout="agenda"] ol {
+  padding: 0;
+  font-family: var(--deck-font-heading);
+  font-size: 1.5em;
+  list-style: none;
+  counter-reset: agenda;
+}
+
+[data-layout="agenda"] li {
+  counter-increment: agenda;
+}
+
+[data-layout="agenda"] li::before {
+  display: inline-block;
+  width: 2em;
+  color: var(--deck-accent);
+  content: counter(agenda, decimal-leading-zero);
+}
+
+/* `class: inverse` in a slide's frontmatter. */
+[data-slide].inverse {
+  --deck-muted: color-mix(in srgb, var(--deck-bg) 75%, transparent);
+  --deck-accent: var(--deck-bg);
+
+  background: light-dark(#b8461b, #f2925a);
+  color: var(--deck-bg);
+}
+
+/* `:::callout` in a slide. */
+[data-directive="callout"] {
+  margin-top: auto;
+  padding: 0.7em 1em;
+  border-left: 4px solid var(--deck-accent);
+  background: var(--deck-surface);
+  font-size: 0.8em;
+}
+
+[data-directive="callout"] > :last-child {
+  margin-bottom: 0;
+}
+
+/* Steps slide up as they fade in. */
+[data-slide] [data-step-state] {
+  transition:
+    opacity var(--deck-step-duration) ease,
+    transform var(--deck-step-duration) ease,
+    visibility var(--deck-step-duration);
+}
+
+[data-slide] [data-step-state="future"] {
+  transform: translateY(0.4em);
+}

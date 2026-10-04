@@ -20,6 +20,8 @@ This is a Bun workspace monorepo:
 
 - `packages/*` — libraries that will be published to npm.
 - `apps/playground` — the browser editor, used as a demo and a test bed.
+- `examples` — example decks and a React app. Their tests check that each
+  one parses, renders and builds, so update them with syntax changes.
 
 Run a script in one workspace with `bun run --filter <package-name> <script>`.
 

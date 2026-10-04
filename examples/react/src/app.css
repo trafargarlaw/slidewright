@@ -1,0 +1,66 @@
+body {
+  margin: 0;
+  background: #f4f4f6;
+  color: #1c1c21;
+  font-family: system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* The editor on the left, the deck on the right. */
+.app {
+  display: grid;
+  grid-template-columns: minmax(18rem, 2fr) 3fr;
+  align-items: start;
+  gap: 1.5rem;
+  box-sizing: border-box;
+  height: 100vh;
+  padding: 1.5rem;
+}
+
+.app textarea {
+  box-sizing: border-box;
+  height: 100%;
+  padding: 1rem;
+  border: 1px solid #d4d4dc;
+  border-radius: 8px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  resize: none;
+}
+
+.app [data-deck] {
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.12);
+}
+
+/* `layout: sidebar`, arranged by its name. */
+[data-layout="sidebar"] {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2em;
+}
+
+[data-layout="sidebar"] [data-part="aside"] {
+  padding-left: 1.5em;
+  border-left: 2px solid var(--deck-border);
+  color: var(--deck-muted);
+  font-size: 0.85em;
+}
+
+/* `:::callout` */
+.callout {
+  margin-bottom: 0.75em;
+  padding: 0.7em 1em;
+  border-radius: var(--deck-radius);
+  background: color-mix(in srgb, var(--deck-accent) 12%, transparent);
+}
+
+.callout[data-tone="warning"] {
+  background: color-mix(in srgb, #f59e0b 20%, transparent);
+}
+
+.callout > :last-child {
+  margin-bottom: 0;
+}

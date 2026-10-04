@@ -73,6 +73,25 @@
         "vitest": "^5.0.3",
       },
     },
+    "examples": {
+      "name": "@slidewright/examples",
+      "version": "0.0.0",
+      "dependencies": {
+        "@slidewright/core": "workspace:*",
+        "@slidewright/react": "workspace:*",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0",
+      },
+      "devDependencies": {
+        "@slidewright/cli": "workspace:*",
+        "@slidewright/vite": "workspace:*",
+        "@types/react": "^19.3.0",
+        "@types/react-dom": "^19.3.0",
+        "@vitejs/plugin-react": "^6.1.1",
+        "vite": "^8.3.2",
+        "vitest": "^5.0.3",
+      },
+    },
     "packages/cli": {
       "name": "@slidewright/cli",
       "version": "0.0.0",
@@ -620,6 +639,8 @@
     "@slidewright/core": ["@slidewright/core@workspace:packages/core"],
 
     "@slidewright/create": ["@slidewright/create@workspace:packages/create"],
+
+    "@slidewright/examples": ["@slidewright/examples@workspace:examples"],
 
     "@slidewright/playground": ["@slidewright/playground@workspace:apps/playground"],
 

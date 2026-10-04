@@ -1,0 +1,14 @@
+/* The `full` slide: a block that reaches every edge of the slide. */
+.poster {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--deck-padding);
+  background: url("/hills.svg") center / cover;
+  color: #fff;
+}
+
+.poster p {
+  color: rgb(255 255 255 / 0.85);
+}
