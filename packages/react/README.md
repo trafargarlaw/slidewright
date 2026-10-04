@@ -128,9 +128,9 @@ const [position, setPosition] = useState({ slide: 0, step: 0 });
 />;
 ```
 
-It takes the deck's props for the source, position, layouts, components,
-compiling, colour scheme, keyboard and styling, and the same keys, except `O`,
-`F` and `P`, which stay with the deck.
+It takes the deck's props for the source, position, URL hash, layouts,
+components, compiling, colour scheme, keyboard and styling, and the same keys,
+except `O`, `F` and `P`, which stay with the deck.
 
 The preview shows the next step of the current slide, or the next slide once
 every step is revealed. Notes divided by `[step]` lines (see
@@ -233,8 +233,9 @@ imageAlt: Fishing boats in a harbour at dawn
 ### Custom layouts
 
 A custom layout is a component, registered by name with `layouts`. It gets
-the slide's content as `children`. Container directives named in its `slots`
-are lifted out of the content and passed in `slots` instead:
+the slide's content as `children`. Container directives named in its `slots`,
+at the top level of the slide, are lifted out of the content and passed in
+`slots` instead:
 
 ```tsx
 import type { LayoutProps } from "@slidewright/react";
@@ -316,9 +317,10 @@ Mind the **gap**.
 :::
 ```
 
-Directives without a registered component render their content in a `div`
-with `data-directive="name"`, so they can be styled with CSS alone. A
-component that throws only breaks its own slide.
+Every directive renders as a `div` with `data-directive="name"`, which keeps
+its id, classes and step. A registered component renders inside that `div`.
+Without one, the content goes straight in, so a directive can be styled with
+CSS alone. A component that throws only breaks its own slide.
 
 ## Styling
 
@@ -348,21 +350,23 @@ Theme a deck with custom properties on `[data-deck]` or any parent:
 }
 ```
 
-| Property                                   | Controls                                 |
-| ------------------------------------------ | ---------------------------------------- |
-| `--deck-bg`, `--deck-fg`, `--deck-muted`   | Slide background, text, secondary text   |
-| `--deck-accent`                            | Links, focus ring, progress, quotes      |
-| `--deck-border`, `--deck-surface`          | Rules and tables; code backgrounds       |
-| `--deck-backdrop`                          | Letterbox around the slide               |
-| `--deck-font-sans`, `--deck-font-heading`  | Body and heading fonts                   |
-| `--deck-font-mono`                         | Code font                                |
-| `--deck-font-size`, `--deck-line-height`   | Base text size on the canvas             |
-| `--deck-padding`, `--deck-radius`          | Slide padding, corner radius             |
-| `--deck-step-duration`                     | Reveal animation (0 with reduced motion) |
-| `--deck-dim-opacity`                       | Opacity of lines not highlighted in code |
-| `--deck-notes-font-size`                   | Notes text in the presenter view         |
-| `--deck-code-token-*`                      | Syntax colours (`keyword`, `string`, …)  |
-| `--deck-code-added`, `--deck-code-removed` | Added and removed lines in diffs         |
+| Property                                   | Controls                                  |
+| ------------------------------------------ | ----------------------------------------- |
+| `--deck-bg`, `--deck-fg`, `--deck-muted`   | Slide background, text, secondary text    |
+| `--deck-accent`                            | Links, focus ring, progress, quotes       |
+| `--deck-border`, `--deck-surface`          | Rules and tables; code backgrounds        |
+| `--deck-code-foreground`                   | Code text (`--deck-fg` by default)        |
+| `--deck-code-background`                   | Code blocks (`--deck-surface` by default) |
+| `--deck-backdrop`                          | Letterbox around the slide                |
+| `--deck-font-sans`, `--deck-font-heading`  | Body and heading fonts                    |
+| `--deck-font-mono`                         | Code font                                 |
+| `--deck-font-size`, `--deck-line-height`   | Base text size on the canvas              |
+| `--deck-padding`, `--deck-radius`          | Slide padding, corner radius              |
+| `--deck-step-duration`                     | Reveal animation (0 with reduced motion)  |
+| `--deck-dim-opacity`                       | Opacity of lines not highlighted in code  |
+| `--deck-notes-font-size`                   | Notes text in the presenter view          |
+| `--deck-code-token-*`                      | Syntax colours (`keyword`, `string`, …)   |
+| `--deck-code-added`, `--deck-code-removed` | Added and removed lines in diffs          |
 
 Colours use `light-dark()`, so a theme can define both schemes in one value.
 
@@ -383,18 +387,22 @@ adds data attributes for everything else:
 | `[data-line-state]`     | Code line: `highlighted` or `dimmed`         |
 | `[data-line-diff]`      | Code line: `added` or `removed`              |
 | `[data-diff-marker]`    | The `+` or `-` before a diff line            |
-| `[data-deck-controls]`  | Previous/next buttons and counter            |
+| `[data-deck-controls]`  | The buttons and the slide counter            |
 | `[data-deck-progress]`  | Progress bar                                 |
 | `[data-deck-overview]`  | Overview grid                                |
 | `[data-deck-thumbnail]` | A slide in the overview. `data-current`      |
 | `[data-presenter]`      | Presenter root, alongside `data-deck`        |
-| `[data-presenter-note]` | Notes part. `data-note-state`, as for steps  |
+| `[data-presenter-note]` | Notes part. With `[step]`, `data-note-state` |
 | `[data-deck-print]`     | `PrintDeck` root, alongside `data-deck`      |
 | `[data-deck-page]`      | A printed page. `data-page-slide`, `-step`   |
+| `[data-slide-error]`    | A slide that failed to compile or render     |
 
 Thumbnails in the overview are slides too, so slide CSS styles them the same
 way. Scope a rule to `[data-deck-viewport]` to style only the slide being
 presented; the presenter's current slide is in one too.
+
+`data-page-slide` counts from 0, like positions, and `data-page-step` is only
+there with `steps`.
 
 The slide canvas has a fixed size (`canvasWidth` in the headmatter, 980px by
 default) and is scaled to fit, so sizes in slide CSS are canvas pixels and

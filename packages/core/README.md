@@ -26,6 +26,11 @@ const { tree, steps } = compile(deck.slides[0]);
 `parseDeck` never throws. Invalid frontmatter, unclosed notes and similar
 problems are reported in `diagnostics`, and the rest of the deck still parses.
 
+A compiler takes a slide from `parseDeck` or a slide's Markdown as a string.
+`steps` is the number of steps on the slide, unless its frontmatter sets
+`steps`. For a one-off, `compileSlide(slide)` compiles with the default
+options.
+
 ### Compiler options
 
 ```ts
@@ -35,6 +40,9 @@ createCompiler({
   rehypePlugins: [], // run last, after sanitising
 });
 ```
+
+`sanitizeSchema` is the default schema, to extend for a custom one. Like
+GitHub's, it prefixes `id` and `name` attributes with `user-content-`.
 
 ## Output contract for renderers
 
@@ -64,3 +72,11 @@ In a `diff` block the `+` and `-` markers are taken out of the code text.
 
 `getSlideAtLine(deck, line)` maps a source line (for example an editor
 cursor) to a slide index.
+
+`splitNotes(notes)` divides a slide's notes at their `[step]` lines, one part
+per step, for a presenter view. See
+[Notes for each step](../../docs/syntax.md#notes-for-each-step).
+
+The types of the deck, its slides and the compiler's output are exported too:
+`Deck`, `DeckConfig`, `Slide`, `Diagnostic`, `CompiledSlide`,
+`CompileOptions` and others.

@@ -25,13 +25,14 @@ welcome.
 
 ## Packages
 
-| Package  | Purpose                                                                                                |
-| -------- | ------------------------------------------------------------------------------------------------------ |
-| `core`   | Deck parser and slide model: frontmatter, notes, slots, steps. No React. Runs in Node and the browser. |
-| `react`  | `<Deck>`, layouts, navigation, presenter mode, themes.                                                 |
-| `vite`   | Vite plugin: deck file loading, HMR, build-time highlighting.                                          |
-| `cli`    | `dev`, `build` and `export` commands, plus the `create` scaffolder.                                    |
-| `editor` | Embeddable editor with live preview.                                                                   |
+| Package  | Purpose                                                                                                     |
+| -------- | ----------------------------------------------------------------------------------------------------------- |
+| `core`   | Deck parser and slide model: frontmatter, notes, directives, steps. No React. Runs in Node and the browser. |
+| `react`  | `<Deck>`, layouts, navigation, presenter view, printing, themes.                                            |
+| `vite`   | Vite plugin: deck file loading, the page around the deck, HMR, the print view.                              |
+| `cli`    | `dev`, `build` and `export` commands.                                                                       |
+| `create` | The `npm create @slidewright` project template.                                                             |
+| `editor` | Embeddable editor with live preview. Planned for v0.3.                                                      |
 
 ## Milestones
 
@@ -49,7 +50,7 @@ welcome.
       grid, go-to-slide, fullscreen, aspect ratios
 - [x] Presenter mode: notes, next-slide preview, timer, synced windows
 - [x] Complete layout set and custom layouts
-- [x] Code: line numbers, diff and focus notation, titles
+- [x] Code: line numbers, highlight stages, diffs, titles
 - [x] Vite plugin and CLI (`dev`, `build`), project template
 - [x] Export to PDF and PNG
 - [x] Documentation site and examples
