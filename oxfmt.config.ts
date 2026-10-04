@@ -6,5 +6,10 @@ export default defineConfig({
   // excluded until then so formatting churn doesn't bury real changes.
   // Decks are not plain Markdown: the formatter reads slide frontmatter as
   // headings.
-  ignorePatterns: ["apps/playground/**", "bun.lock", "**/slides.md"],
+  ignorePatterns: [
+    "apps/playground/**",
+    "bun.lock",
+    "**/slides.md",
+    "apps/docs/src/decks/**",
+  ],
 });

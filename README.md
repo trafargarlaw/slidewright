@@ -24,6 +24,7 @@ Write presentations in Markdown, render them with React.
 | `packages/cli`    | `slidewright` command: dev, build, export   |
 | `packages/create` | `npm create @slidewright` project template  |
 | `apps/playground` | Browser editor with live preview            |
+| `apps/docs`       | Documentation site                          |
 | `examples/`       | [Example decks](examples) and a React app   |
 | `docs/`           | [Syntax reference](docs/syntax.md), roadmap |
 
@@ -34,6 +35,7 @@ Requires [Bun](https://bun.sh) 1.3+.
 ```sh
 bun install
 bun run dev        # start the playground on http://localhost:3000
+bun run docs       # start the documentation site on http://localhost:4321
 bun run typecheck  # type-check every workspace
 bun run test       # run unit tests
 bun run lint       # oxlint

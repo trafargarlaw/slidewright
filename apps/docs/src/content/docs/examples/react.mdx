@@ -1,0 +1,43 @@
+---
+title: React app
+description: A deck in a React app, with a live editor, a custom layout and a directive component.
+---
+
+import { Code } from "@astrojs/starlight/components";
+import { LiveEditor } from "../../../components/live-editor";
+import { components, layouts } from "@repo/examples/react/src/parts";
+import app from "@repo/examples/react/src/app.tsx?raw";
+import parts from "@repo/examples/react/src/parts.tsx?raw";
+import partsCss from "@repo/examples/react/src/parts.css?raw";
+import deck from "@repo/examples/react/src/slides.md?raw";
+
+`<Deck>` in a React app, beside a text area with its Markdown. The deck
+changes as you type, and shows the slide under the cursor. Its second slide
+uses a custom layout, and its third a component for the `:::callout`
+directive.
+
+<LiveEditor
+  client:load
+  markdown={deck}
+  layouts={layouts}
+  components={components}
+/>
+
+## Source
+
+The app keeps the Markdown and the position in its state. `getSlideAtLine`
+from `@slidewright/core` finds the slide under the cursor:
+
+<Code code={app} lang="tsx" title="examples/react/src/app.tsx" />
+
+The layout and the component, and the CSS that arranges them:
+
+<Code code={parts} lang="tsx" title="examples/react/src/parts.tsx" />
+
+<Code code={partsCss} lang="css" title="examples/react/src/parts.css" />
+
+<Code code={deck} lang="md" title="examples/react/src/slides.md" />
+
+To start the app, run `bun run react` in the
+[`examples` folder](https://github.com/trafargarlaw/react-slides/tree/master/examples).
+See the [`@slidewright/react` reference](/reference/react/) for every prop.

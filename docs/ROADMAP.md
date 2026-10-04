@@ -52,7 +52,7 @@ welcome.
 - [x] Code: line numbers, diff and focus notation, titles
 - [x] Vite plugin and CLI (`dev`, `build`), project template
 - [x] Export to PDF and PNG
-- [ ] Documentation site and examples
+- [x] Documentation site and examples
 - [ ] First release on npm, under the `@slidewright` scope
 
 ### 2 — Components and polish (v0.2)

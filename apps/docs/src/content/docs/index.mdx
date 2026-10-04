@@ -1,0 +1,42 @@
+---
+title: Slidewright
+description: Write presentations in Markdown. Present them, export them, or put them in a React app.
+template: splash
+hero:
+  tagline: Write presentations in Markdown. Present them from the command line, export them to PDF, or put them in any React app.
+  actions:
+    - text: Get started
+      link: /start/
+      icon: right-arrow
+    - text: See the examples
+      link: /examples/layouts/
+      icon: right-arrow
+      variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+import { DemoDeck } from "../../components/demo-deck";
+import starter from "@repo/packages/create/template/slides.md?raw";
+
+<DemoDeck client:load markdown={starter} />
+
+This is the deck that `npm create @slidewright` starts you with. Click it and
+use the arrow keys, or press <kbd>O</kbd> for the overview.
+
+<CardGrid>
+  <Card title="Markdown first" icon="pencil">
+    One file, with `---` between slides. Notes and step markers are HTML
+    comments, so the deck still reads well on GitHub.
+  </Card>
+  <Card title="Made to present" icon="laptop">
+    Steps, code highlighting, an overview of every slide, and a presenter view
+    with notes and a timer in a second window.
+  </Card>
+  <Card title="Share it" icon="rocket">
+    Build a static site, or export a PDF or PNG images from the command line.
+  </Card>
+  <Card title="In your app" icon="puzzle">
+    `<Deck markdown={markdown} />` renders a deck in any React app, and follows
+    the Markdown as it changes.
+  </Card>
+</CardGrid>

@@ -1,0 +1,6 @@
+.astro
+
+# Copied from elsewhere in the repository by src/sync.ts.
+src/content/docs/reference/
+src/content/docs/roadmap.md
+public/hills.svg

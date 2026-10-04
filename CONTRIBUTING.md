@@ -20,6 +20,8 @@ This is a Bun workspace monorepo:
 
 - `packages/*` — libraries that will be published to npm.
 - `apps/playground` — the browser editor, used as a demo and a test bed.
+- `apps/docs` — the documentation site. Its reference pages are copied from
+  `docs/` and the package READMEs at build time, so edit those files instead.
 - `examples` — example decks and a React app. Their tests check that each
   one parses, renders and builds, so update them with syntax changes.
 

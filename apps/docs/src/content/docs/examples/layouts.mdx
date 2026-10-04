@@ -1,0 +1,31 @@
+---
+title: Layouts
+description: Every built-in layout, one slide each.
+---
+
+import { Code } from "@astrojs/starlight/components";
+import { DemoDeck } from "../../../components/demo-deck";
+import "@repo/examples/layouts/style.css";
+import css from "@repo/examples/layouts/style.css?raw";
+import deck from "@repo/examples/layouts/slides.md?raw";
+
+Every built-in layout, one slide each. Click the deck and use the arrow keys,
+or press <kbd>O</kbd> to see every slide at once.
+
+<DemoDeck client:load markdown={deck} />
+
+A slide picks its layout with `layout:` in its frontmatter. The image layouts
+read the picture from `image:` and its description from `imageAlt:`. See
+[Layouts](/reference/react/#layouts) for what each layout does, and how to add
+your own.
+
+## Source
+
+<Code code={deck} lang="md" title="examples/layouts/slides.md" />
+
+The `full` slide uses a class from the deck's stylesheet:
+
+<Code code={css} lang="css" title="examples/layouts/style.css" />
+
+To present this deck, run `bun run dev layouts` in the
+[`examples` folder](https://github.com/trafargarlaw/react-slides/tree/master/examples).

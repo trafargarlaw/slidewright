@@ -4,7 +4,7 @@ title: A deck in a React app
 
 # A deck in a React app
 
-Edit the Markdown on the left: the deck changes as you type, and shows the
+Edit the Markdown: the deck changes as you type, and shows the
 slide under the cursor.
 
 - `<Deck markdown={…} />` renders the source
