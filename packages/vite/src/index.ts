@@ -18,11 +18,11 @@ const APP_URL = "/@slidewright/app";
 const DECK_ID = "virtual:slidewright/deck";
 const RESOLVED_DECK_ID = `\0${DECK_ID}`;
 
-// The page's script ships next to this file: app.ts in the sources, app.js
-// once built.
+// The page's script: app.ts next to this file in the sources, and
+// client/app.js once built (see tsdown.config.ts).
 const APP_FILE = fileURLToPath(
   new URL(
-    import.meta.url.endsWith(".ts") ? "app.ts" : "app.js",
+    import.meta.url.endsWith(".ts") ? "app.ts" : "../client/app.js",
     import.meta.url,
   ),
 );

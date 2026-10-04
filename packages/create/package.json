@@ -1,9 +1,22 @@
 {
   "name": "@slidewright/create",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "Start a Markdown deck: npm create @slidewright",
+  "keywords": [
+    "create",
+    "markdown",
+    "presentation",
+    "slides",
+    "template"
+  ],
+  "homepage": "https://github.com/trafargarlaw/react-slides/tree/master/packages/create#readme",
+  "bugs": "https://github.com/trafargarlaw/react-slides/issues",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trafargarlaw/react-slides.git",
+    "directory": "packages/create"
+  },
   "bin": {
     "create-slidewright": "./bin/create-slidewright.js"
   },
@@ -13,13 +26,17 @@
     "template"
   ],
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepack": "bun run build"
   },
   "devDependencies": {
-    "@slidewright/core": "workspace:*",
+    "@slidewright/core": "workspace:^",
     "tsdown": "^0.23.0",
     "vite": "^8.3.2",
     "vitest": "^5.0.3"

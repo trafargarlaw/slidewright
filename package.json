@@ -12,11 +12,12 @@
     "docs": "bun run --filter @slidewright/docs dev",
     "build": "bun run --filter '*' build",
     "test": "bun run --filter '*' test",
-    "typecheck": "bun run --filter '*' typecheck",
+    "typecheck": "bun run --filter '*' typecheck && tsc --noEmit -p scripts",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check"
+    "fmt:check": "oxfmt --check",
+    "smoke-test": "bun scripts/smoke-test.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",

@@ -115,12 +115,12 @@
     },
     "packages/cli": {
       "name": "@slidewright/cli",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "bin": {
         "slidewright": "./bin/slidewright.js",
       },
       "dependencies": {
-        "@slidewright/vite": "workspace:*",
+        "@slidewright/vite": "workspace:^",
         "vite": "^8.3.2",
       },
       "devDependencies": {
@@ -137,7 +137,7 @@
     },
     "packages/core": {
       "name": "@slidewright/core",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
         "@types/hast": "^3.0.4",
         "@types/mdast": "^4.0.4",
@@ -163,12 +163,12 @@
     },
     "packages/create": {
       "name": "@slidewright/create",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "bin": {
         "create-slidewright": "./bin/create-slidewright.js",
       },
       "devDependencies": {
-        "@slidewright/core": "workspace:*",
+        "@slidewright/core": "workspace:^",
         "tsdown": "^0.23.0",
         "vite": "^8.3.2",
         "vitest": "^5.0.3",
@@ -176,9 +176,9 @@
     },
     "packages/react": {
       "name": "@slidewright/react",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
-        "@slidewright/core": "workspace:*",
+        "@slidewright/core": "workspace:^",
         "@types/hast": "^3.0.5",
         "hast-util-to-jsx-runtime": "^2.3.6",
         "shiki": "^4.5.0",
@@ -201,10 +201,10 @@
     },
     "packages/vite": {
       "name": "@slidewright/vite",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
-        "@slidewright/core": "workspace:*",
-        "@slidewright/react": "workspace:*",
+        "@slidewright/core": "workspace:^",
+        "@slidewright/react": "workspace:^",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
       },

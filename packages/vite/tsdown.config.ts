@@ -9,8 +9,11 @@ export default defineConfig([
     dts: true,
   },
   {
-    // The page script, served to the browser by the plugin.
+    // The page script, served to the browser by the plugin. Not in dist:
+    // Vite's dependency scanner skips build output folders, and without the
+    // scan, Vite serves React and other CommonJS dependencies unconverted.
     entry: ["src/app.ts"],
+    outDir: "client",
     format: "esm",
     platform: "browser",
     dts: false,

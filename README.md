@@ -11,8 +11,19 @@ Write presentations in Markdown, render them with React.
   plus a browser editor with live preview.
 
 > [!WARNING]
-> Pre-alpha. The packages are not published yet and every API may change.
-> See the [roadmap](docs/ROADMAP.md) for what is planned and in progress.
+> Early release. Every API may change until 1.0. See the
+> [roadmap](docs/ROADMAP.md) for what is planned and in progress.
+
+## Quick start
+
+```sh
+npm create @slidewright my-talk
+cd my-talk
+npm install
+npm run dev
+```
+
+Requires Node.js 20.19, or 22.12 and later.
 
 ## Repository layout
 

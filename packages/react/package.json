@@ -1,9 +1,22 @@
 {
   "name": "@slidewright/react",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "Render Markdown decks in React. Reacts to Markdown changes as you type.",
+  "keywords": [
+    "deck",
+    "markdown",
+    "presentation",
+    "react",
+    "slides"
+  ],
+  "homepage": "https://github.com/trafargarlaw/react-slides/tree/master/packages/react#readme",
+  "bugs": "https://github.com/trafargarlaw/react-slides/issues",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trafargarlaw/react-slides.git",
+    "directory": "packages/react"
+  },
   "files": [
     "dist"
   ],
@@ -22,13 +35,17 @@
       "default": "./dist/styles.css"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepack": "bun run build"
   },
   "dependencies": {
-    "@slidewright/core": "workspace:*",
+    "@slidewright/core": "workspace:^",
     "@types/hast": "^3.0.5",
     "hast-util-to-jsx-runtime": "^2.3.6",
     "shiki": "^4.5.0"

@@ -18,7 +18,7 @@ bun run dev
 
 This is a Bun workspace monorepo:
 
-- `packages/*` — libraries that will be published to npm.
+- `packages/*` — the libraries, published to npm under `@slidewright`.
 - `apps/playground` — the browser editor, used as a demo and a test bed.
 - `apps/docs` — the documentation site. Its reference pages are copied from
   `docs/` and the package READMEs at build time, so edit those files instead.
@@ -49,6 +49,27 @@ Guidelines:
   docs alongside the code.
 - **PR titles follow [Conventional Commits](https://www.conventionalcommits.org)**
   (`feat(core): …`, `fix(react): …`, `docs: …`, `chore: …`).
+
+## Releasing
+
+Maintainers release every package together, with one version number.
+
+1. Set the version in each `packages/*/package.json`, and in the matching
+   entries of `bun.lock`: `bun install` doesn't update them.
+2. Run `bun run smoke-test`. It packs the packages, makes a deck from the
+   packed template, installs it with npm and checks that the deck builds,
+   serves and explains how to export. The workspace tests run on the sources
+   and miss problems that only the packed files have.
+3. Publish dependencies first:
+
+   ```sh
+   for name in core react vite cli create; do
+     (cd packages/$name && bun publish) || break
+   done
+   ```
+
+   `bun publish` builds each package first and replaces `workspace:^` with
+   the version.
 
 ## Reporting bugs and requesting features
 
