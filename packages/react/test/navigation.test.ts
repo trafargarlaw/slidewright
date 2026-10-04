@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished } from "vitest";
 import {
   clampPosition,
   getKeyCommand,
@@ -87,6 +87,8 @@ describe("getKeyCommand", () => {
     expect(action({ key: "F", shiftKey: true })).toBe("fullscreen");
     expect(action({ key: "o" })).toBe("overview");
     expect(action({ key: "O", shiftKey: true })).toBe("overview");
+    expect(action({ key: "p" })).toBe("presenter");
+    expect(action({ key: "P", shiftKey: true })).toBe("presenter");
     expect(action({ key: "a" })).toBeUndefined();
   });
 
@@ -140,6 +142,21 @@ describe("getKeyCommand", () => {
     expect(key({ key: " ", target: button })).toBeUndefined();
     expect(action({ key: "ArrowRight", target: button })).toBe("next");
     expect(key({ key: "Enter", target: button })).toBeUndefined();
+  });
+
+  it("knows form fields and buttons in another window", () => {
+    // The presenter window has its own `Element`, like this frame.
+    const frame = document.createElement("iframe");
+    document.body.append(frame);
+    onTestFinished(() => frame.remove());
+    const other = frame.contentDocument!;
+    const input = other.createElement("input");
+    const button = other.createElement("button");
+
+    expect(input instanceof Element).toBe(false);
+    expect(key({ key: "ArrowRight", target: input })).toBeUndefined();
+    expect(key({ key: " ", target: button })).toBeUndefined();
+    expect(action({ key: "ArrowRight", target: other })).toBe("next");
   });
 });
 

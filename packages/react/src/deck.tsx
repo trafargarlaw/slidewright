@@ -13,6 +13,7 @@ import {
   type Ref,
   type RefObject,
 } from "react";
+import { createPortal } from "react-dom";
 import type { DirectiveComponents } from "./context";
 import {
   canvasProperties,
@@ -21,7 +22,7 @@ import {
   useLayouts,
 } from "./deck-state";
 import { useElementSize } from "./element-size";
-import { Chevron, FullscreenIcon, GridIcon } from "./icons";
+import { Chevron, FullscreenIcon, GridIcon, PresenterIcon } from "./icons";
 import type { Layout } from "./layouts";
 import {
   getKeyCommand,
@@ -34,6 +35,8 @@ import {
   type NavigationAction,
 } from "./navigation";
 import { Overview } from "./overview";
+import { Presenter } from "./presenter";
+import { usePresenterWindow } from "./presenter-window";
 import { RenderedSlide } from "./slide";
 import { useHashSync } from "./url-hash";
 
@@ -74,8 +77,13 @@ export interface DeckProps {
   /** Swipe left and right on touch screens to navigate. Default `true`. */
   swipe?: boolean;
   /**
-   * Show previous, next, overview and fullscreen buttons, a slide counter and
-   * progress. Default `true`.
+   * Let the speaker open the presenter view in a second window, with `P` or
+   * a button. The two windows move together. Default `true`.
+   */
+  presenter?: boolean;
+  /**
+   * Show previous, next, overview, presenter and fullscreen buttons, a slide
+   * counter and progress. Default `true`.
    */
   controls?: boolean;
   className?: string;
@@ -97,9 +105,15 @@ export interface DeckHandle {
    * a click or key press.
    */
   toggleFullscreen(): void;
+  /**
+   * Opens or closes the presenter view in a second window. Browsers only
+   * allow opening in response to a click or key press.
+   */
+  togglePresenter(): void;
 }
 
 const NO_COMPONENTS: DirectiveComponents = {};
+const PRESENTER_WINDOW_STYLE: CSSProperties = { height: "100dvh" };
 
 /**
  * Renders a Markdown deck: one slide at a time, scaled to fit, with step
@@ -117,6 +131,7 @@ export function Deck({
   colorScheme,
   keyboard = "focus",
   swipe = true,
+  presenter = true,
   controls = true,
   className,
   style,
@@ -169,6 +184,11 @@ export function Deck({
   const rootRef = useRef<HTMLDivElement>(null);
   const fullscreen = useFullscreen(rootRef);
   const toggleFullscreen = fullscreen.toggle;
+  const presenterWindow = usePresenterWindow(
+    rootRef,
+    `${title ?? "Slides"} – Presenter view`,
+  );
+  const togglePresenter = presenterWindow.toggle;
 
   const overviewRef = useRef<HTMLElement>(null);
   const closeOverview = useCallback(() => {
@@ -203,8 +223,9 @@ export function Deck({
       focus: () => rootRef.current?.focus(),
       toggleOverview,
       toggleFullscreen,
+      togglePresenter,
     }),
-    [go, toggleOverview, toggleFullscreen],
+    [go, toggleOverview, toggleFullscreen, togglePresenter],
   );
 
   // Focus left on a control would keep the controls over the fullscreen
@@ -249,7 +270,7 @@ export function Deck({
       }
 
       const command = getKeyCommand(event, typed);
-      if (!command) return;
+      if (!command || (command.type === "presenter" && !presenter)) return;
       event.preventDefault();
       switch (command.type) {
         case "typeSlide":
@@ -267,9 +288,21 @@ export function Deck({
         case "fullscreen":
           setTyped("");
           toggleFullscreen();
+          break;
+        case "presenter":
+          setTyped("");
+          togglePresenter();
       }
     },
-    [go, chooseSlide, closeOverview, toggleOverview, toggleFullscreen],
+    [
+      go,
+      chooseSlide,
+      closeOverview,
+      toggleOverview,
+      toggleFullscreen,
+      togglePresenter,
+      presenter,
+    ],
   );
 
   useEffect(() => {
@@ -319,128 +352,157 @@ export function Deck({
   const overviewOpen = selected !== null;
 
   return (
-    <div
-      ref={rootRef}
-      data-deck=""
-      data-theme={theme}
-      data-color-scheme={colorScheme ?? deck.config.colorScheme}
-      className={className}
-      style={{ ...canvasProperties(deck.config), ...style }}
-      role="region"
-      aria-roledescription="slide deck"
-      aria-label={title ?? "Slides"}
-      tabIndex={keyboard === "focus" ? 0 : undefined}
-      onKeyDown={keyboard === "focus" ? handleKey : undefined}
-      onBlur={onBlur}
-    >
+    <>
       <div
-        ref={viewportRef}
-        data-deck-viewport=""
-        data-swipe={swipe ? "" : undefined}
-        inert={overviewOpen}
-        onPointerDown={swipe ? onPointerDown : undefined}
-        onPointerUp={swipe ? onPointerUp : undefined}
-        onPointerCancel={swipe ? onPointerCancel : undefined}
+        ref={rootRef}
+        data-deck=""
+        data-theme={theme}
+        data-color-scheme={colorScheme ?? deck.config.colorScheme}
+        className={className}
+        style={{ ...canvasProperties(deck.config), ...style }}
+        role="region"
+        aria-roledescription="slide deck"
+        aria-label={title ?? "Slides"}
+        tabIndex={keyboard === "focus" ? 0 : undefined}
+        onKeyDown={keyboard === "focus" ? handleKey : undefined}
+        onBlur={onBlur}
       >
         <div
-          data-deck-canvas=""
-          data-measured={scale === null ? undefined : ""}
-          style={{ "--deck-scale": scale ?? 1 } as CSSProperties}
+          ref={viewportRef}
+          data-deck-viewport=""
+          data-swipe={swipe ? "" : undefined}
+          inert={overviewOpen}
+          onPointerDown={swipe ? onPointerDown : undefined}
+          onPointerUp={swipe ? onPointerUp : undefined}
+          onPointerCancel={swipe ? onPointerCancel : undefined}
         >
-          {slide ? (
-            <RenderedSlide
-              slide={slide}
-              entry={getSlide(current.slide)}
-              step={current.step}
-              layouts={allLayouts}
-              components={components}
-              label={label}
-            />
-          ) : null}
+          <div
+            data-deck-canvas=""
+            data-measured={scale === null ? undefined : ""}
+            style={{ "--deck-scale": scale ?? 1 } as CSSProperties}
+          >
+            {slide ? (
+              <RenderedSlide
+                slide={slide}
+                entry={getSlide(current.slide)}
+                step={current.step}
+                layouts={allLayouts}
+                components={components}
+                label={label}
+              />
+            ) : null}
+          </div>
         </div>
-      </div>
 
-      {selected !== null ? (
-        <Overview
-          ref={overviewRef}
-          slides={deck.slides}
-          getSlide={getSlide}
-          layouts={allLayouts}
-          components={components}
-          canvasWidth={canvasWidth}
-          columns={columns}
-          current={current.slide}
-          selected={selected}
-          onChoose={chooseSlide}
-        />
-      ) : null}
+        {selected !== null ? (
+          <Overview
+            ref={overviewRef}
+            slides={deck.slides}
+            getSlide={getSlide}
+            layouts={allLayouts}
+            components={components}
+            canvasWidth={canvasWidth}
+            columns={columns}
+            current={current.slide}
+            selected={selected}
+            onChoose={chooseSlide}
+          />
+        ) : null}
 
-      {controls && slideCount > 0 ? (
-        <div data-deck-controls="" data-typing={typed ? "" : undefined}>
-          <button
-            type="button"
-            aria-label="Previous"
-            disabled={
-              overviewOpen || (current.slide === 0 && current.step === 0)
-            }
-            onClick={() => go("prev")}
-          >
-            <Chevron direction="left" />
-          </button>
-          <span data-deck-counter="">
-            {typed ? (
-              <span data-deck-typed="">{typed}</span>
-            ) : (
-              current.slide + 1
-            )}{" "}
-            / {slideCount}
-          </span>
-          <button
-            type="button"
-            aria-label="Next"
-            disabled={
-              overviewOpen ||
-              (current.slide === slideCount - 1 && current.step >= lastStep)
-            }
-            onClick={() => go("next")}
-          >
-            <Chevron direction="right" />
-          </button>
-          <button
-            type="button"
-            aria-label="Overview"
-            aria-pressed={overviewOpen}
-            onClick={toggleOverview}
-          >
-            <GridIcon />
-          </button>
-          {fullscreen.supported ? (
+        {controls && slideCount > 0 ? (
+          <div data-deck-controls="" data-typing={typed ? "" : undefined}>
             <button
               type="button"
-              aria-label="Fullscreen"
-              aria-pressed={fullscreen.active}
-              onClick={toggleFullscreen}
+              aria-label="Previous"
+              disabled={
+                overviewOpen || (current.slide === 0 && current.step === 0)
+              }
+              onClick={() => go("prev")}
             >
-              <FullscreenIcon exit={fullscreen.active} />
+              <Chevron direction="left" />
             </button>
-          ) : null}
-        </div>
-      ) : null}
-      {controls && slideCount > 0 ? (
-        <div
-          data-deck-progress=""
-          style={
-            {
-              "--deck-progress": (current.slide + 1) / slideCount,
-            } as CSSProperties
-          }
-        />
-      ) : null}
+            <span data-deck-counter="">
+              {typed ? (
+                <span data-deck-typed="">{typed}</span>
+              ) : (
+                current.slide + 1
+              )}{" "}
+              / {slideCount}
+            </span>
+            <button
+              type="button"
+              aria-label="Next"
+              disabled={
+                overviewOpen ||
+                (current.slide === slideCount - 1 && current.step >= lastStep)
+              }
+              onClick={() => go("next")}
+            >
+              <Chevron direction="right" />
+            </button>
+            <button
+              type="button"
+              aria-label="Overview"
+              aria-pressed={overviewOpen}
+              onClick={toggleOverview}
+            >
+              <GridIcon />
+            </button>
+            {presenter ? (
+              <button
+                type="button"
+                aria-label="Presenter view"
+                aria-pressed={presenterWindow.popup !== null}
+                onClick={togglePresenter}
+              >
+                <PresenterIcon />
+              </button>
+            ) : null}
+            {fullscreen.supported ? (
+              <button
+                type="button"
+                aria-label="Fullscreen"
+                aria-pressed={fullscreen.active}
+                onClick={toggleFullscreen}
+              >
+                <FullscreenIcon exit={fullscreen.active} />
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+        {controls && slideCount > 0 ? (
+          <div
+            data-deck-progress=""
+            style={
+              {
+                "--deck-progress": (current.slide + 1) / slideCount,
+              } as CSSProperties
+            }
+          />
+        ) : null}
 
-      <div data-deck-status="" aria-live="polite">
-        {slideCount > 0 ? label : ""}
+        <div data-deck-status="" aria-live="polite">
+          {slideCount > 0 ? label : ""}
+        </div>
       </div>
-    </div>
+      {/* Outside the deck, so its events don't bubble through the deck's. */}
+      {presenterWindow.popup
+        ? createPortal(
+            <Presenter
+              markdown={markdown}
+              position={current}
+              onPositionChange={go}
+              layouts={layouts}
+              components={components}
+              compileOptions={compileOptions}
+              colorScheme={colorScheme}
+              keyboard="global"
+              style={PRESENTER_WINDOW_STYLE}
+            />,
+            presenterWindow.popup.document.body,
+          )
+        : null}
+    </>
   );
 }
 

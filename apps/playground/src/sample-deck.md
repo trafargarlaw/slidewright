@@ -32,7 +32,8 @@ Each slide is plain Markdown, so the file reads well anywhere.
 [step]
 Step markers are HTML comments, invisible on GitHub.
 [step]
-Click the preview and use the arrow keys to present.
+Click the preview and use the arrow keys to present. Press P to see these
+notes in a second window.
 -->
 
 ---

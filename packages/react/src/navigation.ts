@@ -100,7 +100,8 @@ export type KeyCommand =
   /** `Enter` after a slide number. 0-based. */
   | { type: "goToSlide"; slide: number }
   | { type: "fullscreen" }
-  | { type: "overview" };
+  | { type: "overview" }
+  | { type: "presenter" };
 
 /**
  * Maps a key press to a command, given the slide number typed so far.
@@ -131,6 +132,7 @@ export function getKeyCommand(
   }
   if (key === "f" || key === "F") return { type: "fullscreen" };
   if (key === "o" || key === "O") return { type: "overview" };
+  if (key === "p" || key === "P") return { type: "presenter" };
 
   if (key === " ") {
     if (targetElement(event)?.closest(ACTIVATES_ON_SPACE)) return undefined;
@@ -225,8 +227,13 @@ function isForeignKey(event: KeyLike): boolean {
 }
 
 function targetElement(event: { target: EventTarget | null }): Element | null {
-  return event.target instanceof Element ? event.target : null;
+  // Not `instanceof Element`: an element in another window, such as the
+  // presenter window, is an instance of that window's `Element`.
+  const target = event.target as Partial<Node> | null;
+  return target?.nodeType === ELEMENT_NODE ? (target as Element) : null;
 }
+
+const ELEMENT_NODE = 1;
 
 /** The parts of a pointer event that swiping looks at. */
 export interface PointerLike {

@@ -27,8 +27,11 @@ export function useElementSize(): [RefCallback<HTMLElement>, Size | null] {
     };
     update();
 
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(update);
+    // An observer from another window, such as the one that opened the
+    // presenter window, never reports on this element.
+    const Observer = element.ownerDocument.defaultView?.ResizeObserver;
+    if (!Observer) return;
+    const observer = new Observer(update);
     observer.observe(element);
     return () => observer.disconnect();
   }, []);

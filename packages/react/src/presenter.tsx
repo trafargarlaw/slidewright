@@ -369,20 +369,24 @@ interface TimerState {
 
 /** Time since the presenter opened, with pause and reset. */
 function Timer() {
+  const ref = useRef<HTMLDivElement>(null);
   const [timer, setTimer] = useState<TimerState>(() => {
     const now = Date.now();
     return { started: now, banked: 0, now };
   });
   const running = timer.started !== null;
 
-  // Wakes up when the shown second changes.
+  // Wakes up when the shown second changes. The window the timer is in
+  // keeps time: in a presenter window, the audience's window may be hidden
+  // behind it, and browsers slow down the timers of hidden pages.
   useEffect(() => {
     if (timer.started === null) return;
-    const id = setTimeout(
+    const view = ref.current?.ownerDocument.defaultView ?? window;
+    const id = view.setTimeout(
       () => setTimer((timer) => ({ ...timer, now: Date.now() })),
       1000 - (elapsedTime(timer) % 1000),
     );
-    return () => clearTimeout(id);
+    return () => view.clearTimeout(id);
   }, [timer]);
 
   const toggle = () =>
@@ -399,7 +403,11 @@ function Timer() {
     });
 
   return (
-    <div data-presenter-timer="" data-paused={running ? undefined : ""}>
+    <div
+      ref={ref}
+      data-presenter-timer=""
+      data-paused={running ? undefined : ""}
+    >
       <span role="timer" aria-label="Elapsed time">
         {formatElapsed(elapsedTime(timer))}
       </span>

@@ -241,11 +241,12 @@ describe("navigation", () => {
     expect(document.querySelector("[data-deck-typed]")).toBeNull();
   });
 
-  it("leaves the overview and fullscreen keys alone", () => {
+  it("leaves the overview, fullscreen and presenter keys alone", () => {
     render(<Presenter markdown={TALK} />);
 
     expect(press("o")).toBe(true);
     expect(press("f")).toBe(true);
+    expect(press("p")).toBe(true);
     expect(press("ArrowRight")).toBe(false);
   });
 

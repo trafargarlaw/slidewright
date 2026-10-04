@@ -3,7 +3,8 @@
 Renders Markdown decks in React. Pass a string, get a presentation: one slide
 at a time, scaled to fit its container, with step reveals, syntax-highlighted
 code, keyboard and touch navigation, an overview of every slide, fullscreen,
-and a presenter view with notes and a timer.
+and a presenter view with notes and a timer, on the page or in a second
+window.
 
 The deck follows its `markdown` prop. Edit the source and the deck
 re-renders in place, staying on the current slide and step, so it works for
@@ -31,23 +32,24 @@ server; code is highlighted after hydration.
 
 ## Props
 
-| Prop               | Default   | Description                                                                                                    |
-| ------------------ | --------- | -------------------------------------------------------------------------------------------------------------- |
-| `markdown`         |           | The deck source.                                                                                               |
-| `position`         |           | `{ slide, step }` for a controlled deck. Use with `onPositionChange`.                                          |
-| `defaultPosition`  | `{0, 0}`  | Starting position for an uncontrolled deck.                                                                    |
-| `onPositionChange` |           | Called with the new position on every navigation.                                                              |
-| `hash`             | `false`   | Keeps the position in the URL hash. See [URL hash](#url-hash).                                                 |
-| `layouts`          |           | Extra layouts by name. A built-in name replaces the built-in layout.                                           |
-| `components`       |           | Components for `:::name` and `::name` directives, by name.                                                     |
-| `compileOptions`   |           | Sanitising and remark/rehype plugins, passed to the compiler. Keep the object stable.                          |
-| `colorScheme`      |           | `light`, `dark` or `auto`. Overrides the deck's headmatter.                                                    |
-| `keyboard`         | `"focus"` | `"focus"`: keys work while the deck has focus. `"global"`: anywhere. `false`: off.                             |
-| `swipe`            | `true`    | Swipe left and right on touch screens to navigate.                                                             |
-| `controls`         | `true`    | Previous, next, overview and fullscreen buttons, slide counter and progress bar.                               |
-| `className`        |           | Class on the deck's root element.                                                                              |
-| `style`            |           | Style on the deck's root element.                                                                              |
-| `ref`              |           | A `DeckHandle`: `next()`, `prev()`, `goTo(slide, step?)`, `focus()`, `toggleOverview()`, `toggleFullscreen()`. |
+| Prop               | Default   | Description                                                                                                                         |
+| ------------------ | --------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `markdown`         |           | The deck source.                                                                                                                    |
+| `position`         |           | `{ slide, step }` for a controlled deck. Use with `onPositionChange`.                                                               |
+| `defaultPosition`  | `{0, 0}`  | Starting position for an uncontrolled deck.                                                                                         |
+| `onPositionChange` |           | Called with the new position on every navigation.                                                                                   |
+| `hash`             | `false`   | Keeps the position in the URL hash. See [URL hash](#url-hash).                                                                      |
+| `layouts`          |           | Extra layouts by name. A built-in name replaces the built-in layout.                                                                |
+| `components`       |           | Components for `:::name` and `::name` directives, by name.                                                                          |
+| `compileOptions`   |           | Sanitising and remark/rehype plugins, passed to the compiler. Keep the object stable.                                               |
+| `colorScheme`      |           | `light`, `dark` or `auto`. Overrides the deck's headmatter.                                                                         |
+| `keyboard`         | `"focus"` | `"focus"`: keys work while the deck has focus. `"global"`: anywhere. `false`: off.                                                  |
+| `swipe`            | `true`    | Swipe left and right on touch screens to navigate.                                                                                  |
+| `presenter`        | `true`    | `P` and a button open the presenter view in a second window. See [Presenter window](#presenter-window).                             |
+| `controls`         | `true`    | Previous, next, overview, presenter and fullscreen buttons, slide counter and progress bar.                                         |
+| `className`        |           | Class on the deck's root element.                                                                                                   |
+| `style`            |           | Style on the deck's root element.                                                                                                   |
+| `ref`              |           | A `DeckHandle`: `next()`, `prev()`, `goTo(slide, step?)`, `focus()`, `toggleOverview()`, `toggleFullscreen()`, `togglePresenter()`. |
 
 Positions are 0-based and clamped to the deck. When slides are removed while
 editing, an uncontrolled deck shows the last slide that still exists and
@@ -75,6 +77,7 @@ const [position, setPosition] = useState({ slide: 0, step: 0 });
 | A number, then `Enter`       | Go to that slide                        |
 | `O`                          | Open or close the overview              |
 | `F`                          | Enter or leave fullscreen               |
+| `P`                          | Open or close the presenter window      |
 
 While a number is being typed, the counter shows it; `Backspace` corrects it
 and `Escape` cancels it. Keys typed into inputs, text areas and editable
@@ -126,8 +129,8 @@ const [position, setPosition] = useState({ slide: 0, step: 0 });
 ```
 
 It takes the deck's props for the source, position, layouts, components,
-compiling, colour scheme, keyboard and styling, and the same keys, except `O`
-and `F`, which stay with the deck.
+compiling, colour scheme, keyboard and styling, and the same keys, except `O`,
+`F` and `P`, which stay with the deck.
 
 The preview shows the next step of the current slide, or the next slide once
 every step is revealed. Notes divided by `[step]` lines (see
@@ -142,6 +145,23 @@ it the window's height and let it take keys from anywhere:
 ```tsx
 <Presenter markdown={markdown} keyboard="global" style={{ height: "100dvh" }} />
 ```
+
+### Presenter window
+
+Press `P` on a deck, or use its presenter button, to open the presenter view
+in a second window, for a second screen. The deck and the window move
+together, and keys work in either. `P` or the button again closes the
+window, and it closes with the page.
+
+The window copies the page's stylesheets, the `<link rel="stylesheet">` and
+`<style>` elements in its head, and the attributes of its `<html>` element,
+such as a dark mode class, and follows changes to them. Rules added through
+`insertRule`, as some CSS-in-JS libraries do in production, are not copied.
+
+Browsers only open windows in response to a click or key press, and a popup
+blocker may still stop it. `presenter={false}` removes the key and the
+button; `togglePresenter()` on the deck's `ref` still opens the window, from
+a button of your own.
 
 ## Layouts
 

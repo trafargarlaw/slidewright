@@ -47,7 +47,7 @@ welcome.
 
 - [x] Navigation: keyboard (scoped when embedded), touch, URL sync, overview
       grid, go-to-slide, fullscreen, aspect ratios
-- [ ] Presenter mode: notes, next-slide preview, timer, synced windows
+- [x] Presenter mode: notes, next-slide preview, timer, synced windows
 - [ ] Complete layout set and custom layouts
 - [ ] Code: line numbers, diff and focus notation, titles
 - [ ] Vite plugin and CLI (`dev`, `build`), project template
