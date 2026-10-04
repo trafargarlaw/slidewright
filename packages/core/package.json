@@ -1,0 +1,46 @@
+{
+  "name": "@react-slides/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Parse Markdown decks into slides and compile slides to HTML syntax trees.",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "@react-slides/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@types/hast": "^3.0.4",
+    "@types/mdast": "^4.0.4",
+    "hast-util-sanitize": "^5.0.2",
+    "mdast-util-directive": "^3.1.0",
+    "rehype-raw": "^7.0.0",
+    "rehype-sanitize": "^6.0.0",
+    "remark-directive": "^4.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.1.0",
+    "vfile": "^6.0.3",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "hast-util-to-html": "^9.0.5",
+    "tsdown": "^0.23.0",
+    "vitest": "^5.0.3"
+  }
+}

@@ -31,6 +31,7 @@ Run the same checks CI runs:
 bun run lint
 bun run fmt:check
 bun run typecheck
+bun run test
 bun run build
 ```
 

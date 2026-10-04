@@ -38,7 +38,7 @@ welcome.
 ### 0 — Foundation
 
 - [x] Monorepo, CI, licence and contributor docs
-- [ ] `core`: one parser for browser and Node, a written syntax spec, tests
+- [x] `core`: one parser for browser and Node, a written syntax spec, tests
 - [ ] `react`: reactive `<Deck>`, layouts, step reveals, code highlighting,
       CSS-variable themes
 - [ ] Playground switched to the new packages

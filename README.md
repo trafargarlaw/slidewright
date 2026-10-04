@@ -18,11 +18,11 @@ Write presentations in Markdown, render them with React.
 
 ## Repository layout
 
-| Path              | What it is                                        |
-| ----------------- | ------------------------------------------------- |
-| `packages/*`      | Publishable libraries (parser, React renderer, …) |
-| `apps/playground` | Browser editor with live preview                  |
-| `docs/`           | Roadmap and design notes                          |
+| Path              | What it is                                  |
+| ----------------- | ------------------------------------------- |
+| `packages/core`   | Deck parser and slide compiler (no React)   |
+| `apps/playground` | Browser editor with live preview            |
+| `docs/`           | [Syntax reference](docs/syntax.md), roadmap |
 
 ## Development
 
@@ -32,6 +32,7 @@ Requires [Bun](https://bun.sh) 1.3+.
 bun install
 bun run dev        # start the playground on http://localhost:3000
 bun run typecheck  # type-check every workspace
+bun run test       # run unit tests
 bun run lint       # oxlint
 bun run fmt        # oxfmt
 bun run build      # build every workspace
