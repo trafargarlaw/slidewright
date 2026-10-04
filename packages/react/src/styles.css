@@ -48,6 +48,8 @@
     --deck-code-token-parameter: light-dark(#953800, #ffa657);
     --deck-code-token-punctuation: light-dark(#57606a, #8b949e);
     --deck-code-token-link: light-dark(#0969da, #58a6ff);
+    --deck-code-added: light-dark(#1a7f37, #3fb950);
+    --deck-code-removed: light-dark(#cf222e, #f85149);
   }
 
   [data-deck][data-color-scheme="dark"] {
@@ -776,7 +778,11 @@
     tab-size: 2;
   }
 
+  /* As wide as the longest line, so line backgrounds span the whole block. */
   [data-code] code {
+    display: block;
+    width: max-content;
+    min-width: 100%;
     font: inherit;
   }
 
@@ -802,6 +808,38 @@
     counter-increment: line;
     opacity: 0.7;
     user-select: none;
+  }
+
+  [data-code] [data-diff-marker] {
+    display: inline-block;
+    width: 2ch;
+    user-select: none;
+  }
+
+  /* Changed lines are coloured across the full width of the block. */
+  [data-code] [data-line-diff] {
+    display: inline-block;
+    box-sizing: border-box;
+    min-width: calc(100% + 2.4em);
+    margin: 0 -1.2em;
+    padding: 0 1.2em;
+    vertical-align: top;
+  }
+
+  [data-code] [data-line-diff="added"] {
+    background: color-mix(in srgb, var(--deck-code-added) 14%, transparent);
+  }
+
+  [data-code] [data-line-diff="removed"] {
+    background: color-mix(in srgb, var(--deck-code-removed) 14%, transparent);
+  }
+
+  [data-line-diff="added"] [data-diff-marker] {
+    color: var(--deck-code-added);
+  }
+
+  [data-line-diff="removed"] [data-diff-marker] {
+    color: var(--deck-code-removed);
   }
 
   /* Layouts ---------------------------------------------------------------- */

@@ -323,20 +323,21 @@ Theme a deck with custom properties on `[data-deck]` or any parent:
 }
 ```
 
-| Property                                  | Controls                                 |
-| ----------------------------------------- | ---------------------------------------- |
-| `--deck-bg`, `--deck-fg`, `--deck-muted`  | Slide background, text, secondary text   |
-| `--deck-accent`                           | Links, focus ring, progress, quotes      |
-| `--deck-border`, `--deck-surface`         | Rules and tables; code backgrounds       |
-| `--deck-backdrop`                         | Letterbox around the slide               |
-| `--deck-font-sans`, `--deck-font-heading` | Body and heading fonts                   |
-| `--deck-font-mono`                        | Code font                                |
-| `--deck-font-size`, `--deck-line-height`  | Base text size on the canvas             |
-| `--deck-padding`, `--deck-radius`         | Slide padding, corner radius             |
-| `--deck-step-duration`                    | Reveal animation (0 with reduced motion) |
-| `--deck-dim-opacity`                      | Opacity of lines not highlighted in code |
-| `--deck-notes-font-size`                  | Notes text in the presenter view         |
-| `--deck-code-token-*`                     | Syntax colours (`keyword`, `string`, …)  |
+| Property                                   | Controls                                 |
+| ------------------------------------------ | ---------------------------------------- |
+| `--deck-bg`, `--deck-fg`, `--deck-muted`   | Slide background, text, secondary text   |
+| `--deck-accent`                            | Links, focus ring, progress, quotes      |
+| `--deck-border`, `--deck-surface`          | Rules and tables; code backgrounds       |
+| `--deck-backdrop`                          | Letterbox around the slide               |
+| `--deck-font-sans`, `--deck-font-heading`  | Body and heading fonts                   |
+| `--deck-font-mono`                         | Code font                                |
+| `--deck-font-size`, `--deck-line-height`   | Base text size on the canvas             |
+| `--deck-padding`, `--deck-radius`          | Slide padding, corner radius             |
+| `--deck-step-duration`                     | Reveal animation (0 with reduced motion) |
+| `--deck-dim-opacity`                       | Opacity of lines not highlighted in code |
+| `--deck-notes-font-size`                   | Notes text in the presenter view         |
+| `--deck-code-token-*`                      | Syntax colours (`keyword`, `string`, …)  |
+| `--deck-code-added`, `--deck-code-removed` | Added and removed lines in diffs         |
 
 Colours use `light-dark()`, so a theme can define both schemes in one value.
 
@@ -355,6 +356,8 @@ adds data attributes for everything else:
 | `[data-step-state]`     | Step content: `future`, `current` or `past`  |
 | `[data-code]`           | Code block figure                            |
 | `[data-line-state]`     | Code line: `highlighted` or `dimmed`         |
+| `[data-line-diff]`      | Code line: `added` or `removed`              |
+| `[data-diff-marker]`    | The `+` or `-` before a diff line            |
 | `[data-deck-controls]`  | Previous/next buttons and counter            |
 | `[data-deck-progress]`  | Progress bar                                 |
 | `[data-deck-overview]`  | Overview grid                                |

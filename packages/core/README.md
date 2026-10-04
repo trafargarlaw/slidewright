@@ -40,23 +40,27 @@ createCompiler({
 
 The compiled tree is plain hast with these annotations:
 
-| Where            | Property                  | Meaning                                                   |
-| ---------------- | ------------------------- | --------------------------------------------------------- |
-| Any element      | `dataStep`                | Visible once the current step is at least this value.     |
-| `code` in `pre`  | `dataLang`                | Language from the fence.                                  |
-|                  | `dataHighlights`          | Resolved highlight stages; read with `parseHighlights()`. |
-|                  | `dataLineNumbers`         | First line number, when line numbers are on.              |
-|                  | `dataTitle`               | Title shown above the code.                               |
-|                  | `dataMeta`                | Raw fence meta, for custom renderers.                     |
-| Directive `div`s | `dataDirective`           | Directive name.                                           |
-|                  | `dataDirectiveKind`       | `container` or `leaf`.                                    |
-|                  | `dataDirectiveAttributes` | JSON object of the directive's attributes.                |
+| Where            | Property                  | Meaning                                                          |
+| ---------------- | ------------------------- | ---------------------------------------------------------------- |
+| Any element      | `dataStep`                | Visible once the current step is at least this value.            |
+| `code` in `pre`  | `dataLang`                | Language from the fence.                                         |
+|                  | `dataHighlights`          | Resolved highlight stages; read with `parseHighlights()`.        |
+|                  | `dataLineNumbers`         | First line number, when line numbers are on.                     |
+|                  | `dataTitle`               | Title shown above the code.                                      |
+|                  | `dataDiff`                | In `diff` blocks: changed lines; read with `parseLineChanges()`. |
+|                  | `dataMeta`                | Raw fence meta, for custom renderers.                            |
+| Directive `div`s | `dataDirective`           | Directive name.                                                  |
+|                  | `dataDirectiveKind`       | `container` or `leaf`.                                           |
+|                  | `dataDirectiveAttributes` | JSON object of the directive's attributes.                       |
 
 Attribute values set before raw HTML is parsed come back as strings, so read
 numbers with `Number(...)`.
 
 `getHighlightedLines(parseHighlights(value), step)` tells a code renderer
 which lines to emphasise at a given step.
+
+In a `diff` block the `+` and `-` markers are taken out of the code text.
+`parseLineChanges(value)` maps 1-based line numbers to `added` or `removed`.
 
 `getSlideAtLine(deck, line)` maps a source line (for example an editor
 cursor) to a slide index.

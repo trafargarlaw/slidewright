@@ -70,6 +70,22 @@ That's the whole outline.
 -->
 
 ---
+
+# Show what changed
+
+```ts diff title="outline.ts"
+ const deck = parseDeck(markdown);
+-const outline = deck.slides.map((slide) => slide.title);
++const outline = deck.slides.map(
++  (slide, index) => `${index + 1}. ${slide.title}`,
++);
+```
+
+<!-- notes
+Add `diff` after the language, then mark lines with + and -.
+-->
+
+---
 layout: two-cols
 ---
 

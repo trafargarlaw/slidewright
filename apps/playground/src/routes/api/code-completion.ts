@@ -41,7 +41,7 @@ LAYOUTS: default, center, cover, section, statement, fact, quote, full, two-cols
 SPECIAL SYNTAX:
 - \`<!-- step -->\` or \`<!-- step N -->\` reveals what follows on the next step
 - \`<!-- notes ... -->\` holds speaker notes
-- Code blocks: \`\`\`lang {1|2-3|all} lines title="file.ts"\`\`\` where \`|\` separates highlight steps
+- Code blocks: \`\`\`lang {1|2-3|all} lines title="file.ts"\`\`\` where \`|\` separates highlight steps; add \`diff\` to mark lines that start with \`+\` (added) or \`-\` (removed)
 - Directives: \`:::name\` ... \`:::\` wraps content (\`:::left\` and \`:::right\` are the two-cols columns); \`::name{key="value"}\` is a single line
 - Math: inline \`$...$\` and block \`$$...$$\`
 - Standard Markdown and HTML with \`class\` and \`style\`

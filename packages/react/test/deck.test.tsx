@@ -894,6 +894,28 @@ const b = 2;
       "const a = 1;\nconst b = 2;",
     );
   });
+
+  it("marks added and removed lines", () => {
+    render(<Deck markdown={"```ts diff\nlet a\n-a = 1\n+a = 2\n```"} />);
+    const lines = [...document.querySelectorAll("[data-line]")];
+
+    expect(lines.map((line) => line.getAttribute("data-line-diff"))).toEqual([
+      null,
+      "removed",
+      "added",
+    ]);
+    // Unchanged lines get an empty marker, so the code stays aligned.
+    expect(
+      lines.map(
+        (line) => line.querySelector("[data-diff-marker]")?.textContent,
+      ),
+    ).toEqual(["", "-", "+"]);
+    expect(lines.map((line) => line.textContent)).toEqual([
+      "let a",
+      "-a = 1",
+      "+a = 2",
+    ]);
+  });
 });
 
 describe("errors", () => {

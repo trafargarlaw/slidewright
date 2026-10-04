@@ -204,6 +204,7 @@ Other options go after the language, in any order:
 | `{…}`          | Highlight stages (see above).                        |
 | `lines`        | Show line numbers. `lines=10` starts counting at 10. |
 | `title="name"` | Show a title, such as a file name, above the code.   |
+| `diff`         | Mark lines as added (`+`) or removed (`-`).          |
 
 ````md
 ```ts {2} lines title="server.ts"
@@ -211,6 +212,28 @@ import { serve } from "./http";
 serve({ port: 3000 });
 ```
 ````
+
+### Diffs
+
+In a `diff` block, a `+` or `-` at the start of a line marks it as added or
+removed. The marker is taken out of the code, so the language's syntax colours
+still apply, and the renderer shows it beside the line.
+
+````md
+```ts diff
+function greet(name: string) {
+-  return "Hello " + name;
++  return `Hello, ${name}!`;
+}
+```
+````
+
+- Lines from `git diff` can be pasted as they are: when every unchanged line
+  starts with a space, that space is removed too. Leave out the `@@` and file
+  header lines.
+- Every line that starts with `+` or `-` is a change. To show an unchanged
+  line such as `-1`, start each unchanged line with a space.
+- Line numbers and `{…}` stages count every line, removed lines included.
 
 ## Directives
 

@@ -131,6 +131,22 @@ describe("code blocks", () => {
     expect(code.properties.dataHighlights).toBe("0:2,4");
     expect(steps).toBe(0);
   });
+
+  it("moves diff markers out of the code", () => {
+    const { code } = codeOf("```ts diff {2}\nlet a\n-a = 1\n+a = 2\n```");
+    expect(code.properties).toMatchObject({
+      dataDiff: "added:3|removed:2",
+      // Removed lines count towards highlight ranges.
+      dataHighlights: "0:2",
+    });
+    expect(toHtml(code.children)).toBe("let a\na = 1\na = 2\n");
+  });
+
+  it("keeps + and - in code without diff", () => {
+    const { code } = codeOf("```ts\n-a\n+b\n```");
+    expect(code.properties.dataDiff).toBeUndefined();
+    expect(toHtml(code.children)).toBe("-a\n+b\n");
+  });
 });
 
 describe("directives", () => {

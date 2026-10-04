@@ -13,6 +13,8 @@ export interface CodeMeta {
   /** First line number when line numbers are on. */
   lineNumbers?: number;
   title?: string;
+  /** Lines start with `+` or `-` diff markers. */
+  diff?: boolean;
 }
 
 const META_TOKEN = /([A-Za-z][\w-]*)(?:=(?:"([^"]*)"|'([^']*)'|(\S+)))?/g;
@@ -21,7 +23,7 @@ const META_TOKEN = /([A-Za-z][\w-]*)(?:=(?:"([^"]*)"|'([^']*)'|(\S+)))?/g;
  * Parses a code fence's meta string:
  *
  * ```text
- * ts {1|3-5|all} lines title="app.ts"
+ * ts {1|3-5|all} lines title="app.ts" diff
  *    └ highlight  └ line numbers (or lines=10 to start at 10)
  * ```
  */
@@ -43,6 +45,8 @@ export function parseCodeMeta(meta: string | null | undefined): CodeMeta {
       if (Number.isInteger(start)) result.lineNumbers = start;
     } else if (key === "title" && value !== undefined) {
       result.title = value;
+    } else if (key === "diff" && value === undefined) {
+      result.diff = true;
     }
   }
   return result;
@@ -108,7 +112,7 @@ export function getHighlightedLines(
   return active.lines === "all" ? "all" : new Set(active.lines);
 }
 
-function parseLines(text: string): number[] | "all" | undefined {
+export function parseLines(text: string): number[] | "all" | undefined {
   const trimmed = text.trim();
   if (trimmed === "all" || trimmed === "*") return "all";
 
@@ -130,7 +134,7 @@ function parseLines(text: string): number[] | "all" | undefined {
   return lines.length > 0 ? lines : undefined;
 }
 
-function formatLines(lines: number[] | "all"): string {
+export function formatLines(lines: number[] | "all"): string {
   if (lines === "all") return "all";
 
   const sorted = [...new Set(lines)].sort((a, b) => a - b);

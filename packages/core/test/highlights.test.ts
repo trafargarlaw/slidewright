@@ -3,16 +3,17 @@ import { parseAspectRatio } from "../src/config";
 import { parseCodeMeta, parseHighlightSpec } from "../src/highlights";
 
 describe("parseCodeMeta", () => {
-  it("reads highlights, line numbers and titles in any order", () => {
-    expect(parseCodeMeta(`title='a b.ts' lines {1|2}`)).toEqual({
+  it("reads highlights, line numbers, titles and diff in any order", () => {
+    expect(parseCodeMeta(`title='a b.ts' diff lines {1|2}`)).toEqual({
       highlight: "1|2",
       lineNumbers: 1,
       title: "a b.ts",
+      diff: true,
     });
   });
 
   it("ignores empty or unknown meta", () => {
-    expect(parseCodeMeta("{} wrap foo=bar")).toEqual({});
+    expect(parseCodeMeta("{} wrap foo=bar diff=no")).toEqual({});
     expect(parseCodeMeta(undefined)).toEqual({});
   });
 });

@@ -1,4 +1,9 @@
-import { getHighlightedLines, parseHighlights } from "@slidewright/core";
+import {
+  getHighlightedLines,
+  parseHighlights,
+  parseLineChanges,
+  type LineChange,
+} from "@slidewright/core";
 import type { Element, ElementContent } from "hast";
 import { Fragment, type ComponentProps, type CSSProperties } from "react";
 import type { ThemedToken } from "shiki";
@@ -8,9 +13,9 @@ import { useTokens } from "./highlighter";
 type PreProps = ComponentProps<"pre"> & { node?: Element };
 
 /**
- * Renders a fenced code block: optional title, line numbers, and per-step
- * line highlighting. Plain text renders immediately (and on the server);
- * syntax colours follow once the highlighter has loaded.
+ * Renders a fenced code block: optional title, line numbers, diff markers and
+ * per-step line highlighting. Plain text renders immediately (and on the
+ * server); syntax colours follow once the highlighter has loaded.
  */
 export function CodeBlock({ node, children, ...rest }: PreProps) {
   const { step } = useSlideContext();
@@ -35,6 +40,7 @@ export function CodeBlock({ node, children, ...rest }: PreProps) {
       ? undefined
       : Number(properties.dataLineNumbers);
   const numbered = firstLine !== undefined && Number.isInteger(firstLine);
+  const changes = parseLineChanges(stringProperty(properties.dataDiff) ?? "");
 
   return (
     <figure data-code="" {...rest}>
@@ -47,13 +53,20 @@ export function CodeBlock({ node, children, ...rest }: PreProps) {
         <code>
           {text.split("\n").map((line, index) => {
             const lineTokens = tokens?.[index];
+            const change = changes.get(index + 1);
             return (
               <Fragment key={index}>
                 {index > 0 ? "\n" : null}
                 <span
                   data-line=""
                   data-line-state={lineState(active, index + 1)}
+                  data-line-diff={change}
                 >
+                  {changes.size > 0 ? (
+                    <span data-diff-marker="">
+                      {change ? DIFF_MARKERS[change] : null}
+                    </span>
+                  ) : null}
                   {lineTokens ? lineTokens.map(renderToken) : line}
                 </span>
               </Fragment>
@@ -64,6 +77,8 @@ export function CodeBlock({ node, children, ...rest }: PreProps) {
     </figure>
   );
 }
+
+const DIFF_MARKERS: Record<LineChange, string> = { added: "+", removed: "-" };
 
 function lineState(
   active: Set<number> | "all" | null,

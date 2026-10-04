@@ -49,7 +49,7 @@ welcome.
       grid, go-to-slide, fullscreen, aspect ratios
 - [x] Presenter mode: notes, next-slide preview, timer, synced windows
 - [x] Complete layout set and custom layouts
-- [ ] Code: line numbers, diff and focus notation, titles
+- [x] Code: line numbers, diff and focus notation, titles
 - [ ] Vite plugin and CLI (`dev`, `build`), project template
 - [ ] Export to PDF and PNG
 - [ ] Documentation site and examples

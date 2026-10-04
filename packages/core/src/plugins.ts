@@ -3,6 +3,7 @@ import type { Root as MdastRoot, Text } from "mdast";
 import type { Directives } from "mdast-util-directive";
 import { SKIP, visit } from "unist-util-visit";
 import type { VFile } from "vfile";
+import { formatLineChanges, stripDiffMarkers } from "./diff";
 import {
   formatHighlights,
   parseCodeMeta,
@@ -73,7 +74,11 @@ export function remarkDirectiveElements() {
   };
 }
 
-/** Copies code fence meta (highlights, line numbers, title) onto the `code` element. */
+/**
+ * Copies code fence meta (highlights, line numbers, title) onto the `code`
+ * element. In a `diff` block, the `+` and `-` markers move from the code to
+ * `data-diff`.
+ */
 export function remarkCodeMeta() {
   return (tree: MdastRoot) => {
     visit(tree, "code", (node) => {
@@ -87,6 +92,11 @@ export function remarkCodeMeta() {
         properties.dataLineNumbers = meta.lineNumbers;
       }
       if (meta.title !== undefined) properties.dataTitle = meta.title;
+      if (meta.diff) {
+        const { code, changes } = stripDiffMarkers(node.value);
+        node.value = code;
+        properties.dataDiff = formatLineChanges(changes);
+      }
 
       const data = (node.data ??= {}) as HastData;
       data.hProperties = { ...data.hProperties, ...properties };
