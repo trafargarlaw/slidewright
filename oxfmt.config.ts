@@ -10,6 +10,6 @@ export default defineConfig({
     "apps/playground/**",
     "bun.lock",
     "**/slides.md",
-    "apps/docs/src/decks/**",
+    "apps/docs/decks/**",
   ],
 });

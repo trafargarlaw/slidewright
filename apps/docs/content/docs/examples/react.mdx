@@ -1,0 +1,40 @@
+---
+title: React app
+description: A deck in a React app, with a live editor, a custom layout and a directive component.
+---
+
+import { ExampleEditor } from "@/components/examples";
+
+`<Deck>` in a React app, beside a text area with its Markdown. The deck
+changes as you type, and shows the slide under the cursor. Its second slide
+uses a custom layout, and its third a component for the `:::callout`
+directive.
+
+<ExampleEditor deck="examples/react/src/slides.md" parts />
+
+## Source
+
+The app keeps the Markdown and the position in its state. `getSlideAtLine`
+from `@slidewright/core` finds the slide under the cursor:
+
+<include cwd lang="tsx" meta='title="examples/react/src/app.tsx"'>
+  ../../examples/react/src/app.tsx
+</include>
+
+The layout and the component, and the CSS that arranges them:
+
+<include cwd lang="tsx" meta='title="examples/react/src/parts.tsx"'>
+  ../../examples/react/src/parts.tsx
+</include>
+
+<include cwd lang="css" meta='title="examples/react/src/parts.css"'>
+  ../../examples/react/src/parts.css
+</include>
+
+<include cwd lang="md" meta='title="examples/react/src/slides.md"'>
+  ../../examples/react/src/slides.md
+</include>
+
+To start the app, run `bun run react` in the
+[`examples` folder](https://github.com/trafargarlaw/react-slides/tree/master/examples).
+See the [`@slidewright/react` reference](/docs/reference/react) for every prop.

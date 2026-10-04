@@ -1,6 +1,9 @@
-.astro
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
 
-# Copied from elsewhere in the repository by src/sync.ts.
-src/content/docs/reference/
-src/content/docs/roadmap.md
-public/hills.svg
+# Copied from elsewhere in the repository by lib/sync.ts.
+/content/docs/reference/*.md
+/content/docs/roadmap.md
+/public/hills.svg

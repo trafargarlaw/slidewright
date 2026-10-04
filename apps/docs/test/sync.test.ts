@@ -1,14 +1,14 @@
 import GithubSlugger from "github-slugger";
 import {
   existsSync,
-  mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
   rmSync,
+  statSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, relative } from "node:path";
+import { join, posix, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import {
@@ -18,7 +18,7 @@ import {
   rewriteLinks,
   sync,
   toPage,
-} from "../src/sync";
+} from "../lib/sync";
 
 const site = fileURLToPath(new URL("..", import.meta.url));
 const repository = join(site, "..", "..");
@@ -32,7 +32,6 @@ describe("toPage", () => {
         "# Generated from docs/guide.md. Edit that file instead.",
         'title: "The guide"',
         'description: "About it"',
-        `editUrl: ${REPOSITORY}/edit/master/docs/guide.md`,
         "---",
         "",
         "Text.",
@@ -60,16 +59,16 @@ describe("rewriteLinks", () => {
 
   it("points links to synced files at their pages", () => {
     expect(rewrite("See [steps](../../docs/syntax.md#steps).")).toBe(
-      "See [steps](/reference/syntax/#steps).",
+      "See [steps](/docs/reference/syntax#steps).",
     );
     expect(rewrite("[Roadmap](../../docs/ROADMAP.md)")).toBe(
-      "[Roadmap](/roadmap/)",
+      "[Roadmap](/docs/roadmap)",
     );
   });
 
   it("points links to a package folder at its README's page", () => {
     expect(rewrite("[cli](../cli) and [core](../core/#api)")).toBe(
-      "[cli](/reference/cli/) and [core](/reference/core/#api)",
+      "[cli](/docs/reference/cli) and [core](/docs/reference/core#api)",
     );
   });
 
@@ -84,13 +83,13 @@ describe("rewriteLinks", () => {
 
   it("keeps URLs, site paths and anchors", () => {
     const markdown =
-      "[a](https://example.com/x.md) [b](mailto:a@b.c) [c](/start/) [d](#usage)";
+      "[a](https://example.com/x.md) [b](mailto:a@b.c) [c](/docs) [d](#usage)";
     expect(rewrite(markdown)).toBe(markdown);
   });
 
   it("keeps titles and bracketed link text", () => {
     expect(rewrite('[the [`Deck`] docs](../core "Core")')).toBe(
-      '[the [`Deck`] docs](/reference/core/ "Core")',
+      '[the [`Deck`] docs](/docs/reference/core "Core")',
     );
   });
 
@@ -110,7 +109,7 @@ describe("rewriteLinks", () => {
       "[after](../cli)",
     ].join("\n");
     expect(rewrite(markdown)).toBe(
-      markdown.replace("[after](../cli)", "[after](/reference/cli/)"),
+      markdown.replace("[after](../cli)", "[after](/docs/reference/cli)"),
     );
   });
 });
@@ -150,7 +149,6 @@ describe("sync", () => {
 
   it("writes every page and asset, and returns the files it read", () => {
     target = mkdtempSync(join(tmpdir(), "slidewright-docs-"));
-    mkdirSync(join(target, "public"));
     const read = sync(repository, target).map((file) =>
       relative(repository, file),
     );
@@ -160,31 +158,46 @@ describe("sync", () => {
       "examples/layouts/public/hills.svg",
     ]);
     for (const route of Object.keys(PAGES)) {
-      expect(existsSync(join(target, "src/content/docs", `${route}.md`))).toBe(
+      expect(existsSync(join(target, "content/docs", `${route}.md`))).toBe(
         true,
       );
     }
     expect(existsSync(join(target, "public/hills.svg"))).toBe(true);
     expect(
-      readFileSync(join(target, "src/content/docs/reference/react.md"), "utf8"),
+      readFileSync(join(target, "content/docs/reference/react.md"), "utf8"),
     ).toMatch(/^description: ".+"$/m);
+  });
+
+  it("leaves unchanged files alone", () => {
+    target = mkdtempSync(join(tmpdir(), "slidewright-docs-"));
+    const page = join(target, "content/docs/reference/react.md");
+    sync(repository, target);
+    const written = statSync(page).mtimeMs;
+    sync(repository, target);
+    expect(statSync(page).mtimeMs).toBe(written);
   });
 });
 
-// The site's pages, by route: the synced ones, and the ones written for it.
+// The site's pages, by path: the home page, the synced pages, and the ones
+// written for the site.
 function sitePages(): Map<string, string> {
-  const pages = new Map<string, string>();
+  const pages = new Map<string, string>([
+    ["", readFileSync(join(site, "app", "(home)", "page.tsx"), "utf8")],
+  ]);
   for (const [route, source] of Object.entries(PAGES)) {
     pages.set(
-      route,
+      `docs/${route}`,
       toPage(source, readFileSync(join(repository, source), "utf8")),
     );
   }
-  const docs = join(site, "src", "content", "docs");
+  const docs = join(site, "content", "docs");
   for (const file of readdirSync(docs, { recursive: true, encoding: "utf8" })) {
     if (!file.endsWith(".mdx")) continue;
-    const route = file.replace(/\.mdx$/, "").replace(/^index$/, "");
-    pages.set(route, readFileSync(join(docs, file), "utf8"));
+    const route = file.replace(/(^|\/)index\.mdx$/, "").replace(/\.mdx$/, "");
+    pages.set(
+      posix.join("docs", route),
+      readFileSync(join(docs, file), "utf8"),
+    );
   }
   return pages;
 }
@@ -198,7 +211,7 @@ function prose(markdown: string): string[] {
     .map((line) => line.replace(/(?<!`)(`+)(?!`).*?(?<!`)\1(?!`)/g, ""));
 }
 
-/** The ids Starlight gives to the headings of a page. */
+/** The ids the site gives to the headings of a page. */
 function anchors(markdown: string): Set<string> {
   const slugger = new GithubSlugger();
   const ids = new Set<string>();
@@ -221,7 +234,7 @@ describe("site links", () => {
       const text = prose(markdown).join("\n");
       const links = [
         ...text.matchAll(/\]\(([/#][^)\s]*)/g),
-        ...text.matchAll(/^\s+link: (\/\S*)$/gm),
+        ...text.matchAll(/href="(\/[^"]*)"/g),
       ].map((match) => match[1]!);
 
       const broken = links.filter((link) => {

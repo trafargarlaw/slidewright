@@ -1,0 +1,24 @@
+---
+title: Code
+description: Code blocks with titles, line numbers, highlight stages and diffs.
+---
+
+import { ExampleDeck } from "@/components/examples";
+
+Code blocks with titles, line numbers, highlight stages and diffs. The
+"Walk through" slide highlights one line at each step, and its notes change
+with the steps: press <kbd>P</kbd> on that slide to see them.
+
+<ExampleDeck deck="examples/code/slides.md" />
+
+The options go after the language of a code block. See
+[Code blocks](/docs/reference/syntax#code-blocks) for every option.
+
+## Source
+
+<include cwd lang="md" meta='title="examples/code/slides.md"'>
+  ../../examples/code/slides.md
+</include>
+
+To present this deck, run `bun run dev code` in the
+[`examples` folder](https://github.com/trafargarlaw/react-slides/tree/master/examples).

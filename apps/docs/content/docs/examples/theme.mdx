@@ -1,0 +1,30 @@
+---
+title: Theme
+description: A deck with its own colours, fonts and a layout made with CSS.
+---
+
+import { ExampleDeck } from "@/components/examples";
+
+A deck with its own look. Everything comes from one stylesheet: colours for
+the light and dark schemes, a heading font, a layout made with CSS alone, a
+slide class, a styled directive and steps that slide up as they appear.
+
+<ExampleDeck deck="examples/theme/slides.md" css="examples/theme/style.css" />
+
+The stylesheet loads after the default theme, so its rules win without any
+extra specificity. See [Styling](/docs/reference/react#styling) for the theme
+properties and the selectors.
+
+## Source
+
+<include cwd lang="css" meta='title="examples/theme/style.css"'>
+  ../../examples/theme/style.css
+</include>
+
+<include cwd lang="md" meta='title="examples/theme/slides.md"'>
+  ../../examples/theme/slides.md
+</include>
+
+To present this deck, run `bun run dev theme` in the
+[`examples` folder](https://github.com/trafargarlaw/react-slides/tree/master/examples).
+A `style.css` next to a deck loads automatically.

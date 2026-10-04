@@ -1,16 +1,23 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["node", "vite/client", "astro/client"],
+    "allowJs": true,
+    "esModuleInterop": true,
+    "incremental": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
     "paths": {
+      "@/*": ["./*"],
       "@repo/*": ["../../*"]
-    }
+    },
+    "plugins": [{ "name": "next" }]
   },
   "include": [
-    ".astro/types.d.ts",
-    "src",
-    "test",
-    "astro.config.ts",
-    "vitest.config.ts"
-  ]
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
 }

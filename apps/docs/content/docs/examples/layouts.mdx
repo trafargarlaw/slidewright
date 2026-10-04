@@ -1,0 +1,34 @@
+---
+title: Layouts
+description: Every built-in layout, one slide each.
+---
+
+import { ExampleDeck } from "@/components/examples";
+
+Every built-in layout, one slide each. Click the deck and use the arrow keys,
+or press <kbd>O</kbd> to see every slide at once.
+
+<ExampleDeck
+  deck="examples/layouts/slides.md"
+  css="examples/layouts/style.css"
+/>
+
+A slide picks its layout with `layout:` in its frontmatter. The image layouts
+read the picture from `image:` and its description from `imageAlt:`. See
+[Layouts](/docs/reference/react#layouts) for what each layout does, and how to add
+your own.
+
+## Source
+
+<include cwd lang="md" meta='title="examples/layouts/slides.md"'>
+  ../../examples/layouts/slides.md
+</include>
+
+The `full` slide uses a class from the deck's stylesheet:
+
+<include cwd lang="css" meta='title="examples/layouts/style.css"'>
+  ../../examples/layouts/style.css
+</include>
+
+To present this deck, run `bun run dev layouts` in the
+[`examples` folder](https://github.com/trafargarlaw/react-slides/tree/master/examples).

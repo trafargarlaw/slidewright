@@ -1,19 +1,24 @@
 # Slidewright docs
 
-The documentation site, built with [Starlight](https://starlight.astro.build).
+The documentation site, built with [Fumadocs](https://fumadocs.dev) on Next.js
+and exported as a static site.
 
 ```sh
 # From the repository root:
 bun run docs                              # http://localhost:4321
-bun run --filter @slidewright/docs build  # a static site in dist/
+bun run --filter @slidewright/docs build  # a static site in out/
+bun run --filter @slidewright/docs start  # serves out/
 ```
 
-- `src/content/docs/` holds the pages written for the site. The decks on them
-  render with `@slidewright/react` from the workspace sources.
+- `content/docs/` holds the pages written for the site, under `/docs`. The
+  `meta.json` files set their order in the sidebar. The home page is
+  `app/(home)/page.tsx`.
+- The decks on the pages render with `@slidewright/react` from the workspace
+  sources. `components/examples.tsx` reads the example decks from the
+  repository when a page renders.
 - The reference pages and the roadmap are copied from `docs/` and the package
-  READMEs by `src/sync.ts` when the site starts or builds. Edit those files,
+  READMEs by `lib/sync.ts` when the site starts or builds. Edit those files,
   not the copies. The tests check that every link between pages lands on a
   page and heading that exist.
-- `satteri` is a direct dependency so the build can load its native binding:
-  Starlight uses it, and without the direct dependency Vite bundles it into
-  the build, where the binding can't be found.
+- The site name and links are in `lib/layout.shared.tsx`, and the repository
+  for the "Open in GitHub" links is in `lib/shared.ts`.

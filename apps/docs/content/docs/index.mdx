@@ -1,0 +1,118 @@
+---
+title: Getting started
+description: Make a deck, present it, share it, and put it in a React app.
+---
+
+import { ExampleEditor } from "@/components/examples";
+
+A Slidewright deck is one Markdown file. The `slidewright` command presents
+it in the browser, builds it into a static site and exports it to PDF.
+
+## Make a deck
+
+```sh tab="npm" tab-group="package-manager"
+npm create @slidewright my-talk
+cd my-talk
+npm install
+npm run dev
+```
+
+```sh tab="pnpm"
+pnpm create @slidewright my-talk
+cd my-talk
+pnpm install
+pnpm run dev
+```
+
+```sh tab="yarn"
+yarn create @slidewright my-talk
+cd my-talk
+yarn install
+yarn run dev
+```
+
+```sh tab="bun"
+bun create @slidewright my-talk
+cd my-talk
+bun install
+bun run dev
+```
+
+The project has a `slides.md` to edit and a `style.css` for the theme. The
+deck opens on [localhost:3030](http://localhost:3030). Save `slides.md` and
+the open deck changes at once, on the same slide.
+
+Requires Node.js 20.19, or 22.12 and later.
+
+## Write slides
+
+A line with only `---` starts a new slide. A YAML block at the top of a
+slide sets its layout and other settings. HTML comments hold step markers
+and speaker notes, so the file still reads well as plain Markdown.
+
+Try it here:
+
+<ExampleEditor deck="apps/docs/decks/first.md" />
+
+The [deck syntax](/docs/reference/syntax) lists everything a deck can do, and
+the [examples](/docs/examples/layouts) show it on slides.
+
+## Present
+
+| Keys                          | Action                             |
+| ----------------------------- | ---------------------------------- |
+| <kbd>→</kbd> <kbd>Space</kbd> | Next step, then next slide         |
+| <kbd>←</kbd>                  | Previous step                      |
+| <kbd>↓</kbd> <kbd>↑</kbd>     | Next or previous slide             |
+| <kbd>O</kbd>                  | Overview of every slide            |
+| <kbd>F</kbd>                  | Fullscreen                         |
+| <kbd>P</kbd>                  | Presenter view, in a second window |
+
+The presenter view shows your notes, the next slide and a timer. It stays in
+step with the deck in the first window.
+
+## Share
+
+```sh
+npm run build                # a static site in dist/, to host anywhere
+npx slidewright export       # slides.pdf
+npx slidewright export --format png
+```
+
+Export opens the deck in Chromium, so it needs Playwright:
+`npm install --save-dev playwright-chromium`. See the
+[CLI reference](/docs/reference/cli) for every option.
+
+## Use in a React app
+
+The deck renderer is a React component. It needs no build plugin.
+
+```sh tab="npm" tab-group="package-manager"
+npm install @slidewright/react
+```
+
+```sh tab="pnpm"
+pnpm add @slidewright/react
+```
+
+```sh tab="yarn"
+yarn add @slidewright/react
+```
+
+```sh tab="bun"
+bun add @slidewright/react
+```
+
+```tsx
+import { Deck } from "@slidewright/react";
+import "@slidewright/react/styles.css";
+
+export function Talk({ markdown }: { markdown: string }) {
+  return <Deck markdown={markdown} />;
+}
+```
+
+The deck re-renders when `markdown` changes and stays on the same slide and
+step. The editor above is such a deck. See the
+[`@slidewright/react` reference](/docs/reference/react) for layouts, components
+and styling, and the [React example](/docs/examples/react) for an app.
