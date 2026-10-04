@@ -2,7 +2,7 @@
 
 Renders Markdown decks in React. Pass a string, get a presentation: one slide
 at a time, scaled to fit its container, with step reveals, syntax-highlighted
-code and keyboard navigation.
+code, keyboard and touch navigation, and fullscreen.
 
 The deck follows its `markdown` prop. Edit the source and the deck
 re-renders in place, staying on the current slide and step, so it works for
@@ -30,21 +30,22 @@ server; code is highlighted after hydration.
 
 ## Props
 
-| Prop               | Default   | Description                                                                           |
-| ------------------ | --------- | ------------------------------------------------------------------------------------- |
-| `markdown`         |           | The deck source.                                                                      |
-| `position`         |           | `{ slide, step }` for a controlled deck. Use with `onPositionChange`.                 |
-| `defaultPosition`  | `{0, 0}`  | Starting position for an uncontrolled deck.                                           |
-| `onPositionChange` |           | Called with the new position on every navigation.                                     |
-| `layouts`          |           | Extra layouts by name. A built-in name replaces the built-in layout.                  |
-| `components`       |           | Components for `:::name` and `::name` directives, by name.                            |
-| `compileOptions`   |           | Sanitising and remark/rehype plugins, passed to the compiler. Keep the object stable. |
-| `colorScheme`      |           | `light`, `dark` or `auto`. Overrides the deck's headmatter.                           |
-| `keyboard`         | `"focus"` | `"focus"`: keys work while the deck has focus. `"global"`: anywhere. `false`: off.    |
-| `controls`         | `true`    | Previous and next buttons, slide counter and progress bar.                            |
-| `className`        |           | Class on the deck's root element.                                                     |
-| `style`            |           | Style on the deck's root element.                                                     |
-| `ref`              |           | A `DeckHandle`: `next()`, `prev()`, `goTo(slide, step?)`, `focus()`.                  |
+| Prop               | Default   | Description                                                                                |
+| ------------------ | --------- | ------------------------------------------------------------------------------------------ |
+| `markdown`         |           | The deck source.                                                                           |
+| `position`         |           | `{ slide, step }` for a controlled deck. Use with `onPositionChange`.                      |
+| `defaultPosition`  | `{0, 0}`  | Starting position for an uncontrolled deck.                                                |
+| `onPositionChange` |           | Called with the new position on every navigation.                                          |
+| `layouts`          |           | Extra layouts by name. A built-in name replaces the built-in layout.                       |
+| `components`       |           | Components for `:::name` and `::name` directives, by name.                                 |
+| `compileOptions`   |           | Sanitising and remark/rehype plugins, passed to the compiler. Keep the object stable.      |
+| `colorScheme`      |           | `light`, `dark` or `auto`. Overrides the deck's headmatter.                                |
+| `keyboard`         | `"focus"` | `"focus"`: keys work while the deck has focus. `"global"`: anywhere. `false`: off.         |
+| `swipe`            | `true`    | Swipe left and right on touch screens to navigate.                                         |
+| `controls`         | `true`    | Previous, next and fullscreen buttons, slide counter and progress bar.                     |
+| `className`        |           | Class on the deck's root element.                                                          |
+| `style`            |           | Style on the deck's root element.                                                          |
+| `ref`              |           | A `DeckHandle`: `next()`, `prev()`, `goTo(slide, step?)`, `focus()`, `toggleFullscreen()`. |
 
 Positions are 0-based and clamped to the deck. When slides are removed while
 editing, an uncontrolled deck shows the last slide that still exists and
@@ -69,9 +70,20 @@ const [position, setPosition] = useState({ slide: 0, step: 0 });
 | `←` `PageUp` `Shift`+`Space` | Previous step; previous slide, revealed |
 | `↓` / `↑`                    | Next / previous slide, skipping steps   |
 | `Home` / `End`               | First / last slide                      |
+| A number, then `Enter`       | Go to that slide                        |
+| `F`                          | Enter or leave fullscreen               |
 
-Keys typed into inputs, text areas and editable content on a slide are left
-alone.
+While a number is being typed, the counter shows it; `Backspace` corrects it
+and `Escape` cancels it. Keys typed into inputs, text areas and editable
+content on a slide are left alone.
+
+On touch screens, swipe left for the next step and right for the previous
+one. Vertical swipes still scroll the page.
+
+The fullscreen button only appears where the browser allows fullscreen:
+not on iPhones, which only allow it for videos, and in an iframe only with
+`allow="fullscreen"`. In fullscreen, the controls stay hidden until the
+pointer reaches them.
 
 ## Layouts
 

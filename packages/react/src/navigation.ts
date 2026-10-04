@@ -73,12 +73,16 @@ const KEY_ACTIONS: Partial<Record<string, NavigationAction>> = {
   End: "last",
 };
 
+// Enough for any deck; further digits are ignored.
+const MAX_SLIDE_DIGITS = 4;
+
 // Elements that need these keys for themselves.
 const TEXT_ENTRY =
   "input, textarea, select, [contenteditable]:not([contenteditable='false'])";
 const ACTIVATES_ON_SPACE = "button, a[href], summary, [role='button']";
 
-interface KeyLike {
+/** The parts of a keyboard event that navigation looks at. */
+export interface KeyLike {
   key: string;
   target: EventTarget | null;
   altKey: boolean;
@@ -88,23 +92,90 @@ interface KeyLike {
   defaultPrevented: boolean;
 }
 
+/** What a key press asks the deck to do. */
+export type KeyCommand =
+  | { type: "navigate"; action: NavigationAction }
+  /** Typing a slide number: the digits typed so far. */
+  | { type: "typeSlide"; typed: string }
+  /** `Enter` after a slide number. 0-based. */
+  | { type: "goToSlide"; slide: number }
+  | { type: "fullscreen" };
+
 /**
- * Maps a key press to a navigation action. Returns `undefined` for keys the
- * deck should leave alone: browser shortcuts, typing in a form field, or keys
- * already handled by a component on the slide.
+ * Maps a key press to a command, given the slide number typed so far.
+ * Returns `undefined` for keys the deck should leave alone: browser
+ * shortcuts, typing in a form field, or keys already handled by a component
+ * on the slide.
  */
-export function getKeyAction(event: KeyLike): NavigationAction | undefined {
+export function getKeyCommand(
+  event: KeyLike,
+  typed = "",
+): KeyCommand | undefined {
   if (event.defaultPrevented) return undefined;
   if (event.altKey || event.ctrlKey || event.metaKey) return undefined;
 
   const target = event.target instanceof Element ? event.target : null;
   if (target?.closest(TEXT_ENTRY)) return undefined;
 
-  if (event.key === " ") {
-    if (target?.closest(ACTIVATES_ON_SPACE)) return undefined;
-    return event.shiftKey ? "prev" : "next";
+  const { key } = event;
+  if (/^[0-9]$/.test(key)) {
+    return {
+      type: "typeSlide",
+      typed: (typed + key).slice(0, MAX_SLIDE_DIGITS),
+    };
   }
-  return KEY_ACTIONS[event.key];
+  // Enter, Backspace and Escape keep their usual meaning unless a number is
+  // being typed.
+  if (typed) {
+    if (key === "Enter") return { type: "goToSlide", slide: Number(typed) - 1 };
+    if (key === "Backspace")
+      return { type: "typeSlide", typed: typed.slice(0, -1) };
+    if (key === "Escape") return { type: "typeSlide", typed: "" };
+  }
+  if (key === "f" || key === "F") return { type: "fullscreen" };
+
+  if (key === " ") {
+    if (target?.closest(ACTIVATES_ON_SPACE)) return undefined;
+    return { type: "navigate", action: event.shiftKey ? "prev" : "next" };
+  }
+  const action = KEY_ACTIONS[key];
+  return action ? { type: "navigate", action } : undefined;
+}
+
+/** The parts of a pointer event that swiping looks at. */
+export interface PointerLike {
+  pointerType: string;
+  isPrimary: boolean;
+  target: EventTarget | null;
+  defaultPrevented: boolean;
+}
+
+/**
+ * Whether a pointer press may start a swipe: one finger, not in a form field
+ * (a range slider drags sideways) or on a component that handled it.
+ */
+export function isSwipeStart(event: PointerLike): boolean {
+  if (event.pointerType !== "touch" || !event.isPrimary) return false;
+  if (event.defaultPrevented) return false;
+  const target = event.target instanceof Element ? event.target : null;
+  return !target?.closest(TEXT_ENTRY);
+}
+
+/** Minimum horizontal travel for a swipe, in CSS pixels. */
+const SWIPE_DISTANCE = 50;
+
+/**
+ * Maps a touch gesture, by how far it travelled, to an action: swipe left
+ * for the next step, right for the previous one. Mostly vertical gestures
+ * scroll the page instead.
+ */
+export function getSwipeAction(
+  dx: number,
+  dy: number,
+): NavigationAction | undefined {
+  if (Math.abs(dx) < SWIPE_DISTANCE) return undefined;
+  if (Math.abs(dx) < Math.abs(dy) * 2) return undefined;
+  return dx < 0 ? "next" : "prev";
 }
 
 function clamp(value: number, min: number, max: number): number {

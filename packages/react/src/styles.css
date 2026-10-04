@@ -89,6 +89,11 @@
     inset: 0;
   }
 
+  /* Horizontal swipes navigate; vertical ones still scroll the page. */
+  [data-deck-viewport][data-swipe] {
+    touch-action: pan-y pinch-zoom;
+  }
+
   /* Slides are laid out at a fixed size and scaled to fit, so they look the
      same in a thumbnail, an article and a projector. */
   [data-deck-canvas] {
@@ -151,13 +156,30 @@
   }
 
   [data-deck]:hover [data-deck-controls],
-  [data-deck]:focus-within [data-deck-controls] {
+  [data-deck]:focus-within [data-deck-controls],
+  [data-deck-controls][data-typing] {
     opacity: 1;
     transform: none;
   }
 
   @media (hover: none) {
     [data-deck-controls] {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Fullscreen, the deck always has focus and the pointer, so the controls
+     wait for the pointer to reach them instead of covering the slide. */
+  @media (hover: hover) {
+    [data-deck]:fullscreen [data-deck-controls] {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+
+    [data-deck]:fullscreen [data-deck-controls]:hover,
+    [data-deck]:fullscreen [data-deck-controls]:has(:focus-visible),
+    [data-deck]:fullscreen [data-deck-controls][data-typing] {
       opacity: 1;
       transform: none;
     }
@@ -195,6 +217,13 @@
     padding: 0 4px;
     color: var(--deck-muted);
     text-align: center;
+  }
+
+  /* A slide number being typed, before Enter. */
+  [data-deck-typed] {
+    color: var(--deck-accent);
+    text-decoration: underline 1.5px;
+    text-underline-offset: 3px;
   }
 
   [data-deck-progress] {

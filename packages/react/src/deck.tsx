@@ -15,18 +15,24 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
-  type KeyboardEvent,
+  type FocusEvent,
+  type PointerEvent,
   type Ref,
+  type RefObject,
 } from "react";
 import type { DirectiveComponents } from "./context";
 import { builtinLayouts, type Layout } from "./layouts";
 import { LruCache } from "./lru";
 import {
   clampPosition,
-  getKeyAction,
+  getKeyCommand,
+  getSwipeAction,
+  isSwipeStart,
   move,
   type DeckPosition,
+  type KeyLike,
   type NavigationAction,
 } from "./navigation";
 import { SlideError, SlideErrorBoundary, SlideView } from "./slide";
@@ -60,7 +66,12 @@ export interface DeckProps {
    * anywhere on the page. `false` turns it off.
    */
   keyboard?: "focus" | "global" | false;
-  /** Show previous/next buttons, a slide counter and progress. Default `true`. */
+  /** Swipe left and right on touch screens to navigate. Default `true`. */
+  swipe?: boolean;
+  /**
+   * Show previous, next and fullscreen buttons, a slide counter and progress.
+   * Default `true`.
+   */
   controls?: boolean;
   className?: string;
   style?: CSSProperties;
@@ -74,6 +85,11 @@ export interface DeckHandle {
   /** Goes to a slide (0-based) and step, clamped to the deck. */
   goTo(slide: number, step?: number): void;
   focus(): void;
+  /**
+   * Enters or leaves fullscreen. Browsers only allow entering in response to
+   * a click or key press.
+   */
+  toggleFullscreen(): void;
 }
 
 const START: DeckPosition = { slide: 0, step: 0 };
@@ -93,6 +109,7 @@ export function Deck({
   compileOptions,
   colorScheme,
   keyboard = "focus",
+  swipe = true,
   controls = true,
   className,
   style,
@@ -113,6 +130,8 @@ export function Deck({
   // render, so deleting and re-adding a slide while editing returns to it.
   const [internal, setInternal] = useState(defaultPosition ?? START);
   const current = clampPosition(position ?? internal, slideCount, getSteps);
+  // Digits typed towards a slide number, before Enter.
+  const [typed, setTyped] = useState("");
 
   const latest = useRef({
     current,
@@ -120,6 +139,7 @@ export function Deck({
     getSteps,
     controlled: position !== undefined,
     onPositionChange,
+    typed,
   });
   useLayoutEffect(() => {
     latest.current = {
@@ -128,12 +148,14 @@ export function Deck({
       getSteps,
       controlled: position !== undefined,
       onPositionChange,
+      typed,
     };
   });
 
   const go = useCallback((target: DeckPosition | NavigationAction) => {
     const { current, slideCount, getSteps, controlled, onPositionChange } =
       latest.current;
+    setTyped("");
     const next =
       typeof target === "string"
         ? move(current, target, slideCount, getSteps)
@@ -144,6 +166,8 @@ export function Deck({
   }, []);
 
   const rootRef = useRef<HTMLDivElement>(null);
+  const fullscreen = useFullscreen(rootRef);
+  const toggleFullscreen = fullscreen.toggle;
   useImperativeHandle(
     ref,
     () => ({
@@ -151,28 +175,84 @@ export function Deck({
       prev: () => go("prev"),
       goTo: (slide, step = 0) => go({ slide, step }),
       focus: () => rootRef.current?.focus(),
+      toggleFullscreen,
     }),
-    [go],
+    [go, toggleFullscreen],
+  );
+
+  // Focus left on a control would keep the controls over the fullscreen
+  // slide (a focused button shows its ring once a key is pressed), so it
+  // moves to the deck.
+  useEffect(() => {
+    const root = rootRef.current;
+    const focused = document.activeElement;
+    if (!fullscreen.active || !root || !(focused instanceof HTMLElement))
+      return;
+    if (!root.querySelector("[data-deck-controls]")?.contains(focused)) return;
+    if (keyboard === "focus") root.focus();
+    else focused.blur();
+  }, [fullscreen.active, keyboard]);
+
+  const handleKey = useCallback(
+    (event: KeyLike & { preventDefault(): void }) => {
+      const command = getKeyCommand(event, latest.current.typed);
+      if (!command) return;
+      event.preventDefault();
+      switch (command.type) {
+        case "typeSlide":
+          setTyped(command.typed);
+          break;
+        case "goToSlide":
+          go({ slide: command.slide, step: 0 });
+          break;
+        case "navigate":
+          go(command.action);
+          break;
+        case "fullscreen":
+          setTyped("");
+          toggleFullscreen();
+      }
+    },
+    [go, toggleFullscreen],
   );
 
   useEffect(() => {
     if (keyboard !== "global") return;
-    const onKey = (event: globalThis.KeyboardEvent) => {
-      const action = getKeyAction(event);
-      if (!action) return;
-      event.preventDefault();
-      go(action);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [keyboard, go]);
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [keyboard, handleKey]);
 
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (keyboard !== "focus") return;
-    const action = getKeyAction(event);
-    if (!action) return;
-    event.preventDefault();
-    go(action);
+  // A half-typed number is dropped when focus moves elsewhere on the page.
+  // Switching to another window blurs the deck too, but leaves it the active
+  // element, so the number survives a glance at the speaker notes.
+  const onBlur = (event: FocusEvent<HTMLDivElement>) => {
+    if (document.activeElement === event.target) return;
+    if (!event.currentTarget.contains(event.relatedTarget)) setTyped("");
+  };
+
+  // The start of a one-finger touch, to tell a swipe from a tap.
+  const touchStart = useRef<{ id: number; x: number; y: number }>(null);
+  const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (!isSwipeStart(event)) return;
+    touchStart.current = {
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+    };
+  };
+  const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    const start = touchStart.current;
+    if (start?.id !== event.pointerId) return;
+    touchStart.current = null;
+    const action = getSwipeAction(
+      event.clientX - start.x,
+      event.clientY - start.y,
+    );
+    if (action) go(action);
+  };
+  // Scrolling, zooming or a second finger takes the gesture over.
+  const onPointerCancel = () => {
+    touchStart.current = null;
   };
 
   const { aspectRatio, canvasWidth, theme, title } = deck.config;
@@ -208,9 +288,17 @@ export function Deck({
       aria-roledescription="slide deck"
       aria-label={title ?? "Slides"}
       tabIndex={keyboard === "focus" ? 0 : undefined}
-      onKeyDown={onKeyDown}
+      onKeyDown={keyboard === "focus" ? handleKey : undefined}
+      onBlur={onBlur}
     >
-      <div ref={viewportRef} data-deck-viewport="">
+      <div
+        ref={viewportRef}
+        data-deck-viewport=""
+        data-swipe={swipe ? "" : undefined}
+        onPointerDown={swipe ? onPointerDown : undefined}
+        onPointerUp={swipe ? onPointerUp : undefined}
+        onPointerCancel={swipe ? onPointerCancel : undefined}
+      >
         <div
           data-deck-canvas=""
           data-measured={scale === null ? undefined : ""}
@@ -240,7 +328,7 @@ export function Deck({
       </div>
 
       {controls && slideCount > 0 ? (
-        <div data-deck-controls="">
+        <div data-deck-controls="" data-typing={typed ? "" : undefined}>
           <button
             type="button"
             aria-label="Previous"
@@ -250,7 +338,12 @@ export function Deck({
             <Chevron direction="left" />
           </button>
           <span data-deck-counter="">
-            {current.slide + 1} / {slideCount}
+            {typed ? (
+              <span data-deck-typed="">{typed}</span>
+            ) : (
+              current.slide + 1
+            )}{" "}
+            / {slideCount}
           </span>
           <button
             type="button"
@@ -262,6 +355,16 @@ export function Deck({
           >
             <Chevron direction="right" />
           </button>
+          {fullscreen.supported ? (
+            <button
+              type="button"
+              aria-label="Fullscreen"
+              aria-pressed={fullscreen.active}
+              onClick={toggleFullscreen}
+            >
+              <FullscreenIcon exit={fullscreen.active} />
+            </button>
+          ) : null}
         </div>
       ) : null}
       {controls && slideCount > 0 ? (
@@ -360,6 +463,60 @@ function useFitScale(
   }, [width, height]);
 
   return [viewportRef, scale];
+}
+
+const subscribeToFullscreen = (onChange: () => void) => {
+  document.addEventListener("fullscreenchange", onChange);
+  return () => document.removeEventListener("fullscreenchange", onChange);
+};
+const ignoreChanges = () => () => {};
+
+/**
+ * Fullscreen state of an element. `supported` is `false` on the server and
+ * where the page may not go fullscreen, such as iPhones and iframes without
+ * `allow="fullscreen"`.
+ */
+function useFullscreen(ref: RefObject<HTMLElement | null>) {
+  const supported = useSyncExternalStore(
+    ignoreChanges,
+    () => document.fullscreenEnabled === true,
+    () => false,
+  );
+  const active = useSyncExternalStore(
+    subscribeToFullscreen,
+    () => ref.current !== null && document.fullscreenElement === ref.current,
+    () => false,
+  );
+  const toggle = useCallback(() => {
+    const element = ref.current;
+    if (!element || !document.fullscreenEnabled) return;
+    // Both reject when the browser refuses, which leaves things as they are.
+    if (document.fullscreenElement === element) {
+      document.exitFullscreen().catch(() => {});
+    } else {
+      element.requestFullscreen().catch(() => {});
+    }
+  }, [ref]);
+  return { supported, active, toggle };
+}
+
+function FullscreenIcon({ exit }: { exit: boolean }) {
+  return (
+    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+      <path
+        d={
+          exit
+            ? "M6 2.5V6H2.5M10 2.5V6h3.5M6 13.5V10H2.5M10 13.5V10h3.5"
+            : "M2.5 6V2.5H6M10 2.5h3.5V6M2.5 10v3.5H6M13.5 10v3.5H10"
+        }
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 function Chevron({ direction }: { direction: "left" | "right" }) {

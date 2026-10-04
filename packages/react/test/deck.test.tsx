@@ -6,7 +6,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { createRef } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { Deck, type DeckHandle, type LayoutProps } from "../src";
 
 const text = (strings: TemplateStringsArray) =>
@@ -17,6 +17,52 @@ const heading = () => slide().querySelector("h1, h2")?.textContent;
 const deckRoot = () => document.querySelector<HTMLElement>("[data-deck]")!;
 const press = (key: string, target: Element = deckRoot()) =>
   fireEvent.keyDown(target, { key });
+const counter = () =>
+  document.querySelector("[data-deck-counter]")?.textContent;
+
+const viewport = () => document.querySelector("[data-deck-viewport]")!;
+const swipe = (dx: number, dy = 0, pointerType = "touch") => {
+  const at = { pointerId: 1, pointerType, isPrimary: true };
+  fireEvent.pointerDown(viewport(), { ...at, clientX: 200, clientY: 100 });
+  fireEvent.pointerUp(viewport(), {
+    ...at,
+    clientX: 200 + dx,
+    clientY: 100 + dy,
+  });
+};
+
+/** jsdom has no Fullscreen API: a stand-in that records calls. */
+function stubFullscreen() {
+  let element: Element | null = null;
+  const change = (next: Element | null) => {
+    element = next;
+    document.dispatchEvent(new Event("fullscreenchange"));
+    return Promise.resolve();
+  };
+  const request = vi.fn(function (this: Element) {
+    return change(this);
+  });
+  const exit = vi.fn(() => change(null));
+
+  Object.defineProperties(document, {
+    fullscreenEnabled: { configurable: true, get: () => true },
+    fullscreenElement: { configurable: true, get: () => element },
+    exitFullscreen: { configurable: true, value: exit },
+  });
+  Object.defineProperty(Element.prototype, "requestFullscreen", {
+    configurable: true,
+    value: request,
+  });
+  onTestFinished(() => {
+    const doc = document as unknown as Record<string, unknown>;
+    delete doc.fullscreenEnabled;
+    delete doc.fullscreenElement;
+    delete doc.exitFullscreen;
+    delete (Element.prototype as unknown as Record<string, unknown>)
+      .requestFullscreen;
+  });
+  return { request, exit };
+}
 
 const THREE_SLIDES = text`
 # One
@@ -173,6 +219,149 @@ describe("keyboard", () => {
     const input = screen.getByLabelText("Name");
     const event = press("ArrowRight", input);
     expect(event).toBe(true); // not prevented
+  });
+});
+
+describe("going to a slide by number", () => {
+  it("goes to the typed slide on Enter", () => {
+    render(<Deck markdown={THREE_SLIDES} />);
+    press("3");
+    expect(counter()).toBe("3 / 3");
+    expect(heading()).toBe("One");
+
+    press("Enter");
+    expect(heading()).toBe("Three");
+    expect(counter()).toBe("3 / 3");
+  });
+
+  it("corrects and cancels the number", () => {
+    render(<Deck markdown={THREE_SLIDES} />);
+    press("1");
+    press("2");
+    press("Backspace");
+    press("Enter");
+    expect(heading()).toBe("One");
+
+    press("2");
+    press("Escape");
+    expect(counter()).toBe("1 / 3");
+    expect(press("Enter")).toBe(true); // not prevented
+    expect(heading()).toBe("One");
+  });
+
+  it("forgets the number on other navigation", () => {
+    render(<Deck markdown={THREE_SLIDES} />);
+    press("3");
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(counter()).toBe("2 / 3");
+    press("Enter");
+    expect(heading()).toBe("Two");
+  });
+
+  it("forgets the number when focus moves elsewhere on the page", () => {
+    render(
+      <>
+        <Deck markdown={THREE_SLIDES} />
+        <button type="button">Elsewhere</button>
+      </>,
+    );
+    act(() => deckRoot().focus());
+    press("3");
+
+    fireEvent.blur(deckRoot()); // another window: the deck keeps focus
+    expect(counter()).toBe("3 / 3");
+
+    act(() => screen.getByRole("button", { name: "Elsewhere" }).focus());
+    expect(counter()).toBe("1 / 3");
+  });
+});
+
+describe("touch", () => {
+  it("swipes between steps and slides", () => {
+    render(<Deck markdown={THREE_SLIDES} />);
+    swipe(-100);
+    expect(heading()).toBe("Two");
+    swipe(-100);
+    expect(screen.getByText("Revealed").dataset.stepState).toBe("current");
+    swipe(100);
+    swipe(100);
+    expect(heading()).toBe("One");
+  });
+
+  it("ignores taps, scrolling, mouse drags and cancelled touches", () => {
+    render(<Deck markdown={THREE_SLIDES} />);
+    swipe(-10);
+    swipe(-100, 120);
+    swipe(-100, 0, "mouse");
+
+    const at = { pointerId: 1, pointerType: "touch", isPrimary: true };
+    fireEvent.pointerDown(viewport(), { ...at, clientX: 200 });
+    fireEvent.pointerCancel(viewport(), at);
+    fireEvent.pointerUp(viewport(), { ...at, clientX: 50 });
+
+    expect(heading()).toBe("One");
+  });
+
+  it("leaves sliders on a slide alone", () => {
+    render(
+      <Deck
+        markdown={"# One\n\n::volume\n\n---\n\n# Two"}
+        components={{
+          volume: () => <input type="range" aria-label="Volume" />,
+        }}
+      />,
+    );
+    const at = { pointerId: 1, pointerType: "touch", isPrimary: true };
+    const slider = screen.getByLabelText("Volume");
+    fireEvent.pointerDown(slider, { ...at, clientX: 200 });
+    fireEvent.pointerUp(slider, { ...at, clientX: 50 });
+    expect(heading()).toBe("One");
+  });
+
+  it("can be turned off", () => {
+    render(<Deck markdown={THREE_SLIDES} swipe={false} />);
+    swipe(-100);
+    expect(heading()).toBe("One");
+    expect(viewport().hasAttribute("data-swipe")).toBe(false);
+  });
+});
+
+describe("fullscreen", () => {
+  it("has no button where the browser can't go fullscreen", () => {
+    render(<Deck markdown={THREE_SLIDES} />);
+    expect(screen.queryByRole("button", { name: "Fullscreen" })).toBeNull();
+  });
+
+  it("toggles with the button and the F key", () => {
+    const { request, exit } = stubFullscreen();
+    render(<Deck markdown={THREE_SLIDES} />);
+    const button = screen.getByRole("button", { name: "Fullscreen" });
+    expect(button.getAttribute("aria-pressed")).toBe("false");
+
+    fireEvent.click(button);
+    expect(request.mock.contexts).toEqual([deckRoot()]);
+    expect(button.getAttribute("aria-pressed")).toBe("true");
+
+    press("f");
+    expect(exit).toHaveBeenCalledOnce();
+    expect(button.getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("moves focus from the controls to the deck in fullscreen", () => {
+    stubFullscreen();
+    render(<Deck markdown={THREE_SLIDES} />);
+    const button = screen.getByRole("button", { name: "Fullscreen" });
+    act(() => button.focus());
+    fireEvent.click(button);
+    expect(document.activeElement).toBe(deckRoot());
+  });
+
+  it("toggles through a ref", () => {
+    const { request } = stubFullscreen();
+    const ref = createRef<DeckHandle>();
+    render(<Deck markdown={THREE_SLIDES} ref={ref} controls={false} />);
+    act(() => ref.current!.toggleFullscreen());
+    expect(request).toHaveBeenCalledOnce();
   });
 });
 
