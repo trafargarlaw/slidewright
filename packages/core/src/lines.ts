@@ -55,3 +55,16 @@ export function markCodeLines(lines: string[]): boolean[] {
 
   return inCode;
 }
+
+/** Lines without the blank lines at the start and end. */
+export function trimBlankLines(lines: string[]): string[] {
+  let start = 0;
+  let end = lines.length;
+  while (start < end && isBlankLine(lines[start]!)) start++;
+  while (end > start && isBlankLine(lines[end - 1]!)) end--;
+  return lines.slice(start, end);
+}
+
+export function isBlankLine(line: string): boolean {
+  return line.trim() === "";
+}

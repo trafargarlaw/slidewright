@@ -105,6 +105,31 @@ Pause here. Mention the churn numbers only if asked.
 -->
 ```
 
+### Notes for each step
+
+A `[step]` line divides the notes by step. The text before the first marker
+is for step 0, the text after the first marker for step 1, and so on, so a
+presenter view can show what to say as each step appears.
+
+```md
+# Three reasons
+
+- It's fast
+
+<!-- step -->
+
+- It's small
+
+<!-- notes
+There are two reasons, and the second one surprises people.
+[step]
+It's under 10 kB.
+-->
+```
+
+A marker must be on its own line, outside code blocks. The number of markers
+doesn't have to match the slide's steps.
+
 ## Steps
 
 Steps reveal a slide bit by bit. Step `0` is what the audience sees first;

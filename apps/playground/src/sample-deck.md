@@ -29,9 +29,9 @@ the preview follows.
 
 <!-- notes
 Each slide is plain Markdown, so the file reads well anywhere.
-[click]
+[step]
 Step markers are HTML comments, invisible on GitHub.
-[click]
+[step]
 Click the preview and use the arrow keys to present.
 -->
 
@@ -54,9 +54,9 @@ const outline = deck.slides.map((slide) => slide.title);
 
 <!-- notes
 Highlight stages take one step each.
-[click]
+[step]
 Parse the deck, then read each slide's title.
-[click]
+[step]
 That's the whole outline.
 -->
 

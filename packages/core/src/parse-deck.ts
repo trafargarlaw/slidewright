@@ -1,6 +1,6 @@
 import { parseDocument } from "yaml";
 import { DEFAULT_CONFIG, isPlainObject, resolveConfig } from "./config";
-import { markCodeLines } from "./lines";
+import { isBlankLine, markCodeLines, trimBlankLines } from "./lines";
 import type { Deck, DeckConfig, Diagnostic, Slide } from "./types";
 
 const SEPARATOR = /^---[ \t]*$/;
@@ -322,18 +322,6 @@ function dedent(lines: string[]): string[] {
     .map((line) => /^[ \t]*/.exec(line)![0].length);
   const indent = indents.length > 0 ? Math.min(...indents) : 0;
   return lines.map((line) => line.slice(indent).trimEnd());
-}
-
-function trimBlankLines(lines: string[]): string[] {
-  let start = 0;
-  let end = lines.length;
-  while (start < end && isBlankLine(lines[start]!)) start++;
-  while (end > start && isBlankLine(lines[end - 1]!)) end--;
-  return lines.slice(start, end);
-}
-
-function isBlankLine(line: string): boolean {
-  return line.trim() === "";
 }
 
 function isBlankChunk(lines: string[], chunk: Chunk): boolean {

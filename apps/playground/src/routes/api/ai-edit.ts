@@ -35,9 +35,9 @@ Notes are the **exact words the speaker would say** when presenting this slide �
 
 Notes must be an HTML comment starting with \`notes\` at the end of the slide content. Write in a conversational, natural speaking voice — complete sentences, transitions between ideas, and the kind of phrasing someone would actually say out loud.
 
-## [click] Markers — Syncing Script to Steps
+## [step] Markers — Syncing Script to Steps
 
-Use \`[click]\` in notes to mark where the presenter advances to the next step. The number of \`[click]\` markers MUST exactly equal the number of steps on the slide.
+Use \`[step]\` in notes to mark where the presenter advances to the next step. The number of \`[step]\` markers MUST exactly equal the number of steps on the slide.
 
 ### Step-by-step: How to count steps
 
@@ -45,7 +45,7 @@ Before writing notes, walk through the slide content and count every step:
 
 1. **Count \`<!-- step -->\` markers.** Each one = 1 step.
 2. **Count \`|\` pipes in every code block's highlight stages.** A code block \`{A|B|C}\` has 2 pipes = 2 extra steps. The first stage is free (it appears with the block), but every \`|\` after that adds one step.
-3. **Add them up.** That's the slide's step count, and the number of \`[click]\` markers the notes need.
+3. **Add them up.** That's the slide's step count, and the number of \`[step]\` markers the notes need.
 4. **Explicit numbers.** \`<!-- step N -->\` and \`@N\` pin content to step N without adding steps, and the count is the highest step any content uses. \`steps:\` in the frontmatter overrides the count.
 
 ⚠ **Common mistake:** Treating a code block as 1 step. A code block with \`{1-2|4-6|all}\` is NOT 1 step — it's 3 visual states (2 pipes = 2 extra steps on top of whatever revealed the block). You must count every pipe.
@@ -71,28 +71,28 @@ Conclusion text
 
 Count: 2 step markers + 2 pipes = **4 steps total**.
 
-Correct notes (4 \`[click]\` markers):
+Correct notes (4 \`[step]\` markers):
 \`\`\`
 <!-- notes
 Here's the intro — let me explain what we're looking at.
-[click]
+[step]
 Now the code appears. See how we set up the subscription in the effect...
-[click]
+[step]
 And here's the subscribe/unsubscribe pattern — classic cleanup.
-[click]
+[step]
 Looking at the full picture, it seems clean enough, right?
-[click]
+[step]
 But here are the actual problems with this approach...
 -->
 \`\`\`
 
 ### Placement rules
 
-1. Text BEFORE the first \`[click]\` = what you say while the audience sees step 0 (initial content).
-2. Each \`[click]\` = the moment you press the key to advance.
-3. Text AFTER each \`[click]\` = what you say about the content that just appeared.
-4. Text AFTER the last \`[click]\` = what you say about the final state.
-5. EVERY step gets a \`[click]\` — including each code highlight transition. Not just \`<!-- step -->\` markers.
+1. Text BEFORE the first \`[step]\` = what you say while the audience sees step 0 (initial content).
+2. Each \`[step]\` = the moment you press the key to advance.
+3. Text AFTER each \`[step]\` = what you say about the content that just appeared.
+4. Text AFTER the last \`[step]\` = what you say about the final state.
+5. EVERY step gets a \`[step]\` — including each code highlight transition. Not just \`<!-- step -->\` markers.
 
 # PRESENTATION DESIGN PRINCIPLES
 

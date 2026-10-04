@@ -47,7 +47,10 @@ export interface Slide {
   title?: string;
   /** Markdown body with frontmatter and notes removed. */
   content: string;
-  /** Speaker notes as Markdown. Empty when the slide has none. */
+  /**
+   * Speaker notes as Markdown, `[step]` lines included: `splitNotes` divides
+   * them by step. Empty when the slide has none.
+   */
   notes: string;
   /** Lines covered by the slide, from its separator to the line before the next one. */
   range: LineRange;

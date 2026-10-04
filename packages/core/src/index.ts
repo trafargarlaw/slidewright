@@ -6,6 +6,7 @@ export {
   type SlideCompiler,
 } from "./compile";
 export { parseHighlights, getHighlightedLines } from "./highlights";
+export { splitNotes } from "./notes";
 export { sanitizeSchema } from "./sanitize";
 export type {
   ColorScheme,

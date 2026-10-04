@@ -108,11 +108,11 @@ function applySearchReplace(original: string, response: string): string {
   return result;
 }
 
-function renderScriptWithClicks(text: string) {
-  const parts = text.split(/(\[click\])/gi);
+function renderScriptWithSteps(text: string) {
+  const parts = text.split(/(\[step\])/g);
   return parts.map((part, i) =>
-    /^\[click\]$/i.test(part) ? (
-      <ClickBadge key={i}>&#9654; click</ClickBadge>
+    part === "[step]" ? (
+      <StepBadge key={i}>&#9654; step</StepBadge>
     ) : (
       <span key={i}>{part}</span>
     ),
@@ -891,7 +891,7 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
               <ScriptContainer>
                 <ScriptHighlight aria-hidden="true">
                   {scriptText
-                    ? renderScriptWithClicks(scriptText)
+                    ? renderScriptWithSteps(scriptText)
                     : <ScriptPlaceholder>Write what you'd say presenting this slide...</ScriptPlaceholder>}
                 </ScriptHighlight>
                 <ScriptTextarea
@@ -1024,7 +1024,7 @@ const ScriptPlaceholder = styled.span`
   opacity: 0.5;
 `;
 
-const ClickBadge = styled.span`
+const StepBadge = styled.span`
   display: inline-flex;
   align-items: center;
   gap: 3px;
