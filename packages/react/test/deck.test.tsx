@@ -770,6 +770,85 @@ Side
     expect(slide().getAttribute("data-layout")).toBe("nope");
     expect(heading()).toBe("Hi");
   });
+
+  it("shows the frontmatter image behind or beside the content", () => {
+    render(
+      <Deck
+        markdown={text`
+---
+layout: image
+image: /photos/harbour.jpg
+imageAlt: Boats in a harbour
+---
+
+# Harbour
+
+---
+layout: image-right
+image: /chart.svg
+---
+
+# Growth
+
+---
+layout: image-left
+image: ""
+---
+
+# No image yet
+`}
+      />,
+    );
+    const part = (name: string) =>
+      slide().querySelector(`:scope > [data-part="${name}"]`);
+
+    expect(part("content")?.textContent).toBe("Harbour");
+    const photo = part("image")?.querySelector("img");
+    expect(photo?.getAttribute("src")).toBe("/photos/harbour.jpg");
+    expect(photo?.alt).toBe("Boats in a harbour");
+
+    press("ArrowRight");
+    expect(part("content")?.textContent).toBe("Growth");
+    expect(part("image")?.querySelector("img")?.getAttribute("src")).toBe(
+      "/chart.svg",
+    );
+    // Decorative unless described, so screen readers skip it.
+    expect(part("image")?.querySelector("img")?.getAttribute("alt")).toBe("");
+
+    press("ArrowRight");
+    expect(part("content")?.textContent).toBe("No image yet");
+    expect(part("image")?.childElementCount).toBe(0);
+  });
+
+  it("lets a custom layout replace a built-in one and read the frontmatter", () => {
+    function Cover({ slide, children }: LayoutProps) {
+      const { date } = slide.frontmatter;
+      return (
+        <>
+          {children}
+          <time>{typeof date === "string" ? date : null}</time>
+        </>
+      );
+    }
+
+    render(
+      <Deck
+        markdown={text`
+---
+layout: cover
+date: 4 October
+---
+
+# Launch
+`}
+        layouts={{ cover: Cover }}
+      />,
+    );
+
+    expect(slide().getAttribute("data-layout")).toBe("cover");
+    expect(heading()).toBe("Launch");
+    expect(slide().querySelector("time")?.textContent).toBe("4 October");
+  });
 });
 
 describe("code blocks", () => {

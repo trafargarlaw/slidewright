@@ -846,6 +846,74 @@
     content: "";
   }
 
+  [data-layout="statement"] {
+    align-items: center;
+    justify-content: center;
+    padding: 72px 120px;
+    text-align: center;
+  }
+
+  [data-layout="statement"] :where(h1, h2) {
+    font-size: 3em;
+    letter-spacing: -0.03em;
+  }
+
+  [data-layout="statement"] :where(h1 + p, h2 + p) {
+    color: var(--deck-muted);
+    font-size: 1.15em;
+  }
+
+  [data-layout="fact"] {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  [data-layout="fact"] :where(h1, h2) {
+    margin-bottom: 0.15em;
+    color: var(--deck-accent);
+    font-size: 5em;
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+
+  [data-layout="fact"] :where(h1 + p, h2 + p) {
+    color: var(--deck-muted);
+    font-size: 1.2em;
+  }
+
+  [data-layout="quote"] {
+    justify-content: center;
+    padding: 72px 120px;
+  }
+
+  [data-layout="quote"] :where(blockquote) {
+    margin: 0 0 0.75em;
+    padding: 0;
+    border: 0;
+    color: var(--deck-fg);
+    font-size: 1.6em;
+    font-weight: 500;
+    line-height: 1.35;
+    text-wrap: balance;
+  }
+
+  [data-layout="quote"] :where(blockquote)::before {
+    display: block;
+    height: 0.5em;
+    color: var(--deck-accent);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 3em;
+    line-height: 1;
+    content: "\201C";
+    /* Decoration only: screen readers skip it where supported. */
+    content: "\201C" / "";
+  }
+
+  [data-layout="quote"] :where(blockquote ~ *) {
+    color: var(--deck-muted);
+  }
+
   [data-layout="full"] {
     padding: 0;
   }
@@ -880,7 +948,7 @@
     background: var(--deck-surface);
   }
 
-  [data-layout^="image-"] [data-part="image"] img {
+  :is([data-layout="image"], [data-layout^="image-"]) [data-part="image"] img {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -890,6 +958,41 @@
 
   [data-layout="image-left"] [data-part="image"] {
     order: -1;
+  }
+
+  /* The image fills the slide, with the content at the bottom over a shade
+     that keeps it readable on any picture. */
+  [data-layout="image"] {
+    justify-content: flex-end;
+    padding: 0;
+  }
+
+  [data-layout="image"] [data-part="image"] {
+    position: absolute;
+    inset: 0;
+    background: var(--deck-surface);
+  }
+
+  [data-layout="image"] [data-part="content"] {
+    --deck-muted: rgb(255 255 255 / 0.78);
+    --deck-border: rgb(255 255 255 / 0.3);
+    --deck-surface: rgb(255 255 255 / 0.16);
+
+    position: relative;
+    z-index: 1;
+    padding: var(--deck-padding);
+    padding-top: 3em;
+    background: linear-gradient(
+      to top,
+      rgb(0 0 0 / 0.72),
+      rgb(0 0 0 / 0.45) 65%,
+      transparent
+    );
+    color: #fff;
+  }
+
+  [data-layout="image"] [data-part="content"]:empty {
+    display: none;
   }
 
   /* Errors ----------------------------------------------------------------- */

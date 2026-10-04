@@ -14,9 +14,15 @@ Pick a layout with \`layout:\` in a slide's frontmatter.
 | \`center\` | Content centred. Best for one short message. |
 | \`cover\` | Title slide: large heading, the paragraph after it as a subtitle. |
 | \`section\` | Section divider: large heading with an accent bar. |
+| \`statement\` | One large heading, centred, with an optional line under it. |
+| \`fact\` | A large number or word in the accent colour, and a caption under it. |
+| \`quote\` | A large \`>\` quote, with the paragraph after it as the source. |
 | \`full\` | No padding. |
 | \`two-cols\` | Content on top, then \`:::left\` and \`:::right\` columns. |
-| \`image-left\`, \`image-right\` | Content beside \`image:\` (with optional \`imageAlt:\`). |
+| \`image\` | \`image:\` fills the slide, with the content at the bottom over a shade. |
+| \`image-left\`, \`image-right\` | Content beside \`image:\`. |
+
+The image layouts take an optional \`imageAlt:\` that describes the image.
 
 \`\`\`md
 ---

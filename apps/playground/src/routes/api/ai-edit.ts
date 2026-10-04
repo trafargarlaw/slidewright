@@ -24,8 +24,12 @@ Choose the right layout for each slide's purpose. This is critical for good pres
 - \`default\` — the workhorse: bullet points, mixed content, agendas, explanations. The fallback when nothing else fits.
 - \`cover\` — opening and closing slides: a title, then a one-line subtitle. Don't use it mid-deck unless it's a dramatic reset.
 - \`section\` — chapter breaks between major topics. Minimal text, usually just a heading. Meant to appear several times in a deck.
-- \`center\` — one key takeaway, a short quote or a question for the audience. Keep it to 1-3 lines; lists and long text look bad centred.
+- \`center\` — a short message or a question for the audience. Keep it to 1-3 lines; lists and long text look bad centred.
+- \`statement\` — one key takeaway as a single large heading, with an optional line under it. Use it sparingly, for the ideas the audience should remember.
+- \`fact\` — one striking number or word as the heading (\`# 40%\`), with a short caption under it.
+- \`quote\` — a quotation as a \`>\` blockquote, with its source in the paragraph after it.
 - \`two-cols\` — comparisons, pros and cons, code beside explanation, before and after. Put each column in \`:::left\` and \`:::right\`.
+- \`image\` — a picture that fills the slide, set with \`image:\`, with a heading and one line at the bottom. Only use it with a real image URL.
 - \`image-left\` / \`image-right\` — an image beside text, set with \`image:\`. \`image-left\`: the audience sees the image first. \`image-right\`: the text gives context and the image is the payoff.
 - \`full\` — full-bleed visuals or completely custom HTML. You handle all positioning.
 

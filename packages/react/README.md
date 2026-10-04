@@ -167,48 +167,103 @@ a button of your own.
 
 A slide picks its layout with `layout:` in its frontmatter. Built in:
 
-| Layout                      | Arrangement                                            |
-| --------------------------- | ------------------------------------------------------ |
-| `default`                   | Content from the top left.                             |
-| `center`                    | Content centred.                                       |
-| `cover`                     | Title slide: large heading, subtitle.                  |
-| `section`                   | Section divider.                                       |
-| `full`                      | No padding.                                            |
-| `two-cols`                  | Content on top, then `:::left` and `:::right` columns. |
-| `image-left`, `image-right` | Content beside `image:` (with optional `imageAlt:`).   |
+| Layout                      | Arrangement                                                 |
+| --------------------------- | ----------------------------------------------------------- |
+| `default`                   | Content from the top left.                                  |
+| `center`                    | Content centred.                                            |
+| `cover`                     | Title slide: large heading, subtitle.                       |
+| `section`                   | Section divider.                                            |
+| `statement`                 | One large heading, centred.                                 |
+| `fact`                      | A large number or word in the accent colour, and a caption. |
+| `quote`                     | A large `>` quote, with the text after it as the source.    |
+| `full`                      | No padding.                                                 |
+| `two-cols`                  | Content on top, then `:::left` and `:::right` columns.      |
+| `image`                     | `image:` fills the slide, with the content at the bottom.   |
+| `image-left`, `image-right` | Content beside `image:`.                                    |
 
-Unknown layout names render with `default`, keeping the name in
-`data-layout` so CSS can still target them.
-
-A custom layout is a component. Container directives named in its `slots`
-are lifted out of the content and passed separately:
-
-```tsx
-import type { LayoutProps } from "@slidewright/react";
-
-function Quote({ children, slots }: LayoutProps) {
-  return (
-    <figure>
-      <blockquote>{children}</blockquote>
-      <figcaption>{slots.author}</figcaption>
-    </figure>
-  );
-}
-Quote.slots = ["author"];
-
-<Deck markdown={markdown} layouts={{ quote: Quote }} />;
-```
+The image layouts read the image URL from `image:` and its description from
+`imageAlt:`. Without `imageAlt:` the image counts as decoration, and screen
+readers skip it.
 
 ```md
 ---
 layout: quote
 ---
 
-Simplicity is prerequisite for reliability.
+> Simplicity is prerequisite for reliability.
 
-:::author
 Edsger W. Dijkstra
+```
+
+```md
+---
+layout: image
+image: /photos/harbour.jpg
+imageAlt: Fishing boats in a harbour at dawn
+---
+
+# Where we started
+```
+
+### Custom layouts
+
+A custom layout is a component, registered by name with `layouts`. It gets
+the slide's content as `children`. Container directives named in its `slots`
+are lifted out of the content and passed in `slots` instead:
+
+```tsx
+import type { LayoutProps } from "@slidewright/react";
+
+function Sidebar({ children, slots }: LayoutProps) {
+  return (
+    <>
+      <div data-part="main">{children}</div>
+      <aside data-part="aside">{slots.aside}</aside>
+    </>
+  );
+}
+Sidebar.slots = ["aside"];
+
+<Deck markdown={markdown} layouts={{ sidebar: Sidebar }} />;
+```
+
+```md
+---
+layout: sidebar
+---
+
+# Release plan
+
+- Beta in May
+- Launch in June
+
+:::aside
+Owned by the platform team
 :::
+```
+
+The layout renders inside the slide's `<section data-layout="sidebar">`, so
+CSS can arrange it by name:
+
+```css
+[data-layout="sidebar"] {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2em;
+}
+```
+
+- `slide.frontmatter` holds the slide's settings, so a layout can take its
+  own, like `image:` for the image layouts.
+- A layout with a built-in name replaces the built-in one, in the deck, the
+  overview and the presenter view.
+- A layout name with no component renders like `default`, keeping the name in
+  `data-layout`. A layout that only changes the look needs CSS alone:
+
+```css
+[data-layout="agenda"] :where(ol) {
+  font-size: 1.3em;
+}
 ```
 
 ## Components
@@ -294,7 +349,7 @@ adds data attributes for everything else:
 | ----------------------- | -------------------------------------------- |
 | `[data-deck]`           | Root. `data-theme`, `data-color-scheme`      |
 | `[data-slide]`          | A slide. `data-layout`, plus `class:`        |
-| `[data-part]`           | Layout regions (`columns`, `left`, `image`…) |
+| `[data-part]`           | Layout regions (`content`, `image`, `left`…) |
 | `[data-slot]`           | Content placed in a layout slot              |
 | `[data-directive]`      | A directive, by name                         |
 | `[data-step-state]`     | Step content: `future`, `current` or `past`  |

@@ -58,7 +58,8 @@ YAML is reported as a diagnostic and the slide renders without settings.
 | `steps`  | number | Overrides the number of steps counted on the slide.        |
 
 Other keys are passed to the layout and renderer (for example `class` or
-`image`). Their meaning is defined by the renderer.
+`image`). Their meaning is defined by the renderer: the README of
+`@slidewright/react` lists its layouts and the keys they read.
 
 ## Headmatter
 

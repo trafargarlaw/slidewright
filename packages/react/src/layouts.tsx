@@ -43,7 +43,9 @@ function TwoCols({ children, slots }: LayoutProps) {
 }
 TwoCols.slots = ["left", "right"] as const;
 
-function ImageSide({ slide, children }: LayoutProps) {
+// `image-left` and `image-right` put the image beside the content, `image`
+// behind it.
+function WithImage({ slide, children }: LayoutProps) {
   const { image, imageAlt } = slide.frontmatter;
   return (
     <>
@@ -62,10 +64,14 @@ export const builtinLayouts: Readonly<Record<string, Layout>> = {
   center: Content,
   cover: Content,
   section: Content,
+  statement: Content,
+  fact: Content,
+  quote: Content,
   full: Content,
   "two-cols": TwoCols,
-  "image-left": ImageSide,
-  "image-right": ImageSide,
+  image: WithImage,
+  "image-left": WithImage,
+  "image-right": WithImage,
 };
 
 /** The layout registered under a name, or `default` for unknown names. */

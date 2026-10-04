@@ -37,6 +37,14 @@ notes in a second window.
 -->
 
 ---
+layout: fact
+---
+
+# 12 layouts
+
+From title slides to full-bleed pictures. Pick one with `layout:`.
+
+---
 layout: section
 ---
 
@@ -92,6 +100,24 @@ layout: two-cols
 | Columns | `:::left` and `:::right`   |
 
 Inline maths like $e^{i\pi} + 1 = 0$ works too.
+
+---
+layout: quote
+---
+
+> Simplicity is prerequisite for reliability.
+
+Edsger W. Dijkstra
+
+---
+layout: image
+image: /dusk.svg
+imageAlt: Mountains at dusk
+---
+
+# Pictures fill the slide
+
+Set `image:` in the frontmatter, or use `image-left` and `image-right`.
 
 ---
 layout: center

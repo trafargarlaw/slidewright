@@ -36,7 +36,7 @@ layout: <layout-name>
 
 Content here...
 
-LAYOUTS: default, center, cover, section, full, two-cols, image-left, image-right
+LAYOUTS: default, center, cover, section, statement, fact, quote, full, two-cols, image, image-left, image-right
 
 SPECIAL SYNTAX:
 - \`<!-- step -->\` or \`<!-- step N -->\` reveals what follows on the next step
@@ -51,7 +51,7 @@ FRONTMATTER KEYS:
 - title: slide title
 - class: CSS classes on the slide
 - steps: number of steps on the slide
-- image, imageAlt: image for the image-left/image-right layouts
+- image, imageAlt: image for the image, image-left and image-right layouts
 
 The presentation content is typically educational/instructional. Complete the markdown naturally, maintaining the slide's style and topic.`,
                             instruction: `Continue the slide content naturally. If inside a code block, complete the code. If inside frontmatter (between --- lines), suggest valid YAML keys and values. If in regular markdown, continue the prose or structure. Match the existing formatting, indentation, and style. Keep completions concise — suggest one logical unit at a time (a line, a bullet, a code statement). Language context: ${completionMetadata.language}.`,
