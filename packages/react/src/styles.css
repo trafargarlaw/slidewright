@@ -202,6 +202,10 @@
     background: color-mix(in srgb, var(--deck-fg) 9%, transparent);
   }
 
+  [data-deck-controls] button[aria-pressed="true"] {
+    color: var(--deck-accent);
+  }
+
   [data-deck-controls] button:focus-visible {
     outline: 2px solid var(--deck-accent);
     outline-offset: 1px;
@@ -237,6 +241,111 @@
     transform: scaleX(var(--deck-progress, 0));
     transform-origin: left;
     transition: transform 300ms ease;
+  }
+
+  /* Overview --------------------------------------------------------------- */
+
+  [data-deck-overview] {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: auto;
+    overscroll-behavior: contain;
+    /* Room below the last row for the controls. */
+    padding: 16px 16px 60px;
+    background: var(--deck-backdrop);
+    animation: deck-overview-in 160ms ease;
+  }
+
+  @keyframes deck-overview-in {
+    from {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-deck-overview] {
+      animation: none;
+    }
+  }
+
+  [data-deck-overview] ol {
+    display: grid;
+    grid-template-columns: repeat(var(--deck-overview-columns), minmax(0, 1fr));
+    gap: 18px 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  [data-deck-thumbnail] {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  /* The button covers the whole thumbnail; the slide underneath is inert. */
+  [data-deck-thumbnail] > button {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  [data-deck-thumbnail] > button:focus {
+    outline: none;
+  }
+
+  [data-deck-thumbnail-frame] {
+    position: relative;
+    aspect-ratio: var(--deck-aspect-ratio);
+    overflow: hidden;
+    border-radius: 6px;
+    background: var(--deck-bg);
+    box-shadow:
+      0 0 0 1px var(--deck-border),
+      0 1px 3px rgb(0 0 0 / 0.08);
+    /* Thumbnails scrolled out of view skip rendering. */
+    content-visibility: auto;
+    transition:
+      box-shadow 120ms ease,
+      transform 120ms ease;
+  }
+
+  [data-deck-thumbnail]:hover [data-deck-thumbnail-frame] {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--deck-accent) 55%, var(--deck-border)),
+      0 4px 14px rgb(0 0 0 / 0.12);
+    transform: translateY(-1px);
+  }
+
+  [data-deck-thumbnail][data-current] [data-deck-thumbnail-frame] {
+    box-shadow:
+      0 0 0 2px var(--deck-accent),
+      0 4px 14px rgb(0 0 0 / 0.12);
+  }
+
+  [data-deck-thumbnail]:has(> button:focus-visible)
+    [data-deck-thumbnail-frame] {
+    outline: 2px solid var(--deck-accent);
+    outline-offset: 4px;
+  }
+
+  [data-deck-thumbnail-number] {
+    color: var(--deck-muted);
+    font: 500 12px/1 var(--deck-font-sans);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  [data-deck-thumbnail][data-current] [data-deck-thumbnail-number] {
+    color: var(--deck-accent);
+    font-weight: 600;
   }
 
   /* Slide ------------------------------------------------------------------ */

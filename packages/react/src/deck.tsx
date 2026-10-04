@@ -23,19 +23,23 @@ import {
   type RefObject,
 } from "react";
 import type { DirectiveComponents } from "./context";
+import { useElementSize } from "./element-size";
 import { builtinLayouts, type Layout } from "./layouts";
 import { LruCache } from "./lru";
 import {
   clampPosition,
   getKeyCommand,
+  getOverviewKeyCommand,
   getSwipeAction,
   isSwipeStart,
   move,
+  overviewColumns,
   type DeckPosition,
   type KeyLike,
   type NavigationAction,
 } from "./navigation";
-import { SlideError, SlideErrorBoundary, SlideView } from "./slide";
+import { Overview } from "./overview";
+import { RenderedSlide, type CompiledEntry } from "./slide";
 
 export interface DeckProps {
   /**
@@ -69,8 +73,8 @@ export interface DeckProps {
   /** Swipe left and right on touch screens to navigate. Default `true`. */
   swipe?: boolean;
   /**
-   * Show previous, next and fullscreen buttons, a slide counter and progress.
-   * Default `true`.
+   * Show previous, next, overview and fullscreen buttons, a slide counter and
+   * progress. Default `true`.
    */
   controls?: boolean;
   className?: string;
@@ -85,6 +89,8 @@ export interface DeckHandle {
   /** Goes to a slide (0-based) and step, clamped to the deck. */
   goTo(slide: number, step?: number): void;
   focus(): void;
+  /** Opens or closes the overview of all slides. */
+  toggleOverview(): void;
   /**
    * Enters or leaves fullscreen. Browsers only allow entering in response to
    * a click or key press.
@@ -132,6 +138,23 @@ export function Deck({
   const current = clampPosition(position ?? internal, slideCount, getSteps);
   // Digits typed towards a slide number, before Enter.
   const [typed, setTyped] = useState("");
+  // The slide picked in the overview, while it is open.
+  const [picked, setPicked] = useState<number | null>(null);
+  const selected =
+    picked === null || slideCount === 0
+      ? null
+      : Math.min(picked, slideCount - 1);
+
+  const { aspectRatio, canvasWidth, theme, title } = deck.config;
+  const canvasHeight = canvasWidth / aspectRatio;
+  const [viewportRef, viewportSize] = useElementSize();
+  const scale = viewportSize
+    ? Math.min(
+        viewportSize.width / canvasWidth,
+        viewportSize.height / canvasHeight,
+      )
+    : null;
+  const columns = overviewColumns(viewportSize?.width);
 
   const latest = useRef({
     current,
@@ -140,6 +163,8 @@ export function Deck({
     controlled: position !== undefined,
     onPositionChange,
     typed,
+    selected,
+    columns,
   });
   useLayoutEffect(() => {
     latest.current = {
@@ -149,6 +174,8 @@ export function Deck({
       controlled: position !== undefined,
       onPositionChange,
       typed,
+      selected,
+      columns,
     };
   });
 
@@ -168,6 +195,31 @@ export function Deck({
   const rootRef = useRef<HTMLDivElement>(null);
   const fullscreen = useFullscreen(rootRef);
   const toggleFullscreen = fullscreen.toggle;
+
+  const overviewRef = useRef<HTMLElement>(null);
+  const closeOverview = useCallback(() => {
+    // The focused thumbnail is about to go. Focus moves to the deck, so its
+    // keys keep working; a deck that can't take focus leaves it to the page.
+    if (overviewRef.current?.contains(document.activeElement)) {
+      rootRef.current?.focus();
+    }
+    setPicked(null);
+  }, []);
+  const toggleOverview = useCallback(() => {
+    const { current, selected } = latest.current;
+    setTyped("");
+    if (selected === null) setPicked(current.slide);
+    else closeOverview();
+  }, [closeOverview]);
+  // Choosing the slide the deck is on keeps its step.
+  const chooseSlide = useCallback(
+    (slide: number) => {
+      closeOverview();
+      if (slide !== latest.current.current.slide) go({ slide, step: 0 });
+    },
+    [closeOverview, go],
+  );
+
   useImperativeHandle(
     ref,
     () => ({
@@ -175,9 +227,10 @@ export function Deck({
       prev: () => go("prev"),
       goTo: (slide, step = 0) => go({ slide, step }),
       focus: () => rootRef.current?.focus(),
+      toggleOverview,
       toggleFullscreen,
     }),
-    [go, toggleFullscreen],
+    [go, toggleOverview, toggleFullscreen],
   );
 
   // Focus left on a control would keep the controls over the fullscreen
@@ -195,7 +248,33 @@ export function Deck({
 
   const handleKey = useCallback(
     (event: KeyLike & { preventDefault(): void }) => {
-      const command = getKeyCommand(event, latest.current.typed);
+      const { typed, selected, slideCount, columns } = latest.current;
+      if (selected !== null) {
+        const command = getOverviewKeyCommand(
+          event,
+          selected,
+          slideCount,
+          columns,
+        );
+        if (!command) return;
+        event.preventDefault();
+        switch (command.type) {
+          case "select":
+            setPicked(command.slide);
+            break;
+          case "choose":
+            chooseSlide(selected);
+            break;
+          case "close":
+            closeOverview();
+            break;
+          case "fullscreen":
+            toggleFullscreen();
+        }
+        return;
+      }
+
+      const command = getKeyCommand(event, typed);
       if (!command) return;
       event.preventDefault();
       switch (command.type) {
@@ -208,12 +287,15 @@ export function Deck({
         case "navigate":
           go(command.action);
           break;
+        case "overview":
+          toggleOverview();
+          break;
         case "fullscreen":
           setTyped("");
           toggleFullscreen();
       }
     },
-    [go, toggleFullscreen],
+    [go, chooseSlide, closeOverview, toggleOverview, toggleFullscreen],
   );
 
   useEffect(() => {
@@ -255,19 +337,15 @@ export function Deck({
     touchStart.current = null;
   };
 
-  const { aspectRatio, canvasWidth, theme, title } = deck.config;
-  const canvasHeight = canvasWidth / aspectRatio;
-  const [viewportRef, scale] = useFitScale(canvasWidth, canvasHeight);
-
   const allLayouts = useMemo(
     () => (layouts ? { ...builtinLayouts, ...layouts } : builtinLayouts),
     [layouts],
   );
 
   const slide = deck.slides[current.slide];
-  const entry = slide ? getSlide(current.slide) : undefined;
   const lastStep = slide ? getSteps(current.slide) : 0;
   const label = `Slide ${current.slide + 1} of ${slideCount}`;
+  const overviewOpen = selected !== null;
 
   return (
     <div
@@ -295,6 +373,7 @@ export function Deck({
         ref={viewportRef}
         data-deck-viewport=""
         data-swipe={swipe ? "" : undefined}
+        inert={overviewOpen}
         onPointerDown={swipe ? onPointerDown : undefined}
         onPointerUp={swipe ? onPointerUp : undefined}
         onPointerCancel={swipe ? onPointerCancel : undefined}
@@ -304,35 +383,42 @@ export function Deck({
           data-measured={scale === null ? undefined : ""}
           style={{ "--deck-scale": scale ?? 1 } as CSSProperties}
         >
-          {slide && entry ? (
-            entry.error === undefined ? (
-              <SlideErrorBoundary key={slide.index} resetKey={entry.tree}>
-                <SlideView
-                  slide={slide}
-                  tree={entry.tree}
-                  step={current.step}
-                  layout={
-                    (Object.hasOwn(allLayouts, slide.layout)
-                      ? allLayouts[slide.layout]
-                      : undefined) ?? builtinLayouts.default!
-                  }
-                  components={components}
-                  label={label}
-                />
-              </SlideErrorBoundary>
-            ) : (
-              <SlideError error={entry.error} />
-            )
+          {slide ? (
+            <RenderedSlide
+              slide={slide}
+              entry={getSlide(current.slide)}
+              step={current.step}
+              layouts={allLayouts}
+              components={components}
+              label={label}
+            />
           ) : null}
         </div>
       </div>
+
+      {selected !== null ? (
+        <Overview
+          ref={overviewRef}
+          slides={deck.slides}
+          getSlide={getSlide}
+          layouts={allLayouts}
+          components={components}
+          canvasWidth={canvasWidth}
+          columns={columns}
+          current={current.slide}
+          selected={selected}
+          onChoose={chooseSlide}
+        />
+      ) : null}
 
       {controls && slideCount > 0 ? (
         <div data-deck-controls="" data-typing={typed ? "" : undefined}>
           <button
             type="button"
             aria-label="Previous"
-            disabled={current.slide === 0 && current.step === 0}
+            disabled={
+              overviewOpen || (current.slide === 0 && current.step === 0)
+            }
             onClick={() => go("prev")}
           >
             <Chevron direction="left" />
@@ -349,11 +435,20 @@ export function Deck({
             type="button"
             aria-label="Next"
             disabled={
-              current.slide === slideCount - 1 && current.step >= lastStep
+              overviewOpen ||
+              (current.slide === slideCount - 1 && current.step >= lastStep)
             }
             onClick={() => go("next")}
           >
             <Chevron direction="right" />
+          </button>
+          <button
+            type="button"
+            aria-label="Overview"
+            aria-pressed={overviewOpen}
+            onClick={toggleOverview}
+          >
+            <GridIcon />
           </button>
           {fullscreen.supported ? (
             <button
@@ -383,12 +478,6 @@ export function Deck({
       </div>
     </div>
   );
-}
-
-interface CompiledEntry {
-  tree: Root;
-  steps: number;
-  error?: unknown;
 }
 
 // Enough for every slide of a large deck plus recent edits.
@@ -432,37 +521,6 @@ function useSlideCompiler(
     },
     [deck, compiler],
   );
-}
-
-/**
- * Scale that fits the canvas inside the viewport element. `null` until the
- * viewport has been measured (on the server, and in the first client render).
- */
-function useFitScale(
-  width: number,
-  height: number,
-): [Ref<HTMLDivElement>, number | null] {
-  const viewportRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState<number | null>(null);
-
-  useLayoutEffect(() => {
-    const viewport = viewportRef.current;
-    if (!viewport) return;
-
-    const update = () => {
-      const rect = viewport.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-      setScale(Math.min(rect.width / width, rect.height / height));
-    };
-    update();
-
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(update);
-    observer.observe(viewport);
-    return () => observer.disconnect();
-  }, [width, height]);
-
-  return [viewportRef, scale];
 }
 
 const subscribeToFullscreen = (onChange: () => void) => {
@@ -515,6 +573,25 @@ function FullscreenIcon({ exit }: { exit: boolean }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </svg>
+  );
+}
+
+function GridIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      aria-hidden="true"
+    >
+      <rect x="2.75" y="2.75" width="4" height="4" rx="1" />
+      <rect x="9.25" y="2.75" width="4" height="4" rx="1" />
+      <rect x="2.75" y="9.25" width="4" height="4" rx="1" />
+      <rect x="9.25" y="9.25" width="4" height="4" rx="1" />
     </svg>
   );
 }

@@ -2,8 +2,52 @@ import type { Slide } from "@react-slides/core";
 import type { Root } from "hast";
 import { Component, useMemo, type ReactNode } from "react";
 import { SlideContext, type DirectiveComponents } from "./context";
-import type { Layout } from "./layouts";
+import { resolveLayout, type Layout } from "./layouts";
 import { renderSlide } from "./render";
+
+/** A compiled slide, or the error a plugin threw while compiling it. */
+export interface CompiledEntry {
+  tree: Root;
+  steps: number;
+  error?: unknown;
+}
+
+interface RenderedSlideProps {
+  slide: Slide;
+  entry: CompiledEntry;
+  step: number;
+  /** Every layout by name, built-in and custom. */
+  layouts: Readonly<Record<string, Layout>>;
+  components: DirectiveComponents;
+  label: string;
+}
+
+/**
+ * A compiled slide at a step, in its layout. A slide that fails to compile or
+ * render shows its error instead.
+ */
+export function RenderedSlide({
+  slide,
+  entry,
+  step,
+  layouts,
+  components,
+  label,
+}: RenderedSlideProps) {
+  if (entry.error !== undefined) return <SlideError error={entry.error} />;
+  return (
+    <SlideErrorBoundary key={slide.index} resetKey={entry.tree}>
+      <SlideView
+        slide={slide}
+        tree={entry.tree}
+        step={step}
+        layout={resolveLayout(layouts, slide.layout)}
+        components={components}
+        label={label}
+      />
+    </SlideErrorBoundary>
+  );
+}
 
 interface SlideViewProps {
   slide: Slide;

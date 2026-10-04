@@ -2,7 +2,8 @@
 
 Renders Markdown decks in React. Pass a string, get a presentation: one slide
 at a time, scaled to fit its container, with step reveals, syntax-highlighted
-code, keyboard and touch navigation, and fullscreen.
+code, keyboard and touch navigation, an overview of every slide, and
+fullscreen.
 
 The deck follows its `markdown` prop. Edit the source and the deck
 re-renders in place, staying on the current slide and step, so it works for
@@ -30,22 +31,22 @@ server; code is highlighted after hydration.
 
 ## Props
 
-| Prop               | Default   | Description                                                                                |
-| ------------------ | --------- | ------------------------------------------------------------------------------------------ |
-| `markdown`         |           | The deck source.                                                                           |
-| `position`         |           | `{ slide, step }` for a controlled deck. Use with `onPositionChange`.                      |
-| `defaultPosition`  | `{0, 0}`  | Starting position for an uncontrolled deck.                                                |
-| `onPositionChange` |           | Called with the new position on every navigation.                                          |
-| `layouts`          |           | Extra layouts by name. A built-in name replaces the built-in layout.                       |
-| `components`       |           | Components for `:::name` and `::name` directives, by name.                                 |
-| `compileOptions`   |           | Sanitising and remark/rehype plugins, passed to the compiler. Keep the object stable.      |
-| `colorScheme`      |           | `light`, `dark` or `auto`. Overrides the deck's headmatter.                                |
-| `keyboard`         | `"focus"` | `"focus"`: keys work while the deck has focus. `"global"`: anywhere. `false`: off.         |
-| `swipe`            | `true`    | Swipe left and right on touch screens to navigate.                                         |
-| `controls`         | `true`    | Previous, next and fullscreen buttons, slide counter and progress bar.                     |
-| `className`        |           | Class on the deck's root element.                                                          |
-| `style`            |           | Style on the deck's root element.                                                          |
-| `ref`              |           | A `DeckHandle`: `next()`, `prev()`, `goTo(slide, step?)`, `focus()`, `toggleFullscreen()`. |
+| Prop               | Default   | Description                                                                                                    |
+| ------------------ | --------- | -------------------------------------------------------------------------------------------------------------- |
+| `markdown`         |           | The deck source.                                                                                               |
+| `position`         |           | `{ slide, step }` for a controlled deck. Use with `onPositionChange`.                                          |
+| `defaultPosition`  | `{0, 0}`  | Starting position for an uncontrolled deck.                                                                    |
+| `onPositionChange` |           | Called with the new position on every navigation.                                                              |
+| `layouts`          |           | Extra layouts by name. A built-in name replaces the built-in layout.                                           |
+| `components`       |           | Components for `:::name` and `::name` directives, by name.                                                     |
+| `compileOptions`   |           | Sanitising and remark/rehype plugins, passed to the compiler. Keep the object stable.                          |
+| `colorScheme`      |           | `light`, `dark` or `auto`. Overrides the deck's headmatter.                                                    |
+| `keyboard`         | `"focus"` | `"focus"`: keys work while the deck has focus. `"global"`: anywhere. `false`: off.                             |
+| `swipe`            | `true`    | Swipe left and right on touch screens to navigate.                                                             |
+| `controls`         | `true`    | Previous, next, overview and fullscreen buttons, slide counter and progress bar.                               |
+| `className`        |           | Class on the deck's root element.                                                                              |
+| `style`            |           | Style on the deck's root element.                                                                              |
+| `ref`              |           | A `DeckHandle`: `next()`, `prev()`, `goTo(slide, step?)`, `focus()`, `toggleOverview()`, `toggleFullscreen()`. |
 
 Positions are 0-based and clamped to the deck. When slides are removed while
 editing, an uncontrolled deck shows the last slide that still exists and
@@ -71,6 +72,7 @@ const [position, setPosition] = useState({ slide: 0, step: 0 });
 | `↓` / `↑`                    | Next / previous slide, skipping steps   |
 | `Home` / `End`               | First / last slide                      |
 | A number, then `Enter`       | Go to that slide                        |
+| `O`                          | Open or close the overview              |
 | `F`                          | Enter or leave fullscreen               |
 
 While a number is being typed, the counter shows it; `Backspace` corrects it
@@ -79,6 +81,11 @@ content on a slide are left alone.
 
 On touch screens, swipe left for the next step and right for the previous
 one. Vertical swipes still scroll the page.
+
+The overview shows every slide in a grid, fully revealed, starting from the
+current one. Move through it with the arrow keys and press `Enter` to go to a
+slide, or click one. `Escape` or `O` closes it without moving. In
+fullscreen, browsers keep `Escape` for leaving fullscreen, so use `O` there.
 
 The fullscreen button only appears where the browser allows fullscreen:
 not on iPhones, which only allow it for videos, and in an iframe only with
@@ -211,18 +218,24 @@ Colours use `light-dark()`, so a theme can define both schemes in one value.
 Slide content is ordinary HTML, styled with ordinary selectors. The renderer
 adds data attributes for everything else:
 
-| Selector               | Element                                      |
-| ---------------------- | -------------------------------------------- |
-| `[data-deck]`          | Root. `data-theme`, `data-color-scheme`      |
-| `[data-slide]`         | Current slide. `data-layout`, plus `class:`  |
-| `[data-part]`          | Layout regions (`columns`, `left`, `image`…) |
-| `[data-slot]`          | Content placed in a layout slot              |
-| `[data-directive]`     | A directive, by name                         |
-| `[data-step-state]`    | Step content: `future`, `current` or `past`  |
-| `[data-code]`          | Code block figure                            |
-| `[data-line-state]`    | Code line: `highlighted` or `dimmed`         |
-| `[data-deck-controls]` | Previous/next buttons and counter            |
-| `[data-deck-progress]` | Progress bar                                 |
+| Selector                | Element                                      |
+| ----------------------- | -------------------------------------------- |
+| `[data-deck]`           | Root. `data-theme`, `data-color-scheme`      |
+| `[data-slide]`          | A slide. `data-layout`, plus `class:`        |
+| `[data-part]`           | Layout regions (`columns`, `left`, `image`…) |
+| `[data-slot]`           | Content placed in a layout slot              |
+| `[data-directive]`      | A directive, by name                         |
+| `[data-step-state]`     | Step content: `future`, `current` or `past`  |
+| `[data-code]`           | Code block figure                            |
+| `[data-line-state]`     | Code line: `highlighted` or `dimmed`         |
+| `[data-deck-controls]`  | Previous/next buttons and counter            |
+| `[data-deck-progress]`  | Progress bar                                 |
+| `[data-deck-overview]`  | Overview grid                                |
+| `[data-deck-thumbnail]` | A slide in the overview. `data-current`      |
+
+Thumbnails in the overview are slides too, so slide CSS styles them the same
+way. Scope a rule to `[data-deck-viewport]` to style only the slide being
+presented.
 
 The slide canvas has a fixed size (`canvasWidth` in the headmatter, 980px by
 default) and is scaled to fit, so sizes in slide CSS are canvas pixels and

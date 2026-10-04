@@ -67,3 +67,14 @@ export const builtinLayouts: Readonly<Record<string, Layout>> = {
   "image-left": ImageSide,
   "image-right": ImageSide,
 };
+
+/** The layout registered under a name, or `default` for unknown names. */
+export function resolveLayout(
+  layouts: Readonly<Record<string, Layout>>,
+  name: string,
+): Layout {
+  return (
+    (Object.hasOwn(layouts, name) ? layouts[name] : undefined) ??
+    builtinLayouts.default!
+  );
+}

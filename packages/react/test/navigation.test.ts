@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   clampPosition,
   getKeyCommand,
+  getOverviewKeyCommand,
   getSwipeAction,
   isSwipeStart,
   move,
+  overviewColumns,
   type KeyLike,
 } from "../src/navigation";
 
@@ -55,21 +57,20 @@ describe("clampPosition", () => {
   });
 });
 
+const keyEvent = (init: Partial<KeyLike>): KeyLike => ({
+  key: "",
+  target: null,
+  altKey: false,
+  ctrlKey: false,
+  metaKey: false,
+  shiftKey: false,
+  defaultPrevented: false,
+  ...init,
+});
+
 describe("getKeyCommand", () => {
   const key = (init: Partial<KeyLike>, typed?: string) =>
-    getKeyCommand(
-      {
-        key: "",
-        target: null,
-        altKey: false,
-        ctrlKey: false,
-        metaKey: false,
-        shiftKey: false,
-        defaultPrevented: false,
-        ...init,
-      },
-      typed,
-    );
+    getKeyCommand(keyEvent(init), typed);
   const action = (init: Partial<KeyLike>) => {
     const command = key(init);
     return command?.type === "navigate" ? command.action : command?.type;
@@ -84,6 +85,8 @@ describe("getKeyCommand", () => {
     expect(action({ key: "End" })).toBe("last");
     expect(action({ key: "f" })).toBe("fullscreen");
     expect(action({ key: "F", shiftKey: true })).toBe("fullscreen");
+    expect(action({ key: "o" })).toBe("overview");
+    expect(action({ key: "O", shiftKey: true })).toBe("overview");
     expect(action({ key: "a" })).toBeUndefined();
   });
 
@@ -137,6 +140,75 @@ describe("getKeyCommand", () => {
     expect(key({ key: " ", target: button })).toBeUndefined();
     expect(action({ key: "ArrowRight", target: button })).toBe("next");
     expect(key({ key: "Enter", target: button })).toBeUndefined();
+  });
+});
+
+describe("getOverviewKeyCommand", () => {
+  // Eight slides, three to a row:
+  //   0 1 2
+  //   3 4 5
+  //   6 7
+  const key = (init: Partial<KeyLike>, selected = 4) =>
+    getOverviewKeyCommand(keyEvent(init), selected, 8, 3);
+  const select = (key: string, selected: number) => {
+    const command = getOverviewKeyCommand(keyEvent({ key }), selected, 8, 3);
+    return command?.type === "select" ? command.slide : command?.type;
+  };
+
+  it("moves the selection along rows and columns", () => {
+    expect(select("ArrowLeft", 4)).toBe(3);
+    expect(select("ArrowRight", 4)).toBe(5);
+    expect(select("ArrowUp", 4)).toBe(1);
+    expect(select("ArrowDown", 4)).toBe(7);
+    expect(select("ArrowLeft", 3)).toBe(2);
+    expect(select("Home", 4)).toBe(0);
+    expect(select("End", 4)).toBe(7);
+  });
+
+  it("stops at the edges of the grid", () => {
+    expect(select("ArrowLeft", 0)).toBe(0);
+    expect(select("ArrowRight", 7)).toBe(7);
+    expect(select("ArrowUp", 2)).toBe(2);
+    expect(select("ArrowDown", 6)).toBe(6);
+    // Down from a full row onto the shorter last one.
+    expect(select("ArrowDown", 5)).toBe(7);
+  });
+
+  it("chooses, closes and toggles fullscreen", () => {
+    expect(key({ key: "Enter" })).toEqual({ type: "choose" });
+    expect(key({ key: " " })).toEqual({ type: "choose" });
+    expect(key({ key: "Escape" })).toEqual({ type: "close" });
+    expect(key({ key: "o" })).toEqual({ type: "close" });
+    expect(key({ key: "f" })).toEqual({ type: "fullscreen" });
+  });
+
+  it("leaves a focused button to activate itself", () => {
+    const button = document.createElement("button");
+    expect(key({ key: "Enter", target: button })).toBeUndefined();
+    expect(key({ key: " ", target: button })).toBeUndefined();
+    expect(key({ key: "ArrowRight", target: button })).toEqual({
+      type: "select",
+      slide: 5,
+    });
+  });
+
+  it("leaves other keys, shortcuts and form fields alone", () => {
+    expect(key({ key: "3" })).toBeUndefined();
+    expect(key({ key: "PageDown" })).toBeUndefined();
+    expect(key({ key: "ArrowRight", metaKey: true })).toBeUndefined();
+    expect(key({ key: "ArrowRight", defaultPrevented: true })).toBeUndefined();
+    const input = document.createElement("input");
+    expect(key({ key: "ArrowRight", target: input })).toBeUndefined();
+  });
+});
+
+describe("overviewColumns", () => {
+  it("fits thumbnails to the width, within limits", () => {
+    expect(overviewColumns(360)).toBe(2);
+    expect(overviewColumns(980)).toBe(4);
+    expect(overviewColumns(1440)).toBe(6);
+    expect(overviewColumns(2560)).toBe(6);
+    expect(overviewColumns(undefined)).toBe(4);
   });
 });
 

@@ -99,7 +99,8 @@ export type KeyCommand =
   | { type: "typeSlide"; typed: string }
   /** `Enter` after a slide number. 0-based. */
   | { type: "goToSlide"; slide: number }
-  | { type: "fullscreen" };
+  | { type: "fullscreen" }
+  | { type: "overview" };
 
 /**
  * Maps a key press to a command, given the slide number typed so far.
@@ -111,11 +112,7 @@ export function getKeyCommand(
   event: KeyLike,
   typed = "",
 ): KeyCommand | undefined {
-  if (event.defaultPrevented) return undefined;
-  if (event.altKey || event.ctrlKey || event.metaKey) return undefined;
-
-  const target = event.target instanceof Element ? event.target : null;
-  if (target?.closest(TEXT_ENTRY)) return undefined;
+  if (isForeignKey(event)) return undefined;
 
   const { key } = event;
   if (/^[0-9]$/.test(key)) {
@@ -133,13 +130,102 @@ export function getKeyCommand(
     if (key === "Escape") return { type: "typeSlide", typed: "" };
   }
   if (key === "f" || key === "F") return { type: "fullscreen" };
+  if (key === "o" || key === "O") return { type: "overview" };
 
   if (key === " ") {
-    if (target?.closest(ACTIVATES_ON_SPACE)) return undefined;
+    if (targetElement(event)?.closest(ACTIVATES_ON_SPACE)) return undefined;
     return { type: "navigate", action: event.shiftKey ? "prev" : "next" };
   }
   const action = KEY_ACTIONS[key];
   return action ? { type: "navigate", action } : undefined;
+}
+
+/** What a key press asks the overview to do. */
+export type OverviewKeyCommand =
+  /** Moves the selection to a slide. 0-based. */
+  | { type: "select"; slide: number }
+  /** Goes to the selected slide. */
+  | { type: "choose" }
+  | { type: "close" }
+  | { type: "fullscreen" };
+
+/**
+ * Maps a key press in the overview to a command. The arrow keys move the
+ * selection through a grid of `count` slides, `columns` to a row.
+ */
+export function getOverviewKeyCommand(
+  event: KeyLike,
+  selected: number,
+  count: number,
+  columns: number,
+): OverviewKeyCommand | undefined {
+  if (isForeignKey(event)) return undefined;
+
+  const last = count - 1;
+  const select = (slide: number): OverviewKeyCommand => ({
+    type: "select",
+    slide: clamp(slide, 0, last),
+  });
+  switch (event.key) {
+    case "Escape":
+    case "o":
+    case "O":
+      return { type: "close" };
+    case "f":
+    case "F":
+      return { type: "fullscreen" };
+    case "Enter":
+    case " ":
+      // A focused button, such as a thumbnail, activates itself.
+      if (targetElement(event)?.closest(ACTIVATES_ON_SPACE)) return undefined;
+      return { type: "choose" };
+    case "ArrowLeft":
+      return select(selected - 1);
+    case "ArrowRight":
+      return select(selected + 1);
+    case "ArrowUp":
+      return select(selected >= columns ? selected - columns : selected);
+    case "ArrowDown": {
+      // From a full row onto a shorter last row, land on its last slide.
+      const lastRow = Math.floor(last / columns);
+      const below = Math.floor(selected / columns) < lastRow;
+      return select(below ? selected + columns : selected);
+    }
+    case "Home":
+      return select(0);
+    case "End":
+      return select(last);
+  }
+  return undefined;
+}
+
+/** Thumbnails get at least this much width, in CSS pixels. */
+const THUMBNAIL_WIDTH = 240;
+const MIN_COLUMNS = 2;
+const MAX_COLUMNS = 6;
+const DEFAULT_COLUMNS = 4;
+
+/**
+ * Thumbnails per row in an overview of the given width, or a default while
+ * the width is unknown.
+ */
+export function overviewColumns(width: number | undefined): number {
+  if (!width) return DEFAULT_COLUMNS;
+  return clamp(Math.floor(width / THUMBNAIL_WIDTH), MIN_COLUMNS, MAX_COLUMNS);
+}
+
+/**
+ * Keys the deck should leave alone: browser shortcuts, typing in a form
+ * field, and keys already handled by a component on the slide.
+ */
+function isForeignKey(event: KeyLike): boolean {
+  if (event.defaultPrevented) return true;
+  if (event.altKey || event.ctrlKey || event.metaKey) return true;
+  return Boolean(targetElement(event)?.closest(TEXT_ENTRY));
+}
+
+function targetElement(event: { target: EventTarget | null }): Element | null {
+  return event.target instanceof Element ? event.target : null;
 }
 
 /** The parts of a pointer event that swiping looks at. */
@@ -157,8 +243,7 @@ export interface PointerLike {
 export function isSwipeStart(event: PointerLike): boolean {
   if (event.pointerType !== "touch" || !event.isPrimary) return false;
   if (event.defaultPrevented) return false;
-  const target = event.target instanceof Element ? event.target : null;
-  return !target?.closest(TEXT_ENTRY);
+  return !targetElement(event)?.closest(TEXT_ENTRY);
 }
 
 /** Minimum horizontal travel for a swipe, in CSS pixels. */

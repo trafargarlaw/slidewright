@@ -4,6 +4,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { createRef } from "react";
 import { describe, expect, it, onTestFinished, vi } from "vitest";
@@ -362,6 +363,154 @@ describe("fullscreen", () => {
     render(<Deck markdown={THREE_SLIDES} ref={ref} controls={false} />);
     act(() => ref.current!.toggleFullscreen());
     expect(request).toHaveBeenCalledOnce();
+  });
+});
+
+describe("overview", () => {
+  const overview = () =>
+    screen.queryByRole("navigation", { name: "Slide overview" });
+  const thumbnail = (name: string) =>
+    within(overview()!).getByRole("button", { name });
+  const focused = () => document.activeElement!;
+
+  it("shows every slide fully revealed, starting from the current one", () => {
+    render(
+      <Deck markdown={THREE_SLIDES} defaultPosition={{ slide: 1, step: 0 }} />,
+    );
+    press("o");
+
+    const thumbnails = within(overview()!).getAllByRole("button");
+    expect(thumbnails.map((button) => button.ariaLabel)).toEqual([
+      "Slide 1: One",
+      "Slide 2: Two",
+      "Slide 3: Three",
+    ]);
+    expect(thumbnail("Slide 2: Two").ariaCurrent).toBe("true");
+    expect(focused()).toBe(thumbnail("Slide 2: Two"));
+    expect(within(overview()!).getByText("Revealed").dataset.stepState).toBe(
+      "current",
+    );
+    expect(viewport().hasAttribute("inert")).toBe(true);
+  });
+
+  it("picks a slide with the arrow keys", () => {
+    render(<Deck markdown={THREE_SLIDES} />);
+    press("o");
+    press("ArrowRight", focused());
+    press("ArrowRight", focused());
+    expect(focused()).toBe(thumbnail("Slide 3: Three"));
+    expect(heading()).toBe("One");
+
+    // Enter is left to the focused thumbnail, which clicks itself.
+    expect(press("Enter", focused())).toBe(true);
+    fireEvent.click(focused());
+    expect(overview()).toBeNull();
+    expect(heading()).toBe("Three");
+    expect(focused()).toBe(deckRoot());
+  });
+
+  it("moves a row at a time with the up and down arrows", () => {
+    const rect = vi
+      .spyOn(Element.prototype, "getBoundingClientRect")
+      .mockReturnValue({ width: 720, height: 405 } as DOMRect);
+    onTestFinished(() => rect.mockRestore());
+    const markdown = ["A", "B", "C", "D", "E", "F"]
+      .map((name) => `# ${name}`)
+      .join("\n\n---\n\n");
+    render(<Deck markdown={markdown} />);
+    press("o");
+
+    // 720 pixels fit three thumbnails to a row.
+    press("ArrowDown", focused());
+    expect(focused()).toBe(thumbnail("Slide 4: D"));
+    press("ArrowRight", focused());
+    press("ArrowUp", focused());
+    expect(focused()).toBe(thumbnail("Slide 2: B"));
+  });
+
+  it("closes with Escape or O without moving", () => {
+    render(
+      <Deck markdown={THREE_SLIDES} defaultPosition={{ slide: 1, step: 1 }} />,
+    );
+    press("o");
+    press("ArrowRight", focused());
+    press("Escape", focused());
+    expect(overview()).toBeNull();
+    expect(focused()).toBe(deckRoot());
+    expect(screen.getByText("Revealed").dataset.stepState).toBe("current");
+
+    press("o");
+    expect(focused()).toBe(thumbnail("Slide 2: Two"));
+    press("O", focused());
+    expect(overview()).toBeNull();
+  });
+
+  it("goes to a clicked slide, keeping the step on the current one", () => {
+    render(
+      <Deck markdown={THREE_SLIDES} defaultPosition={{ slide: 1, step: 1 }} />,
+    );
+    press("o");
+    fireEvent.click(thumbnail("Slide 2: Two"));
+    expect(screen.getByText("Revealed").dataset.stepState).toBe("current");
+
+    press("o");
+    fireEvent.click(thumbnail("Slide 1: One"));
+    expect(heading()).toBe("One");
+
+    press("o");
+    fireEvent.click(thumbnail("Slide 2: Two"));
+    expect(screen.getByText("Revealed").dataset.stepState).toBe("future");
+  });
+
+  it("keeps keys and controls away from the slides behind it", () => {
+    render(<Deck markdown={THREE_SLIDES} />);
+    press("o");
+    press("ArrowRight");
+    press("PageDown");
+    press("3");
+    expect(heading()).toBe("One");
+    expect(counter()).toBe("1 / 3");
+    const next = screen.getByRole("button", { name: "Next" });
+    expect((next as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("opens with the controls and through a ref", () => {
+    const ref = createRef<DeckHandle>();
+    render(<Deck markdown={THREE_SLIDES} ref={ref} />);
+    const button = screen.getByRole("button", { name: "Overview" });
+    expect(button.ariaPressed).toBe("false");
+
+    fireEvent.click(button);
+    expect(overview()).not.toBeNull();
+    expect(button.ariaPressed).toBe("true");
+    fireEvent.click(button);
+    expect(overview()).toBeNull();
+
+    act(() => ref.current!.toggleOverview());
+    expect(overview()).not.toBeNull();
+  });
+
+  it("handles keys anywhere on the page in global mode", () => {
+    render(<Deck markdown={THREE_SLIDES} keyboard="global" />);
+    press("o", document.body);
+    expect(overview()).not.toBeNull();
+    press("ArrowRight", document.body);
+    expect(focused()).toBe(thumbnail("Slide 2: Two"));
+    expect(counter()).toBe("1 / 3");
+    press("Enter", document.body);
+    expect(overview()).toBeNull();
+    expect(heading()).toBe("Two");
+  });
+
+  it("follows edits to the deck while open", () => {
+    const { rerender } = render(<Deck markdown={THREE_SLIDES} />);
+    press("o");
+    press("End", focused());
+    rerender(
+      <Deck markdown={THREE_SLIDES.replace("\n---\n\n# Three\n", "")} />,
+    );
+    expect(within(overview()!).getAllByRole("button")).toHaveLength(2);
+    expect(focused()).toBe(thumbnail("Slide 2: Two"));
   });
 });
 
