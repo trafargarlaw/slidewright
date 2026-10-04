@@ -31,3 +31,9 @@ dist-ssr
 
 slide.md
 .playwright-cli
+# Build output
+.output
+.tanstack
+.vinxi
+*.tsbuildinfo
+coverage

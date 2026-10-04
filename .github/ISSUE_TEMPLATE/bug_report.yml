@@ -1,0 +1,28 @@
+name: Bug report
+description: Something renders or behaves incorrectly.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal deck that reproduces it
+      description: The smallest Markdown that shows the problem.
+      render: markdown
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Package and version
+      placeholder: e.g. core 0.1.0
+  - type: input
+    id: env
+    attributes:
+      label: Browser / Node / OS
