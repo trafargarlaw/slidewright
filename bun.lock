@@ -114,6 +114,19 @@
         "vitest": "^5.0.3",
       },
     },
+    "packages/create": {
+      "name": "@slidewright/create",
+      "version": "0.0.0",
+      "bin": {
+        "create-slidewright": "./bin/create-slidewright.js",
+      },
+      "devDependencies": {
+        "@slidewright/core": "workspace:*",
+        "tsdown": "^0.23.0",
+        "vite": "^8.3.2",
+        "vitest": "^5.0.3",
+      },
+    },
     "packages/react": {
       "name": "@slidewright/react",
       "version": "0.0.0",
@@ -598,6 +611,8 @@
     "@slidewright/cli": ["@slidewright/cli@workspace:packages/cli"],
 
     "@slidewright/core": ["@slidewright/core@workspace:packages/core"],
+
+    "@slidewright/create": ["@slidewright/create@workspace:packages/create"],
 
     "@slidewright/playground": ["@slidewright/playground@workspace:apps/playground"],
 

@@ -1,0 +1,30 @@
+{
+  "name": "@slidewright/create",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Start a Markdown deck: npm create @slidewright",
+  "license": "MIT",
+  "bin": {
+    "create-slidewright": "./bin/create-slidewright.js"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "template"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@slidewright/core": "workspace:*",
+    "tsdown": "^0.23.0",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}

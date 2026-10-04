@@ -50,7 +50,7 @@ welcome.
 - [x] Presenter mode: notes, next-slide preview, timer, synced windows
 - [x] Complete layout set and custom layouts
 - [x] Code: line numbers, diff and focus notation, titles
-- [ ] Vite plugin and CLI (`dev`, `build`), project template
+- [x] Vite plugin and CLI (`dev`, `build`), project template
 - [ ] Export to PDF and PNG
 - [ ] Documentation site and examples
 - [ ] First release on npm, under the `@slidewright` scope

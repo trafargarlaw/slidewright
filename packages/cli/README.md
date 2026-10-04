@@ -7,6 +7,9 @@ The deck format is documented in [docs/syntax.md](../../docs/syntax.md).
 
 ## Usage
 
+Start a project with [`npm create @slidewright`](../create/README.md), or
+add the CLI to an existing one:
+
 ```sh
 npm install --save-dev @slidewright/cli
 
