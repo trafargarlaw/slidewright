@@ -1,4 +1,6 @@
 {
+  "title": "Slidewright",
+  "description": "Write presentations in Markdown. Present them from the command line, export them to PDF, or put them in any React app.",
   "pages": [
     "index",
     "---Examples---",

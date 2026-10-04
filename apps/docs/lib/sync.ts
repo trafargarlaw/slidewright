@@ -23,6 +23,16 @@ export const PAGES: Readonly<Record<string, string>> = {
   roadmap: "docs/ROADMAP.md",
 };
 
+/**
+ * Descriptions for the pages of files outside a package. A package README's
+ * page takes the description in its package.json.
+ */
+export const DESCRIPTIONS: Readonly<Record<string, string>> = {
+  "docs/syntax.md":
+    "Everything a deck can hold on top of GitHub Flavored Markdown.",
+  "docs/ROADMAP.md": "The direction of the project, and what comes next.",
+};
+
 /** Files the example decks show, copied to the site root as they're served there. */
 export const ASSETS: readonly string[] = ["examples/layouts/public/hills.svg"];
 
@@ -128,7 +138,7 @@ export function sync(repository: string, site: string): string[] {
     const description = existsSync(manifest)
       ? (JSON.parse(readFileSync(manifest, "utf8")) as { description?: string })
           .description
-      : undefined;
+      : DESCRIPTIONS[source];
     write(
       join(site, "content", "docs", `${route}.md`),
       toPage(source, readFileSync(file, "utf8"), description),

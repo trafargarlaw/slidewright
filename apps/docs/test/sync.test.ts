@@ -163,9 +163,17 @@ describe("sync", () => {
       );
     }
     expect(existsSync(join(target, "public/hills.svg"))).toBe(true);
-    expect(
-      readFileSync(join(target, "content/docs/reference/react.md"), "utf8"),
-    ).toMatch(/^description: ".+"$/m);
+  });
+
+  it("gives every page a description", () => {
+    target = mkdtempSync(join(tmpdir(), "slidewright-docs-"));
+    sync(repository, target);
+    for (const route of Object.keys(PAGES)) {
+      expect(
+        readFileSync(join(target, "content/docs", `${route}.md`), "utf8"),
+        route,
+      ).toMatch(/^description: ".+"$/m);
+    }
   });
 
   it("leaves unchanged files alone", () => {

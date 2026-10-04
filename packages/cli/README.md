@@ -3,7 +3,7 @@
 Present, build and export Markdown decks from the command line. A project
 needs only the deck file: no config, no `index.html`, no React code.
 
-The deck format is documented in [docs/syntax.md](../../docs/syntax.md).
+The deck format is documented in the [deck syntax reference](../../docs/syntax.md).
 
 ## Usage
 

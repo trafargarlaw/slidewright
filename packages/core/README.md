@@ -7,7 +7,7 @@ React dependency and runs in Node and the browser.
 Most people want the React renderer instead. Use this package directly when
 you build your own renderer, editor integration or tooling.
 
-The deck format is documented in [docs/syntax.md](../../docs/syntax.md).
+The deck format is documented in the [deck syntax reference](../../docs/syntax.md).
 
 ## Usage
 

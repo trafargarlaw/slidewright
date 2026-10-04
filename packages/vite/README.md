@@ -8,7 +8,7 @@ React code.
   on the same slide and step.
 - `vite build` writes a static site that can be hosted anywhere.
 
-The deck format is documented in [docs/syntax.md](../../docs/syntax.md).
+The deck format is documented in the [deck syntax reference](../../docs/syntax.md).
 
 ## Usage
 

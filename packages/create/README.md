@@ -28,5 +28,5 @@ npm run dev     # present on http://localhost:3030
 npm run build   # build a static site into dist/
 ```
 
-See [`@slidewright/cli`](../cli/README.md) for the commands and
-[docs/syntax.md](../../docs/syntax.md) for the deck format.
+See [`@slidewright/cli`](../cli/README.md) for the commands and the
+[deck syntax reference](../../docs/syntax.md) for the deck format.

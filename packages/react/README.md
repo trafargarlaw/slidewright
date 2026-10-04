@@ -10,7 +10,7 @@ The deck follows its `markdown` prop. Edit the source and the deck
 re-renders in place, staying on the current slide and step, so it works for
 live editors, CMS previews and docs sites as well as plain presenting.
 
-The deck format is documented in [docs/syntax.md](../../docs/syntax.md).
+The deck format is documented in the [deck syntax reference](../../docs/syntax.md).
 
 ## Usage
 

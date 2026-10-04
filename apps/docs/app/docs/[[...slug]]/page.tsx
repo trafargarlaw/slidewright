@@ -26,16 +26,20 @@ export default async function Page(props: Props) {
 
   const MDX = page.data.body;
   const markdownUrl = getPageMarkdownUrl(page).url;
-  // A synced page shows the repository file it comes from.
-  const file =
-    PAGES[page.slugs.join("/")] ?? `apps/docs/content/docs/${page.path}`;
+  // A synced page links to the repository file it comes from. Its
+  // description, for search and previews, repeats the file's first lines, so
+  // the page doesn't show it.
+  const synced = PAGES[page.slugs.join("/")];
+  const file = synced ?? `apps/docs/content/docs/${page.path}`;
 
   return (
     <DocsPage toc={page.data.toc} full={page.data.full}>
       <DocsTitle>{page.data.title}</DocsTitle>
-      <DocsDescription className="mb-0">
-        {page.data.description}
-      </DocsDescription>
+      {synced ? null : (
+        <DocsDescription className="mb-0">
+          {page.data.description}
+        </DocsDescription>
+      )}
       <div className="flex flex-row gap-2 items-center border-b pb-6">
         <MarkdownCopyButton markdownUrl={markdownUrl} />
         <ViewOptionsPopover
