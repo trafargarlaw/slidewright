@@ -20,6 +20,7 @@ Write presentations in Markdown, render them with React.
 | ----------------- | ------------------------------------------- |
 | `packages/core`   | Deck parser and slide compiler (no React)   |
 | `packages/react`  | `<Deck>` component, layouts and themes      |
+| `packages/vite`   | Vite plugin: serve and build a deck file    |
 | `apps/playground` | Browser editor with live preview            |
 | `docs/`           | [Syntax reference](docs/syntax.md), roadmap |
 

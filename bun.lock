@@ -124,6 +124,26 @@
         "react-dom": "^19.0.0",
       },
     },
+    "packages/vite": {
+      "name": "@slidewright/vite",
+      "version": "0.0.0",
+      "dependencies": {
+        "@slidewright/core": "workspace:*",
+        "@slidewright/react": "workspace:*",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0",
+      },
+      "devDependencies": {
+        "@types/react": "^19.3.0",
+        "@types/react-dom": "^19.3.0",
+        "tsdown": "^0.23.0",
+        "vite": "^8.3.2",
+        "vitest": "^5.0.3",
+      },
+      "peerDependencies": {
+        "vite": "^8.0.0",
+      },
+    },
   },
   "packages": {
     "@ai-sdk/gateway": ["@ai-sdk/gateway@4.0.103", "", { "dependencies": { "@ai-sdk/provider": "4.0.21", "@ai-sdk/provider-utils": "5.0.53", "@vercel/oidc": "3.2.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-nnGTUHzPRQ14jhv9CL4OQrzcRBIFTBMIPKGIi9Z9u/4GtwSRxa/nxUX6np2Iwp5phOzO0a0njj/j9Jolf5AEaA=="],
@@ -565,6 +585,8 @@
     "@slidewright/playground": ["@slidewright/playground@workspace:apps/playground"],
 
     "@slidewright/react": ["@slidewright/react@workspace:packages/react"],
+
+    "@slidewright/vite": ["@slidewright/vite@workspace:packages/vite"],
 
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
 
