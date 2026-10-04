@@ -53,7 +53,7 @@ welcome.
 - [x] Vite plugin and CLI (`dev`, `build`), project template
 - [x] Export to PDF and PNG
 - [x] Documentation site and examples
-- [ ] First release on npm, under the `@slidewright` scope
+- [x] First release on npm, under the `@slidewright` scope
 
 ### 2 — Components and polish (v0.2)
 
