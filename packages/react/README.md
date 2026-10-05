@@ -28,7 +28,7 @@ deck's aspect ratio. Give it a height as well (through `className` or `style`)
 to fill a fixed box; the slide scales to fit and is letterboxed.
 
 Requires React 19. The package ships with `"use client"` and renders on the
-server; code is highlighted after hydration.
+server; code is highlighted and maths is drawn after hydration.
 
 ## Props
 
@@ -191,9 +191,10 @@ printed, each page breaks onto a sheet of its own: the component sets the
 printed page size to the slide size, so give it its own page rather than
 mixing it with other printed content.
 
-Code highlighting loads after the first render. A code block has
-`aria-busy="true"` until its colours are ready, so a script that prints or
-captures the pages can wait for `[aria-busy="true"]` to be gone.
+Code highlighting and maths load after the first render. A code block has
+`aria-busy="true"` until its colours are ready, and maths until it is drawn,
+so a script that prints or captures the pages can wait for
+`[aria-busy="true"]` to be gone.
 
 ## Layouts
 
@@ -339,6 +340,11 @@ CSS alone. A component that throws only breaks its own slide.
 theme, all inside the `slidewright` cascade layer. Any rule in your own CSS
 outside a layer wins over it.
 
+For maths, it imports KaTeX's stylesheet and fonts
+(`katex/dist/katex.min.css`) into the same layer. Your bundler resolves that
+import from `node_modules`; KaTeX itself loads with the first slide that has
+maths.
+
 That includes resets. A global `* { margin: 0; padding: 0 }` outside a layer
 strips the slide padding and spacing, so put resets in a layer declared before
 `slidewright`. With Tailwind, declare the order before importing it, so the
@@ -398,6 +404,7 @@ adds data attributes for everything else:
 | `[data-line-state]`     | Code line: `highlighted` or `dimmed`         |
 | `[data-line-diff]`      | Code line: `added` or `removed`              |
 | `[data-diff-marker]`    | The `+` or `-` before a diff line            |
+| `[data-math]`           | Maths: `inline` or `display`                 |
 | `[data-deck-controls]`  | The buttons and the slide counter            |
 | `[data-deck-progress]`  | Progress bar                                 |
 | `[data-deck-overview]`  | Overview grid                                |

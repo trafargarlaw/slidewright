@@ -117,7 +117,7 @@ function stringProperty(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
-function textContent(node: ElementContent): string {
+export function textContent(node: ElementContent): string {
   if (node.type === "text") return node.value;
   if (node.type !== "element") return "";
   return node.children.map(textContent).join("");

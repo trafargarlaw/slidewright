@@ -60,7 +60,8 @@ welcome.
 
 - [ ] Components in Markdown through a registry (directive syntax)
 - [ ] MDX support through the Vite plugin, if it fits cleanly
-- [ ] Transitions, diagrams (Mermaid), maths (KaTeX), icons
+- [x] Maths (KaTeX)
+- [ ] Transitions, diagrams (Mermaid), icons
 - [ ] Multi-file decks
 - [ ] Agent skills describing the deck format
 
