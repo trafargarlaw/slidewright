@@ -370,15 +370,12 @@ New checkout flow
 Inline directives (`:name`) are **not** part of the syntax, so text like
 `Note:this` or `10:30` stays as written.
 
-Components are React components. With the CLI, they come from a
-`components.tsx` file next to the deck; with the Vite plugin, from its
-`components` option; in a React app, from the `components` prop of `<Deck>`.
-See [Components](vite.md#components).
-
 A deck is Markdown, not MDX: it has no `import` lines, no JSX and no
-`{expressions}`, so braces and `<` in text stay as written. Directives are
-the way to put a component on a slide. The reasons are in
-[ADR 0001](https://github.com/trafargarlaw/slidewright/blob/master/docs/adr/0001-decks-are-markdown-not-mdx.md).
+`{expressions}`, so braces and `<` in text stay as written. A component is
+a React component that a React app gives to `<Deck>`, in its
+[`components` prop](react.md#components). With the CLI
+and the Vite plugin, a directive is a slot or a `div` to style. The reasons
+are in [ADR 0001](https://github.com/trafargarlaw/slidewright/blob/master/docs/adr/0001-decks-are-markdown-not-mdx.md).
 
 ## HTML
 

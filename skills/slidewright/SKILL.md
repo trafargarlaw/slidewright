@@ -1,6 +1,6 @@
 ---
 name: slidewright
-description: Write presentations as Markdown with Slidewright. Use when creating or editing a Slidewright deck (a `slides.md` with `---` between slides), its layouts, steps, speaker notes, theme or components, or when turning notes or a document into slides.
+description: Write presentations as Markdown with Slidewright. Use when creating or editing a Slidewright deck (a `slides.md` with `---` between slides), its layouts, steps, speaker notes or theme, or when turning notes or a document into slides.
 ---
 
 # Slidewright decks
@@ -171,10 +171,11 @@ From merge to production
   doesn't have.
 - HTML works, with `class` and `style`. Leave a blank line between an HTML
   tag and the Markdown inside it.
-- A deck is Markdown, not MDX: no `import`, no JSX and no `{expressions}`.
-  A React component comes in through a directive, `:::callout{tone="warning"}`,
-  and a `components.tsx` next to the deck. See
-  [Components](references/vite.md#components).
+- A deck is Markdown, not MDX: no `import`, no JSX, no `{expressions}` and
+  no React components. A block between `:::callout{.warning}` and `:::` is
+  a `div` to style in `style.css`, with the selector
+  `[data-directive="callout"]`. See
+  [Directives](references/syntax.md#directives).
 - A long deck can be several files. A slide whose frontmatter is
   `src: chapters/why.md` stands for the slides of that file. See
   [Several files](references/syntax.md#several-files).
@@ -241,8 +242,7 @@ for the heading you need. Read one when this file only names what you need.
   [Styling](references/react.md#styling), with every theme property and CSS
   selector. Read Styling before writing more CSS than [Style](#style)
   shows. The rest is for a deck inside a React app.
-- [references/vite.md](references/vite.md): the
-  [`components` module](references/vite.md#components), where
+- [references/vite.md](references/vite.md): where
   [images and other files](references/vite.md#files) go, and the
   [problems](references/vite.md#problems-in-the-deck) that a build prints.
 - [references/cli.md](references/cli.md): the commands and their options,

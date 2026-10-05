@@ -338,9 +338,6 @@ its id, classes and step. A registered component renders inside that `div`.
 Without one, the content goes straight in, so a directive can be styled with
 CSS alone. A component that throws only breaks its own slide.
 
-With the Vite plugin or the CLI, the components come from a file. See
-[Components](vite.md#components) in the plugin's README.
-
 ## Diagrams
 
 A `mermaid` code block is drawn as a diagram when the deck can load
