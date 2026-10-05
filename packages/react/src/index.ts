@@ -5,3 +5,4 @@ export type { DeckPosition } from "./navigation";
 export type { Layout, LayoutProps } from "./layouts";
 export type { DirectiveComponents } from "./context";
 export type { MermaidLoader } from "./diagram";
+export type { IconSet } from "./icon-sets";

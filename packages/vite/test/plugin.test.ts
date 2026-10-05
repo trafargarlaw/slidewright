@@ -23,6 +23,7 @@ import {
 } from "vite";
 import { builtinLayouts } from "../../react/src/layouts";
 import { slidewright, type SlidewrightOptions } from "../src/index";
+import { createIconSetLoader, pickIcons } from "../src/icons";
 import { filePattern } from "../src/pattern";
 import { findProblems, LAYOUTS } from "../src/problems";
 import { parseDeck } from "@slidewright/core";
@@ -72,6 +73,43 @@ function installMermaid() {
 };
 `,
   );
+}
+
+const ICONS = {
+  prefix: "lucide",
+  lastModified: 1,
+  width: 24,
+  height: 24,
+  icons: {
+    rocket: { body: '<path d="M4 20 20 4"/>' },
+    "arrow-right": { body: '<path d="M5 12h14"/>' },
+    unused: { body: '<path d="M1 1h1"/>' },
+  },
+  aliases: {
+    "arrow-left": { parent: "arrow-right", hFlip: true },
+    back: { parent: "arrow-left" },
+    launch: { parent: "rocket" },
+  },
+};
+
+/** Installs a small icon set in the project, as `@iconify-json/lucide`. */
+function installIcons() {
+  const folder = join(root, "node_modules", "@iconify-json", "lucide");
+  mkdirSync(folder, { recursive: true });
+  writeFileSync(
+    join(folder, "package.json"),
+    JSON.stringify({
+      name: "@iconify-json/lucide",
+      version: "0.0.0",
+      exports: { "./*": "./*", "./icons.json": "./icons.json" },
+    }),
+  );
+  writeFileSync(join(folder, "icons.json"), JSON.stringify(ICONS));
+}
+
+/** The `icons` that the deck module gives the page. */
+function iconsOf(code: string | undefined): unknown {
+  return JSON.parse(/const icons = (.*);/.exec(code ?? "")?.[1] ?? "null");
 }
 
 let root = "";
@@ -224,6 +262,69 @@ describe("dev server", () => {
     ]);
   });
 
+  it("gives the page the icons that the deck uses", async () => {
+    const deck = join(root, "slides.md");
+    writeFileSync(deck, "# Go :lucide:rocket:\n");
+    await serve();
+    const without = await server!.transformRequest("virtual:slidewright/deck");
+    expect(iconsOf(without?.code)).toEqual([]);
+    await server!.close();
+
+    installIcons();
+    await serve();
+    const result = await server!.transformRequest("virtual:slidewright/deck");
+    expect(iconsOf(result?.code)).toEqual([
+      {
+        prefix: "lucide",
+        width: 24,
+        height: 24,
+        icons: { rocket: ICONS.icons.rocket },
+        aliases: {},
+      },
+    ]);
+
+    // A saved deck with another icon gives the page that icon.
+    writeFileSync(deck, "# Back :lucide:back:\n");
+    server!.watcher.emit("change", deck);
+    await vi.waitFor(async () => {
+      const next = await server!.transformRequest("virtual:slidewright/deck");
+      expect(iconsOf(next?.code)).toEqual([
+        {
+          prefix: "lucide",
+          width: 24,
+          height: 24,
+          icons: { "arrow-right": ICONS.icons["arrow-right"] },
+          aliases: {
+            back: ICONS.aliases.back,
+            "arrow-left": ICONS.aliases["arrow-left"],
+          },
+        },
+      ]);
+    });
+  });
+
+  it("tells which icons show as text", async () => {
+    writeFileSync(
+      join(root, "slides.md"),
+      "# Go :lucide:rocket:\n\n:lucide:rockt: and :mdi:home:\n",
+    );
+    installIcons();
+    const { logger, warnings } = recordWarnings();
+    server = await createServer({
+      ...config(),
+      customLogger: logger,
+      server: { port: 0, strictPort: false, ws: false },
+      optimizeDeps: { noDiscovery: true },
+    });
+    await server.listen();
+    expect(warnings).toEqual([
+      [
+        "slides.md:3: warning: The icon `:lucide:rockt:` shows as text: the `lucide` icons have no `rockt`. The names are at https://icon-sets.iconify.design/lucide/.",
+        "slides.md:3: warning: The icon `:mdi:home:` shows as text: the project doesn't have the `mdi` icons. Add them with `npm install @iconify-json/mdi`.",
+      ].join("\n"),
+    ]);
+  });
+
   it("serves the page script", async () => {
     const url = await serve();
     const response = await fetch(`${url}@slidewright/app`);
@@ -371,6 +472,28 @@ describe("build", () => {
     );
   });
 
+  it("builds the deck's icons into the page", async () => {
+    writeFileSync(join(root, "slides.md"), "# Go :lucide:launch:\n");
+    installIcons();
+    const { logger, warnings } = recordWarnings();
+    const outDir = join(root, "dist");
+    await build({
+      ...config(),
+      customLogger: logger,
+      build: { outDir, emptyOutDir: true },
+    });
+
+    expect(warnings).toEqual([]);
+    const scripts = readdirSync(join(outDir, "assets"))
+      .filter((name) => name.endsWith(".js"))
+      .map((name) => readFileSync(join(outDir, "assets", name), "utf8"))
+      .join("\n");
+    expect(scripts).toContain("M4 20 20 4");
+    // Only the icons of the deck, not the set.
+    expect(scripts).not.toContain("M5 12h14");
+    expect(scripts).not.toContain("M1 1h1");
+  });
+
   it("prints the deck's problems and still builds", async () => {
     writeFileSync(join(root, "slides.md"), PROBLEMS);
     const { logger, warnings } = recordWarnings();
@@ -512,6 +635,68 @@ describe("findProblems", () => {
       "```",
     ].join("\n");
     expect(lines(source)).toEqual([]);
+  });
+});
+
+describe("pickIcons", () => {
+  const pick = (source: string) => {
+    installIcons();
+    return pickIcons(parseDeck(source), source, createIconSetLoader(root));
+  };
+
+  it("picks the icons of the slides and of the notes", () => {
+    const source = [
+      "# One :lucide:rocket:",
+      "",
+      "<!-- notes",
+      "Say :lucide:arrow-right:",
+      "-->",
+      "",
+      "---",
+      "",
+      "- :lucide:rocket: again",
+    ].join("\n");
+    const { sets, problems } = pick(source);
+    expect(problems).toEqual([]);
+    expect(sets).toHaveLength(1);
+    expect(Object.keys(sets[0]!.icons)).toEqual(["rocket", "arrow-right"]);
+  });
+
+  it("leaves icons in code where they are", () => {
+    const source = "`:lucide:rocket:`\n\n```\n:lucide:unused:\n```";
+    expect(pick(source)).toEqual({ sets: [], problems: [] });
+  });
+
+  it("picks an icon written as HTML", () => {
+    const { sets } = pick('<span data-icon="lucide:launch"></span>');
+    expect(sets[0]?.icons).toEqual({ rocket: ICONS.icons.rocket });
+    expect(sets[0]?.aliases).toEqual({ launch: ICONS.aliases.launch });
+  });
+
+  it("warns once for each icon of a slide, at its first line", () => {
+    const source = [
+      "# One",
+      "",
+      "A :lucide:nope: and a :lucide:nope:",
+      "",
+      "---",
+      "",
+      "# Two",
+      "",
+      ":lucide:nope:",
+      '<span data-icon="lucide:none"></span>',
+    ].join("\n");
+    expect(
+      pick(source).problems.map(({ line, slide, message }) => [
+        line,
+        slide,
+        message.slice(0, 29),
+      ]),
+    ).toEqual([
+      [3, 0, "The icon `:lucide:nope:` show"],
+      [9, 1, "The icon `:lucide:nope:` show"],
+      [10, 1, "The icon `:lucide:none:` show"],
+    ]);
   });
 });
 

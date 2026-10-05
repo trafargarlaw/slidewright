@@ -10,6 +10,7 @@ import {
   type Plugin,
 } from "vite";
 import { findDeckFiles } from "./files";
+import { createIconSetLoader, pickIcons, type DeckIcons } from "./icons";
 import { filePattern } from "./pattern";
 import { findProblems, formatProblem } from "./problems";
 
@@ -62,6 +63,18 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
   let componentsFile: string | undefined;
   // The project has Mermaid, so the page draws the deck's diagrams.
   let mermaid = false;
+  // The icons of the deck as it was last read, from the project's icon sets.
+  let loadIconSet = createIconSetLoader(root);
+  let picked: { source: string; icons: DeckIcons } | undefined;
+  const pickDeckIcons = (source: string) => {
+    if (picked?.source !== source) {
+      picked = {
+        source,
+        icons: pickIcons(parseDeck(source), source, loadIconSet),
+      };
+    }
+    return picked.icons;
+  };
   // Both with `/` separators, as Vite gives ids to the hooks on Windows too.
   let pageFile = "";
   // The build input. Vite resolves symbolic links in the root, so this can
@@ -75,7 +88,11 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
   // renders: problems never stop the server or the build.
   const report = () => {
     const source = readFileSync(deckFile, "utf8");
-    const text = findProblems(parseDeck(source), source, { mermaid })
+    const text = [
+      ...findProblems(parseDeck(source), source, { mermaid }),
+      ...pickDeckIcons(source).problems,
+    ]
+      .sort((a, b) => a.line - b.line)
       .map((problem) => formatProblem(deckFile, problem))
       .join("\n");
     if (text === reported) return;
@@ -142,6 +159,7 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
           ? undefined
           : resolve(root, options.components);
       pageFile = normalizePath(resolve(root, "index.html"));
+      loadIconSet = createIconSetLoader(root);
       logger = config.logger;
     },
 
@@ -187,6 +205,7 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
     load(id) {
       if (normalizePath(id) === pageFile) return page();
       if (id !== RESOLVED_DECK_ID) return undefined;
+      const { sets } = pickDeckIcons(readFileSync(deckFile, "utf8"));
       return [
         ...cssFiles.map((file) => `import ${JSON.stringify(file)};`),
         `export { default as markdown } from ${JSON.stringify(`${deckFile}?raw`)};`,
@@ -196,7 +215,17 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
         mermaid
           ? 'export const mermaid = () => import("mermaid");'
           : "export const mermaid = undefined;",
+        `export const icons = ${JSON.stringify(sets)};`,
       ].join("\n");
+    },
+
+    // The deck module has the deck's icons, so it is made again when the
+    // deck changes. Vite can keep a module whose imports changed, and then
+    // only the Markdown would be new.
+    hotUpdate({ file, modules }) {
+      if (resolve(file) !== deckFile) return undefined;
+      const deck = this.environment.moduleGraph.getModuleById(RESOLVED_DECK_ID);
+      return deck ? [...modules, deck] : undefined;
     },
 
     configureServer(server) {

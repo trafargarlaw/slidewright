@@ -754,6 +754,15 @@
     height: auto;
   }
 
+  /* An icon is as tall as the text around it, and has its colour. */
+  [data-deck] :where(svg[data-icon]) {
+    display: inline-block;
+    flex: none;
+    width: auto;
+    height: 1em;
+    vertical-align: -0.125em;
+  }
+
   [data-slide] :where(table) {
     border-collapse: collapse;
     font-size: 0.85em;

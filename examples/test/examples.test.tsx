@@ -7,8 +7,14 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import logos from "@iconify-json/logos/icons.json";
+import lucide from "@iconify-json/lucide/icons.json";
 import { parseDeck } from "@slidewright/core";
-import { PrintDeck, type DirectiveComponents } from "@slidewright/react";
+import {
+  PrintDeck,
+  type DirectiveComponents,
+  type IconSet,
+} from "@slidewright/react";
 import { slidewright } from "@slidewright/vite";
 import { renderToString } from "react-dom/server";
 import { build, defaultClientConditions, type InlineConfig } from "vite";
@@ -25,6 +31,7 @@ const DECKS = {
   theme: example("theme", "slides.md"),
   components: example("components", "slides.md"),
   diagrams: example("diagrams", "slides.md"),
+  icons: example("icons", "slides.md"),
   react: example("react", "src", "slides.md"),
 };
 
@@ -32,6 +39,9 @@ const COMPONENTS: Partial<Record<keyof typeof DECKS, DirectiveComponents>> = {
   components: deckComponents,
   react: components,
 };
+
+// The sets as their packages have them: thousands of icons each.
+const ICONS: readonly IconSet[] = [lucide, logos];
 
 const read = (deck: string) => readFileSync(deck, "utf8");
 
@@ -42,6 +52,7 @@ function print(name: keyof typeof DECKS): string {
       markdown={read(DECKS[name])}
       layouts={name === "react" ? layouts : undefined}
       components={COMPONENTS[name]}
+      icons={name === "icons" ? ICONS : undefined}
     />,
   );
 }
@@ -106,6 +117,15 @@ describe("components", () => {
   });
 });
 
+describe("icons", () => {
+  it("draws every icon of the deck", () => {
+    const html = print("icons");
+    expect(html).not.toContain("<span data-icon=");
+    expect(html.match(/<svg data-icon="lucide:[a-z-]+"/g)).toHaveLength(13);
+    expect(html.match(/<svg data-icon="logos:[a-z-]+"/g)).toHaveLength(4);
+  });
+});
+
 describe("build", () => {
   let out = "";
   beforeEach(() => {
@@ -132,46 +152,56 @@ describe("build", () => {
       .map((file) => readFileSync(join(out, file), "utf8"))
       .join("\n");
 
-  it.each(["layouts", "code", "theme", "components", "diagrams"] as const)(
-    "builds the %s deck as the CLI does",
-    async (name) => {
-      const root = dirname(DECKS[name]);
-      const file = (name: string) =>
-        existsSync(join(root, name)) ? name : undefined;
-      await build(
-        config({
-          root,
-          configFile: false,
-          plugins: [
-            slidewright({
-              deck: "slides.md",
-              css: file("style.css"),
-              components: file("components.tsx"),
-            }),
-          ],
-        }),
-      );
+  it.each([
+    "layouts",
+    "code",
+    "theme",
+    "components",
+    "diagrams",
+    "icons",
+  ] as const)("builds the %s deck as the CLI does", async (name) => {
+    const root = dirname(DECKS[name]);
+    const file = (name: string) =>
+      existsSync(join(root, name)) ? name : undefined;
+    await build(
+      config({
+        root,
+        configFile: false,
+        plugins: [
+          slidewright({
+            deck: "slides.md",
+            css: file("style.css"),
+            components: file("components.tsx"),
+          }),
+        ],
+      }),
+    );
 
-      expect(existsSync(join(out, "index.html"))).toBe(true);
-      if (name === "layouts") {
-        expect(existsSync(join(out, "hills.svg"))).toBe(true);
-        expect(output()).toContain(".poster");
-      }
-      if (name === "theme") expect(output()).toContain("#f2925a");
-      if (name === "diagrams") {
-        // Mermaid, from this workspace: a file for each kind of diagram.
-        expect(
-          readdirSync(join(out, "assets")).filter((file) =>
-            /^(flow|sequence|state|pie)Diagram.*\.js$/.test(file),
-          ),
-        ).toHaveLength(4);
-      }
-      if (name === "components") {
-        // The component, whatever quotes the minifier picks.
-        expect(output()).toMatch(/className:["'`]counter["'`]/);
-      }
-    },
-  );
+    expect(existsSync(join(out, "index.html"))).toBe(true);
+    if (name === "layouts") {
+      expect(existsSync(join(out, "hills.svg"))).toBe(true);
+      expect(output()).toContain(".poster");
+    }
+    if (name === "theme") expect(output()).toContain("#f2925a");
+    if (name === "diagrams") {
+      // Mermaid, from this workspace: a file for each kind of diagram.
+      expect(
+        readdirSync(join(out, "assets")).filter((file) =>
+          /^(flow|sequence|state|pie)Diagram.*\.js$/.test(file),
+        ),
+      ).toHaveLength(4);
+    }
+    if (name === "icons") {
+      // The icons of the deck, from this workspace, and not their sets.
+      expect(output()).toMatch(/["'`]party-popper["'`]:/);
+      expect(output()).toMatch(/["'`]typescript-icon["'`]:/);
+      expect(output()).not.toMatch(/["'`]a-arrow-down["'`]:/);
+    }
+    if (name === "components") {
+      // The component, whatever quotes the minifier picks.
+      expect(output()).toMatch(/className:["'`]counter["'`]/);
+    }
+  });
 
   it("builds the React app", async () => {
     await build(

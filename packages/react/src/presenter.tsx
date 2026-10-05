@@ -19,8 +19,8 @@ import {
   useLayouts,
   type CompiledDeck,
 } from "./deck-state";
-import { MermaidContext } from "./diagram";
 import { useElementSize } from "./element-size";
+import type { IconSet } from "./icon-sets";
 import { Chevron, PauseIcon, PlayIcon, ResetIcon } from "./icons";
 import {
   getKeyCommand,
@@ -30,6 +30,7 @@ import {
   type NavigationAction,
 } from "./navigation";
 import { renderSlide } from "./render";
+import { Resources } from "./resources";
 import { RenderedSlide, SlideErrorBoundary } from "./slide";
 import { useHashSync } from "./url-hash";
 
@@ -43,6 +44,7 @@ export type PresenterProps = Pick<
   | "layouts"
   | "components"
   | "mermaid"
+  | "icons"
   | "compileOptions"
   | "colorScheme"
   | "keyboard"
@@ -51,6 +53,7 @@ export type PresenterProps = Pick<
 >;
 
 const NO_COMPONENTS: DirectiveComponents = {};
+const NO_ICONS: readonly IconSet[] = [];
 
 /**
  * The speaker's view of a deck: the current slide, what comes next, the
@@ -66,6 +69,7 @@ export function Presenter({
   layouts,
   components = NO_COMPONENTS,
   mermaid,
+  icons = NO_ICONS,
   compileOptions,
   colorScheme,
   keyboard = "focus",
@@ -152,7 +156,7 @@ export function Presenter({
   const notes = useMemo(() => splitNotes(slide?.notes ?? ""), [slide?.notes]);
 
   return (
-    <MermaidContext value={mermaid}>
+    <Resources mermaid={mermaid} icons={icons}>
       <div
         ref={rootRef}
         data-deck=""
@@ -268,7 +272,7 @@ export function Presenter({
           <Timer />
         </div>
       </div>
-    </MermaidContext>
+    </Resources>
   );
 }
 

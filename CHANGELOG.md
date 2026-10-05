@@ -23,6 +23,19 @@ have the same version. Each entry gives the packages that it changes.
   project; in a React app, give `<Deck>`, `<Presenter>` and `<PrintDeck>`
   the new `mermaid` prop, `() => import("mermaid")`. Without Mermaid, the
   block shows as code, as before, and the plugin prints a warning.
+- `core`, `react`, `vite`, `cli`: Icons. `:set:name:` in text, such as
+  `:lucide:rocket:`, is an icon from an Iconify set, as tall as the text and
+  in its colour. The sets are not dependencies: with the CLI and the Vite
+  plugin, install `@iconify-json/<set>` in the project, and the page gets
+  only the icons that the deck uses; in a React app, give `<Deck>`,
+  `<Presenter>` and `<PrintDeck>` the new `icons` prop. Without its set, an
+  icon shows as its source text, and the plugin prints a warning.
+
+### Changed
+
+- `core`: Text of the form `:set:name:` now compiles to
+  `<span data-icon="set:name">`, with the text inside. A deck that shows
+  such text as it is can put it in code.
 
 ## 0.1.4 - 2026-10-05
 

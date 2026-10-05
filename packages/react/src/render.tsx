@@ -5,6 +5,7 @@ import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import { CodeBlock, textContent } from "./code-block";
 import { Diagram, MermaidContext, isDiagram } from "./diagram";
 import { DIRECTIVE_TAG, Directive } from "./directive";
+import { ICON_TAG, Icon } from "./icon-sets";
 import { Maths, isMaths } from "./maths";
 
 export interface SlideContent {
@@ -49,6 +50,7 @@ const COMPONENTS = {
   pre: Pre,
   code: Code,
   [DIRECTIVE_TAG]: Directive,
+  [ICON_TAG]: Icon,
 } as Partial<Components>;
 
 /**
@@ -121,7 +123,8 @@ function toReact(root: Root, step: number): ReactNode {
 
 /**
  * Marks elements with their reveal state (`data-step-state`) and renames
- * directives so they render through `Directive`. Unchanged subtrees are
+ * directives and icons so they render through `Directive` and `Icon`.
+ * Unchanged subtrees are
  * reused rather than copied.
  */
 function prepareChildren<T extends ElementContent | Root["children"][number]>(
@@ -150,7 +153,9 @@ function prepareElement(element: Element, step: number): Element {
   const tagName =
     typeof properties.dataDirective === "string"
       ? DIRECTIVE_TAG
-      : element.tagName;
+      : element.tagName === "span" && typeof properties.dataIcon === "string"
+        ? ICON_TAG
+        : element.tagName;
   const children = prepareChildren(element.children, step);
 
   if (

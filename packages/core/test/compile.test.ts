@@ -188,6 +188,76 @@ describe("directives", () => {
   });
 });
 
+describe("icons", () => {
+  const icon = (name: string) => `<span data-icon="${name}">:${name}:</span>`;
+
+  it("turns :set:name: into a tagged span that keeps the source text", () => {
+    expect(html("Ship it :lucide:rocket: today")).toBe(
+      `<p>Ship it ${icon("lucide:rocket")} today</p>`,
+    );
+  });
+
+  it("finds icons anywhere in text", () => {
+    expect(html("# :mdi:home: Home")).toBe(`<h1>${icon("mdi:home")} Home</h1>`);
+    expect(html("- :fa6-solid:circle-check: Done")).toContain(
+      `<li>${icon("fa6-solid:circle-check")} Done</li>`,
+    );
+    expect(html("[:lucide:link:](https://example.com)")).toContain(
+      `<a href="https://example.com">${icon("lucide:link")}</a>`,
+    );
+    expect(html("**:tabler:123:** and (:ic:10k:)")).toBe(
+      `<p><strong>${icon("tabler:123")}</strong> and (${icon("ic:10k")})</p>`,
+    );
+  });
+
+  it("takes icons that follow each other", () => {
+    expect(html(":lucide:star::lucide:star: :lucide:star-half:")).toBe(
+      `<p>${icon("lucide:star")}${icon("lucide:star")} ${icon("lucide:star-half")}</p>`,
+    );
+  });
+
+  it("leaves times, ratios and longer names as written", () => {
+    const text =
+      "At 10:30:45: a:b:c: and :b:c:d, :Set:name:, :set:Name:, :set::name:, :set:name-:, :smile:";
+    expect(html(text)).toBe(`<p>${text}</p>`);
+  });
+
+  it("leaves code and maths as written", () => {
+    expect(html("`:lucide:rocket:`")).toBe(
+      "<p><code>:lucide:rocket:</code></p>",
+    );
+    expect(html("```\n:lucide:rocket:\n```")).not.toContain("data-icon");
+    expect(html("$:lucide:rocket:$")).not.toContain("data-icon");
+  });
+
+  it("finds icons in the text of HTML", () => {
+    expect(html('<div class="big">:lucide:heart:</div>')).toBe(
+      `<div class="big">${icon("lucide:heart")}</div>`,
+    );
+    expect(html("<kbd>:lucide:heart:</kbd>")).toBe(
+      "<p><kbd>:lucide:heart:</kbd></p>",
+    );
+  });
+
+  it("leaves an icon that is written as HTML as it is", () => {
+    const source = '<span data-icon="lucide:heart">:lucide:heart:</span>';
+    expect(html(source)).toBe(`<p>${source}</p>`);
+  });
+
+  it("gives an icon after a step marker its step", () => {
+    expect(html("Go <!-- step --> :lucide:rocket:")).toBe(
+      '<p>Go  <span data-icon="lucide:rocket" data-step="1">:lucide:rocket:</span></p>',
+    );
+  });
+
+  it("keeps the icon with sanitising off", () => {
+    const compile = createCompiler({ sanitize: false });
+    expect(toHtml(compile(":lucide:rocket:").tree)).toBe(
+      `<p>${icon("lucide:rocket")}</p>`,
+    );
+  });
+});
+
 describe("sanitising", () => {
   const dangerous =
     '<script>alert(1)</script><img src="x.png" onerror="alert(1)"><a href="javascript:alert(1)">x</a><iframe src="https://example.com"></iframe>';
