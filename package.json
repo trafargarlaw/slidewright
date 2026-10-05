@@ -17,7 +17,8 @@
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
-    "smoke-test": "bun scripts/smoke-test.ts"
+    "smoke-test": "bun scripts/smoke-test.ts",
+    "release": "bun scripts/publish.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",

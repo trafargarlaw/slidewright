@@ -60,16 +60,13 @@ Maintainers release every package together, with one version number.
    packed template, installs it with npm and checks that the deck builds,
    serves and explains how to export. The workspace tests run on the sources
    and miss problems that only the packed files have.
-3. Publish dependencies first:
-
-   ```sh
-   for name in core react vite cli create; do
-     (cd packages/$name && bun publish) || break
-   done
-   ```
+3. Run `bun run release`. It publishes each package with `bun publish`,
+   dependencies first, and stops at the first failure. Run it again to
+   continue: it skips the packages that are already on npm.
 
    `bun publish` builds each package first and replaces `workspace:^` with
-   the version.
+   the version. Don't use `npm publish`: it leaves `workspace:^` in the
+   package, and nobody can install it. The packages refuse it.
 
 ## Reporting bugs and requesting features
 
