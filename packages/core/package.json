@@ -1,6 +1,6 @@
 {
   "name": "@slidewright/core",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Parse Markdown decks into slides and compile slides to HTML syntax trees.",
   "keywords": [
     "deck",

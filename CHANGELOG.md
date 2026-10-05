@@ -3,6 +3,15 @@
 All the packages, `@slidewright/core`, `react`, `vite`, `cli` and `create`,
 have the same version. Each entry gives the packages that it changes.
 
+## 0.1.4 - 2026-10-05
+
+### Fixed
+
+- `react`, `vite`, `cli`: The packages install. The 0.1.3 packages were
+  published with `workspace:^` in their dependencies, and `npm install`
+  stopped with "Unsupported URL Type "workspace:"". Use 0.1.4 in place of
+  0.1.3: it has the same code.
+
 ## 0.1.3 - 2026-10-05
 
 ### Fixed
