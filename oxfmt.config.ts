@@ -6,8 +6,10 @@ export default defineConfig({
   // excluded until then so formatting churn doesn't bury real changes.
   // Decks are not plain Markdown: the formatter reads slide frontmatter as
   // headings. The agent skills come from skills-lock.json, and are kept as
-  // their authors wrote them.
+  // their authors wrote them. The reference files of our own skill are
+  // written by `bun run skills`.
   ignorePatterns: [
+    "skills/*/references/**",
     "apps/playground/**",
     ".agents/**",
     ".claude/**",

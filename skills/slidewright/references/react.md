@@ -1,0 +1,620 @@
+<!-- A copy of packages/react/README.md in the Slidewright repository, written by `bun run skills`. -->
+
+# @slidewright/react
+
+Renders Markdown decks in React. Pass a string, get a presentation: one slide
+at a time, scaled to fit its container, with step reveals, syntax-highlighted
+code, keyboard and touch navigation, an overview of every slide, fullscreen,
+and a presenter view with notes and a timer, on the page or in a second
+window.
+
+The deck follows its `markdown` prop. Edit the source and the deck
+re-renders in place, staying on the current slide and step, so it works for
+live editors, CMS previews and docs sites as well as plain presenting.
+
+The deck format is documented in the [deck syntax reference](syntax.md).
+
+## Usage
+
+```tsx
+import { Deck } from "@slidewright/react";
+import "@slidewright/react/styles.css";
+
+export function Talk({ markdown }: { markdown: string }) {
+  return <Deck markdown={markdown} />;
+}
+```
+
+The deck fills the width of its container and takes its height from the
+deck's aspect ratio. Give it a height as well (through `className` or `style`)
+to fill a fixed box; the slide scales to fit and is letterboxed.
+
+Requires React 19. The package ships with `"use client"` and renders on the
+server; code is highlighted and maths is drawn after hydration.
+
+## Props
+
+| Prop               | Default   | Description                                                                                                                         |
+| ------------------ | --------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `markdown`         |           | The deck source.                                                                                                                    |
+| `position`         |           | `{ slide, step }` for a controlled deck. Use with `onPositionChange`.                                                               |
+| `defaultPosition`  | `{0, 0}`  | Starting position for an uncontrolled deck.                                                                                         |
+| `onPositionChange` |           | Called with the new position on every navigation.                                                                                   |
+| `hash`             | `false`   | Keeps the position in the URL hash. See [URL hash](#url-hash).                                                                      |
+| `layouts`          |           | Extra layouts by name. A built-in name replaces the built-in layout.                                                                |
+| `components`       |           | Components for `:::name` and `::name` directives, by name.                                                                          |
+| `mermaid`          |           | Loads Mermaid, to draw `mermaid` code blocks: `() => import("mermaid")`. See [Diagrams](#diagrams).                                 |
+| `icons`            |           | Icon sets for `:set:name:` icons, in the Iconify format. See [Icons](#icons).                                                       |
+| `compileOptions`   |           | Sanitising and remark/rehype plugins, passed to the compiler. Keep the object stable.                                               |
+| `colorScheme`      |           | `light`, `dark` or `auto`. Overrides the deck's headmatter.                                                                         |
+| `keyboard`         | `"focus"` | `"focus"`: keys work while the deck has focus. `"global"`: anywhere. `false`: off.                                                  |
+| `swipe`            | `true`    | Swipe left and right on touch screens to navigate.                                                                                  |
+| `presenter`        | `true`    | `P` and a button open the presenter view in a second window. See [Presenter window](#presenter-window).                             |
+| `controls`         | `true`    | Previous, next, overview, presenter and fullscreen buttons, slide counter and progress bar.                                         |
+| `className`        |           | Class on the deck's root element.                                                                                                   |
+| `style`            |           | Style on the deck's root element.                                                                                                   |
+| `ref`              |           | A `DeckHandle`: `next()`, `prev()`, `goTo(slide, step?)`, `focus()`, `toggleOverview()`, `toggleFullscreen()`, `togglePresenter()`. |
+
+Positions are 0-based and clamped to the deck. When slides are removed while
+editing, an uncontrolled deck shows the last slide that still exists and
+returns to the original position if they come back.
+
+### Controlled position
+
+Own the position to sync it with the URL, a presenter window or an editor
+cursor:
+
+```tsx
+const [position, setPosition] = useState({ slide: 0, step: 0 });
+
+<Deck markdown={markdown} position={position} onPositionChange={setPosition} />;
+```
+
+## Keyboard
+
+| Keys                         | Action                                  |
+| ---------------------------- | --------------------------------------- |
+| `→` `PageDown` `Space`       | Next step, then next slide              |
+| `←` `PageUp` `Shift`+`Space` | Previous step; previous slide, revealed |
+| `↓` / `↑`                    | Next / previous slide, skipping steps   |
+| `Home` / `End`               | First / last slide                      |
+| A number, then `Enter`       | Go to that slide                        |
+| `O`                          | Open or close the overview              |
+| `F`                          | Enter or leave fullscreen               |
+| `P`                          | Open or close the presenter window      |
+
+While a number is being typed, the counter shows it; `Backspace` corrects it
+and `Escape` cancels it. Keys typed into inputs, text areas and editable
+content on a slide are left alone.
+
+On touch screens, swipe left for the next step and right for the previous
+one. Vertical swipes still scroll the page.
+
+Screen readers announce the slide number and title after each move, such as
+"Slide 2 of 8: Results". When the system asks for reduced motion, steps show
+at once and nothing moves: the controls only fade in.
+
+The overview shows every slide in a grid, fully revealed, starting from the
+current one. Move through it with the arrow keys and press `Enter` to go to a
+slide, or click one. `Escape` or `O` closes it without moving. In
+fullscreen, browsers keep `Escape` for leaving fullscreen, so use `O` there.
+
+The fullscreen button only appears where the browser allows fullscreen:
+not on iPhones, which only allow it for videos, and in an iframe only with
+`allow="fullscreen"`. In fullscreen, the controls stay hidden until the
+pointer reaches them.
+
+## URL hash
+
+With `hash`, the URL follows the deck: `#3` is slide 3, and `#3.2` is slide 3
+with two steps revealed. Reloading the page or opening a shared link starts
+the deck there, and changing the hash, by hand or through a link such as
+`[demo](#5)` on a slide, moves the deck. A controlled deck gets the hash's
+position through `onPositionChange`. When the Markdown comes later, such as
+from a `fetch`, give the deck an empty string until then: the deck opens on
+the hash's slide once the slides are there.
+
+The deck replaces the history entry as it moves, so Back leaves the page
+instead of stepping back through the talk. The hash belongs to the whole
+page, so turn it on for one deck at most; the page's own anchors, such as
+`#install`, stay until the deck moves.
+
+## Presenter view
+
+`Presenter` is the speaker's view of a deck: the current slide, a preview of
+what the next key press shows, the notes for the current step and a timer.
+Give it the same position as the audience's deck and the two move together:
+
+```tsx
+import { Deck, Presenter } from "@slidewright/react";
+
+const [position, setPosition] = useState({ slide: 0, step: 0 });
+
+<Deck markdown={markdown} position={position} onPositionChange={setPosition} />;
+<Presenter
+  markdown={markdown}
+  position={position}
+  onPositionChange={setPosition}
+/>;
+```
+
+It takes the deck's props for the source, position, URL hash, layouts,
+components, compiling, colour scheme, keyboard and styling, and the same keys,
+except `O`, `F` and `P`, which stay with the deck.
+
+The preview shows the next step of the current slide, or the next slide once
+every step is revealed. Notes divided by `[step]` lines (see
+[Notes for each step](syntax.md#notes-for-each-step)) show in
+parts: the part for the current step is marked and scrolled into view, and
+earlier parts are dimmed. The timer starts when the presenter mounts, and can
+be paused and reset.
+
+The presenter fills the height of its container. On a page of its own, give
+it the window's height and let it take keys from anywhere:
+
+```tsx
+<Presenter markdown={markdown} keyboard="global" style={{ height: "100dvh" }} />
+```
+
+### Presenter window
+
+Press `P` on a deck, or use its presenter button, to open the presenter view
+in a second window, for a second screen. The deck and the window move
+together. The keys that move, such as `→` or a number and then `Enter`, work
+in either; `O`, `F` and `P` work on the deck only. `P` or the button again
+closes the window, and it closes with the page.
+
+The window copies the page's stylesheets, the `<link rel="stylesheet">` and
+`<style>` elements in its head, and the attributes of its `<html>` element,
+such as a dark mode class, and follows changes to them. Rules added through
+`insertRule`, as some CSS-in-JS libraries do in production, are not copied.
+
+Browsers only open windows in response to a click or key press, and a popup
+blocker may still stop it. `presenter={false}` removes the key and the
+button; `togglePresenter()` on the deck's `ref` still opens the window, from
+a button of your own.
+
+## Printing
+
+`PrintDeck` renders every slide of a deck at full size, one after the other,
+for printing and export. Each slide prints on its own page, sized to the
+slide, with every step revealed and code at its last highlight stage:
+
+```tsx
+import { PrintDeck } from "@slidewright/react";
+
+<PrintDeck markdown={markdown} />;
+```
+
+`steps` prints a page for every step instead, so each reveal gets its own
+page. It also takes the deck's `layouts`, `components`, `mermaid`, `icons`,
+`compileOptions`, `colorScheme`, `className` and `style`.
+
+On screen the pages stack with a gap and a shadow, as a preview. When
+printed, each page breaks onto a sheet of its own: the component sets the
+printed page size to the slide size, so give it its own page rather than
+mixing it with other printed content.
+
+Code highlighting and maths load after the first render. A code block has
+`aria-busy="true"` until its colours are ready, and maths until it is drawn,
+so a script that prints or captures the pages can wait for
+`[aria-busy="true"]` to be gone.
+
+## Layouts
+
+A slide picks its layout with `layout:` in its frontmatter. Built in:
+
+| Layout                      | Arrangement                                                 |
+| --------------------------- | ----------------------------------------------------------- |
+| `default`                   | Content from the top left.                                  |
+| `center`                    | Content centred.                                            |
+| `cover`                     | Title slide: large heading, subtitle.                       |
+| `section`                   | Section divider.                                            |
+| `statement`                 | One large heading, centred.                                 |
+| `fact`                      | A large number or word in the accent colour, and a caption. |
+| `quote`                     | A large `>` quote, with the text after it as the source.    |
+| `full`                      | No padding.                                                 |
+| `two-cols`                  | Content on top, then `:::left` and `:::right` columns.      |
+| `image`                     | `image:` fills the slide, with the content at the bottom.   |
+| `image-left`, `image-right` | Content beside `image:`.                                    |
+
+The image layouts read the image URL from `image:` and its description from
+`imageAlt:`. Without `imageAlt:` the image counts as decoration, and screen
+readers skip it.
+
+```md
+---
+layout: quote
+---
+
+> Simplicity is prerequisite for reliability.
+
+Edsger W. Dijkstra
+```
+
+```md
+---
+layout: image
+image: /photos/harbour.jpg
+imageAlt: Fishing boats in a harbour at dawn
+---
+
+# Where we started
+```
+
+### Custom layouts
+
+A custom layout is a component, registered by name with `layouts`. It gets
+the slide's content as `children`. Container directives named in its `slots`,
+at the top level of the slide, are lifted out of the content and passed in
+`slots` instead:
+
+```tsx
+import type { LayoutProps } from "@slidewright/react";
+
+function Sidebar({ children, slots }: LayoutProps) {
+  return (
+    <>
+      <div data-part="main">{children}</div>
+      <aside data-part="aside">{slots.aside}</aside>
+    </>
+  );
+}
+Sidebar.slots = ["aside"];
+
+<Deck markdown={markdown} layouts={{ sidebar: Sidebar }} />;
+```
+
+```md
+---
+layout: sidebar
+---
+
+# Release plan
+
+- Beta in May
+- Launch in June
+
+:::aside
+Owned by the platform team
+:::
+```
+
+The layout renders inside the slide's `<section data-layout="sidebar">`, so
+CSS can arrange it by name:
+
+```css
+[data-layout="sidebar"] {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2em;
+}
+```
+
+- `slide.frontmatter` holds the slide's settings, so a layout can take its
+  own, like `image:` for the image layouts.
+- A layout with a built-in name replaces the built-in one, in the deck, the
+  overview and the presenter view.
+- A layout name with no component renders like `default`, keeping the name in
+  `data-layout`. A layout that only changes the look needs CSS alone:
+
+```css
+[data-layout="agenda"] :where(ol) {
+  font-size: 1.3em;
+}
+```
+
+## Components
+
+Register components for directives. A component gets the directive's
+attributes as string props and its content as `children`:
+
+```tsx
+function Callout({
+  tone = "info",
+  children,
+}: {
+  tone?: string;
+  children?: ReactNode;
+}) {
+  return <aside className={`callout ${tone}`}>{children}</aside>;
+}
+
+<Deck markdown={markdown} components={{ callout: Callout }} />;
+```
+
+```md
+:::callout{tone="warning"}
+Mind the **gap**.
+:::
+```
+
+With sanitising on, the default, a component doesn't get event handlers
+(`on…`), `srcdoc`, or `javascript:` and `vbscript:` URLs. Treat the other
+attributes as text that the deck's author wrote.
+
+Every directive renders as a `div` with `data-directive="name"`, which keeps
+its id, classes and step. A registered component renders inside that `div`.
+Without one, the content goes straight in, so a directive can be styled with
+CSS alone. A component that throws only breaks its own slide.
+
+With the Vite plugin or the CLI, the components come from a file. See
+[Components](vite.md#components) in the plugin's README.
+
+## Diagrams
+
+A `mermaid` code block is drawn as a diagram when the deck can load
+[Mermaid](https://mermaid.js.org). Mermaid is a large package, so
+`@slidewright/react` doesn't depend on it. Install it, and give the deck a
+function that loads it:
+
+```sh
+npm install mermaid
+```
+
+```tsx
+// Outside the component, or the deck gets a new function on every render.
+const loadMermaid = () => import("mermaid");
+
+<Deck markdown={markdown} mermaid={loadMermaid} />;
+```
+
+Mermaid loads in its own chunk with the first diagram that a deck shows.
+Without the `mermaid` prop, the block stays a code block. `Presenter` and
+`PrintDeck` take the same prop.
+
+A diagram is drawn in the colours and the font of the slide it is on: its
+`--deck-bg`, `--deck-fg`, `--deck-accent` and the other colour properties. It
+is drawn again when they change, such as with the colour scheme. The diagram's
+own config, in [frontmatter or a directive](https://mermaid.js.org/config/configuration.html)
+of its source, can set other `themeVariables`.
+
+A diagram is as large as Mermaid draws it, and no wider than the place it is
+in. At the top level of a slide and in the columns of `two-cols`, it shrinks
+when the slide has no more room. Set a size with CSS:
+
+```css
+[data-diagram] > svg {
+  max-height: 300px;
+}
+```
+
+The source shows until the diagram is drawn, and on the server. A source with
+a mistake stays, with Mermaid's message below it. Mermaid runs with
+`securityLevel: "strict"`: labels can't hold scripts, and diagrams have no
+click handlers.
+
+## Icons
+
+`:set:name:` in the text of a deck is an icon: `:lucide:rocket:` is the
+`rocket` of the set `lucide`. The deck draws the icons of the sets in its
+`icons` prop. The sets have the [Iconify](https://iconify.design) format, so
+the `icons.json` of any `@iconify-json/*` package works:
+
+```sh
+npm install @iconify-json/lucide
+```
+
+```tsx
+import lucide from "@iconify-json/lucide/icons.json";
+
+<Deck markdown={markdown} icons={[lucide]} />;
+```
+
+Find the sets and the names of their icons at
+[icon-sets.iconify.design](https://icon-sets.iconify.design). A set has
+thousands of icons. To keep it out of the page's first script, load it with
+`import()` and give it to the deck when it arrives: until then, and for an
+icon that no set has, the deck shows the source text. `Presenter` and
+`PrintDeck` take the same prop. With the Vite plugin or the CLI, the page
+gets only the icons that the deck uses. See
+[Icons](vite.md#icons) in the plugin's README.
+
+Your own icons go in a set of the same shape. A `body` is the content of the
+icon's `<svg>`:
+
+```tsx
+const brand: IconSet = {
+  prefix: "brand",
+  width: 24,
+  height: 24,
+  icons: { logo: { body: '<path fill="currentColor" d="M3 3h18v18H3z"/>' } },
+};
+
+<Deck markdown=":brand:logo: Acme" icons={[lucide, brand]} />;
+```
+
+The deck puts a `body` in the page as it is, so use sets that you trust.
+
+An icon is an `<svg data-icon="set:name">`, as tall as the text around it
+and, when the set draws with `currentColor`, in its colour. Size and colour
+it through its element, or select it:
+
+```css
+[data-slide] h1 svg[data-icon] {
+  color: var(--deck-accent);
+}
+```
+
+Screen readers skip icons. To give one a name, write its element with a
+`title`: `<span data-icon="lucide:rocket" title="Launch"></span>`.
+
+## Transitions
+
+A slide with `transition:` in its frontmatter comes in with an animation.
+The theme has `fade`, `slide`, `slide-up` and `zoom`; the
+[syntax reference](syntax.md#transitions) tells what each does.
+`<Deck>` plays them. `<Presenter>` and `<PrintDeck>` change slides at once.
+
+While the deck moves, the canvas holds two slides: the one that leaves,
+then the one that enters. Each has these attributes until the animations of
+both end:
+
+| Attribute                   | Value                                        |
+| --------------------------- | -------------------------------------------- |
+| `data-transition`           | The name, from the later of the slides       |
+| `data-transition-state`     | `entering` or `leaving`                      |
+| `data-transition-direction` | `forward`, or `backward` to an earlier slide |
+
+The slide that leaves stays as it was, at its step and with the state of
+its components. It is `inert` and hidden from screen readers.
+
+The theme properties `--deck-transition-duration` and
+`--deck-transition-easing` set the pace of every transition.
+
+### Your own transitions
+
+A name that the theme doesn't have does nothing until your CSS gives it an
+animation for each of the two slides:
+
+```md
+---
+transition: turn
+---
+```
+
+```css
+[data-slide][data-transition="turn"][data-transition-state="entering"] {
+  animation-name: turn-in;
+}
+
+[data-slide][data-transition="turn"][data-transition-state="leaving"] {
+  animation-name: turn-out;
+}
+
+@keyframes turn-in {
+  from {
+    opacity: 0;
+    rotate: calc(12deg * var(--deck-transition-direction));
+  }
+}
+
+@keyframes turn-out {
+  to {
+    opacity: 0;
+    rotate: calc(-12deg * var(--deck-transition-direction));
+  }
+}
+```
+
+- The theme gives both slides the duration, the easing and
+  `animation-fill-mode: both`. Set `animation-duration` to change the pace
+  of one transition.
+- `--deck-transition-direction` is `1` towards a later slide and `-1`
+  towards an earlier one, so one pair of animations can play both ways.
+- An animation for only one of the slides is enough: the other one waits.
+  The deck takes the slide that leaves away when no animation of the two
+  slides is left, so an animation that repeats for ever is not counted.
+- With reduced motion, the theme gives the animations no duration, so
+  slides change at once.
+
+## Styling
+
+`styles.css` contains the deck chrome, the built-in layouts and the default
+theme, all inside the `slidewright` cascade layer. Any rule in your own CSS
+outside a layer wins over it.
+
+For maths, it imports KaTeX's stylesheet and fonts
+(`katex/dist/katex.min.css`) into the same layer. Your bundler resolves that
+import from `node_modules`; KaTeX itself loads with the first slide that has
+maths.
+
+That includes resets. A global `* { margin: 0; padding: 0 }` outside a layer
+strips the slide padding and spacing, so put resets in a layer declared before
+`slidewright`. With Tailwind, declare the order before importing it, so the
+preflight reset comes first and utilities still win:
+
+```css
+@layer theme, base, slidewright, components, utilities;
+@import "tailwindcss";
+```
+
+Theme a deck with custom properties on `[data-deck]` or any parent:
+
+```css
+.my-deck {
+  --deck-bg: #0b1020;
+  --deck-fg: #f3f4f8;
+  --deck-accent: #ffb000;
+  --deck-font-sans: "Inter", sans-serif;
+  --deck-font-size: 26px;
+}
+```
+
+| Property                                   | Controls                                  |
+| ------------------------------------------ | ----------------------------------------- |
+| `--deck-bg`, `--deck-fg`, `--deck-muted`   | Slide background, text, secondary text    |
+| `--deck-accent`                            | Links, focus ring, progress, quotes       |
+| `--deck-border`, `--deck-surface`          | Rules and tables; code backgrounds        |
+| `--deck-code-foreground`                   | Code text (`--deck-fg` by default)        |
+| `--deck-code-background`                   | Code blocks (`--deck-surface` by default) |
+| `--deck-backdrop`                          | Letterbox around the slide                |
+| `--deck-font-sans`, `--deck-font-heading`  | Body and heading fonts                    |
+| `--deck-font-mono`                         | Code font                                 |
+| `--deck-font-size`, `--deck-line-height`   | Base text size on the canvas              |
+| `--deck-padding`, `--deck-radius`          | Slide padding, corner radius              |
+| `--deck-step-duration`                     | Reveal animation (0 with reduced motion)  |
+| `--deck-transition-duration`               | Transition between slides (400ms)         |
+| `--deck-transition-easing`                 | Its timing function                       |
+| `--deck-dim-opacity`                       | Opacity of lines not highlighted in code  |
+| `--deck-notes-font-size`                   | Notes text in the presenter view          |
+| `--deck-code-token-*`                      | Syntax colours (`keyword`, `string`, …)   |
+| `--deck-code-added`, `--deck-code-removed` | Added and removed lines in diffs          |
+
+Colours use `light-dark()`, so a theme can define both schemes in one value.
+
+### Selectors
+
+Slide content is ordinary HTML, styled with ordinary selectors. The renderer
+adds data attributes for everything else:
+
+| Selector                | Element                                      |
+| ----------------------- | -------------------------------------------- |
+| `[data-deck]`           | Root. `data-theme`, `data-color-scheme`      |
+| `[data-slide]`          | A slide. `data-layout`, plus `class:`        |
+| `[data-transition]`     | A slide in a [transition](#transitions)      |
+| `[data-part]`           | Layout regions (`content`, `image`, `left`…) |
+| `[data-slot]`           | Content placed in a layout slot              |
+| `[data-directive]`      | A directive, by name                         |
+| `[data-step-state]`     | Step content: `future`, `current` or `past`  |
+| `[data-code]`           | Code block figure. `aria-busy` while loading |
+| `[data-line-state]`     | Code line: `highlighted` or `dimmed`         |
+| `[data-line-diff]`      | Code line: `added` or `removed`              |
+| `[data-diff-marker]`    | The `+` or `-` before a diff line            |
+| `[data-math]`           | Maths: `inline` or `display`                 |
+| `[data-diagram]`        | Diagram figure. `aria-busy` until drawn      |
+| `svg[data-icon]`        | An icon, by `set:name`                       |
+| `[data-deck-controls]`  | The buttons and the slide counter            |
+| `[data-deck-progress]`  | Progress bar                                 |
+| `[data-deck-overview]`  | Overview grid                                |
+| `[data-deck-thumbnail]` | A slide in the overview. `data-current`      |
+| `[data-presenter]`      | Presenter root, alongside `data-deck`        |
+| `[data-presenter-note]` | Notes part. With `[step]`, `data-note-state` |
+| `[data-deck-print]`     | `PrintDeck` root, alongside `data-deck`      |
+| `[data-deck-page]`      | A printed page. `data-page-slide`, `-step`   |
+| `[data-slide-error]`    | A slide that failed to compile or render     |
+
+Thumbnails in the overview are slides too, so slide CSS styles them the same
+way. Scope a rule to `[data-deck-viewport]` to style only the slide being
+presented; the presenter's current slide is in one too.
+
+`data-page-slide` counts from 0, like positions, and `data-page-step` is only
+there with `steps`.
+
+The slide canvas has a fixed size (`canvasWidth` in the headmatter, 980px by
+default) and is scaled to fit, so sizes in slide CSS are canvas pixels and
+look the same at any screen size.
+
+## Types
+
+| Type                  | What it is                                                                   |
+| --------------------- | ---------------------------------------------------------------------------- |
+| `DeckProps`           | The props of `Deck`. See [Props](#props).                                    |
+| `DeckHandle`          | The `ref` of `Deck`: `next()`, `goTo(slide, step?)`, `togglePresenter()`, …  |
+| `DeckPosition`        | `{ slide, step }`. `slide` counts from 0, and step `0` is before any reveal. |
+| `PresenterProps`      | The props of `Presenter`: the deck's props that it takes.                    |
+| `PrintDeckProps`      | The props of `PrintDeck`. See [Printing](#printing).                         |
+| `Layout`              | A layout component, with its optional `slots` list.                          |
+| `LayoutProps`         | The props that a layout gets: `slide`, `children` and `slots`.               |
+| `DirectiveComponents` | The `components` prop: components by directive name.                         |
+| `IconSet`             | A set of the `icons` prop: icons in the Iconify format. See [Icons](#icons). |

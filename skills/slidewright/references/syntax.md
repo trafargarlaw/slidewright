@@ -1,3 +1,5 @@
+<!-- A copy of docs/syntax.md in the Slidewright repository, written by `bun run skills`. -->
+
 # Deck syntax
 
 A deck is one Markdown file, or [several](#several-files). This page is the
@@ -60,7 +62,7 @@ YAML is reported as a diagnostic and the slide renders without settings.
 Other keys are passed to the layout and renderer (for example `class`,
 `image` or [`transition`](#transitions)). Their meaning is defined by the
 renderer: the
-[README of `@slidewright/react`](../packages/react/README.md#layouts) lists
+[README of `@slidewright/react`](react.md#layouts) lists
 its layouts and the keys they read.
 
 ## Headmatter
@@ -140,10 +142,10 @@ title of its first slide.
 A file that doesn't exist is reported with the line of its `src`, and the
 rest of the deck still renders.
 
-The [command line](../packages/cli/README.md) and the
-[Vite plugin](../packages/vite/README.md#several-files) read `src`. Parsing
+The [command line](cli.md) and the
+[Vite plugin](vite.md#several-files) read `src`. Parsing
 stays free of the file system: `parseDeck` takes one source, and `joinDeck`
-from [`@slidewright/core`](../packages/core/README.md#decks-in-several-files)
+from [`@slidewright/core`](https://github.com/trafargarlaw/slidewright/blob/master/packages/core/README.md#decks-in-several-files)
 makes that source from the files.
 
 ## Speaker notes
@@ -290,7 +292,7 @@ slides change at once.
 
 Renderers can have more names. With `@slidewright/react`, a name that the
 theme doesn't have is a transition of your own, written in CSS. See
-[Transitions](../packages/react/README.md#transitions).
+[Transitions](react.md#transitions).
 
 ## Code blocks
 
@@ -371,12 +373,12 @@ Inline directives (`:name`) are **not** part of the syntax, so text like
 Components are React components. With the CLI, they come from a
 `components.tsx` file next to the deck; with the Vite plugin, from its
 `components` option; in a React app, from the `components` prop of `<Deck>`.
-See [Components](../packages/vite/README.md#components).
+See [Components](vite.md#components).
 
 A deck is Markdown, not MDX: it has no `import` lines, no JSX and no
 `{expressions}`, so braces and `<` in text stay as written. Directives are
 the way to put a component on a slide. The reasons are in
-[ADR 0001](adr/0001-decks-are-markdown-not-mdx.md).
+[ADR 0001](https://github.com/trafargarlaw/slidewright/blob/master/docs/adr/0001-decks-are-markdown-not-mdx.md).
 
 ## HTML
 
@@ -449,7 +451,7 @@ size or the colour, style the element around the icon:
 The sets are separate packages. With the CLI and the Vite plugin, install
 the ones that the deck uses (`npm install @iconify-json/lucide`); in a React
 app, give `<Deck>` its `icons` prop. An icon that the renderer doesn't have
-shows as its source text. See [Icons](../packages/vite/README.md#icons).
+shows as its source text. See [Icons](vite.md#icons).
 
 ## Diagrams
 
@@ -469,4 +471,4 @@ diagram takes steps and goes in layout slots like any other block.
 Mermaid is a separate package. With the CLI and the Vite plugin, install it
 in the project (`npm install mermaid`); in a React app, give `<Deck>` its
 `mermaid` prop. Without Mermaid, the block shows as code. See
-[Diagrams](../packages/vite/README.md#diagrams).
+[Diagrams](vite.md#diagrams).
