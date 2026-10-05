@@ -1,6 +1,6 @@
 {
   "name": "@slidewright/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Present, build and export Markdown decks from the command line.",
   "keywords": [
     "cli",

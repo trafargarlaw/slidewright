@@ -1,6 +1,6 @@
 {
   "name": "@slidewright/react",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Render Markdown decks in React. Reacts to Markdown changes as you type.",
   "keywords": [
     "deck",

@@ -1,6 +1,6 @@
 {
   "name": "@slidewright/vite",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Vite plugin that serves and builds a Markdown deck as a presentation.",
   "keywords": [
     "deck",
