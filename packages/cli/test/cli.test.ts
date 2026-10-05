@@ -8,6 +8,8 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { inflateSync } from "node:zlib";
@@ -19,11 +21,13 @@ import {
 import { chromium } from "playwright-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  CliError,
   loadChromium,
   main,
   pageFiles,
   parse,
   run,
+  stillLoading,
   UsageError,
 } from "../src/index";
 
@@ -230,6 +234,36 @@ describe("commands", () => {
     expect(await main(["dev", "empty"])).toBe(1);
     expect(output("error")).toContain("Deck file not found: empty/slides.md");
   });
+
+  it("explains an export path of the wrong kind", async () => {
+    mkdirSync(join(root, "out"));
+    writeFileSync(join(root, "out.png"), "");
+    expect(await main(["export", "talk", "--out", "out"])).toBe(1);
+    expect(
+      await main(["export", "talk", "--format", "png", "--out", "out.png"]),
+    ).toBe(1);
+    expect(output("error")).toBe(
+      [
+        "out is a folder. Give --out a file for the PDF, such as out/slides.pdf.",
+        'Run "slidewright --help" for usage.',
+        "out.png is a file. Give --out a folder for the PNG files.",
+        'Run "slidewright --help" for usage.',
+      ].join("\n"),
+    );
+  });
+
+  it("explains how to download Chromium", async () => {
+    // Playwright's message when the browser isn't downloaded.
+    vi.spyOn(chromium, "launch").mockRejectedValue(
+      new Error(
+        "browserType.launch: Executable doesn't exist at /cache/chromium_headless_shell-1208/chrome-headless-shell",
+      ),
+    );
+    expect(await main(["export", "talk"])).toBe(1);
+    expect(output("error")).toBe(
+      "Export needs Chromium, which Playwright hasn't downloaded. Download it with:\n  npx playwright-core install chromium",
+    );
+  });
 });
 
 describe("pageFiles", () => {
@@ -255,14 +289,38 @@ describe("loadChromium", () => {
   const nowhere = join(tmpdir(), "slidewright-no-playwright", "package.json");
 
   it("explains how to install Playwright when it is missing", () => {
-    expect(() => loadChromium([nowhere])).toThrow(UsageError);
+    expect(() => loadChromium([nowhere])).toThrow(CliError);
     expect(() => loadChromium([nowhere])).toThrow(
       "npm install --save-dev playwright-chromium",
     );
   });
 
   it("loads Chromium from the first base that has Playwright", () => {
-    expect(loadChromium([nowhere, import.meta.url]).name()).toBe("chromium");
+    const { chromium, install } = loadChromium([nowhere, import.meta.url]);
+    expect(chromium.name()).toBe("chromium");
+    expect(install).toBe("npx playwright-core install chromium");
+  });
+});
+
+describe("stillLoading", () => {
+  it("lists what the deck still loads", () => {
+    expect(
+      stillLoading({ code: 2, images: ["a.png"], fonts: true }, [], 30_000),
+    ).toBe(
+      "The deck didn't finish loading in 30 s. Still loading:\n  2 code blocks to highlight\n  the image a.png\n  fonts",
+    );
+    expect(stillLoading({ code: 1, images: [], fonts: false }, [], 500)).toBe(
+      "The deck didn't finish loading in 0.5 s. Still loading:\n  1 code block to highlight",
+    );
+  });
+
+  it("gives the page's errors when the deck didn't show", () => {
+    expect(stillLoading(null, ["TypeError: x is undefined"], 30_000)).toBe(
+      "The deck didn't show in 30 s.\nThe page reported:\n  TypeError: x is undefined",
+    );
+    expect(stillLoading(null, [], 30_000)).toBe(
+      "The deck didn't show in 30 s.",
+    );
   });
 });
 
@@ -396,6 +454,43 @@ print(1)
     expect(vi.mocked(console.log).mock.calls[0]![0]).toMatch(
       /^Exported 4 pages of talk\/slides\.md to talk\/slides\.pdf in \d+\.\ds\.$/,
     );
+  });
+
+  it("explains what is still loading when the deck is slow", async () => {
+    // A server that never answers.
+    const stalled = createServer(() => {});
+    await new Promise<void>((done) => stalled.listen(0, "127.0.0.1", done));
+    const image = `http://127.0.0.1:${(stalled.address() as AddressInfo).port}/slow.png`;
+    writeFileSync(
+      join(root, "talk", "dot.svg"),
+      '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
+    );
+    writeFileSync(
+      join(root, "talk", "slides.md"),
+      `# Slow\n\n![Loaded](dot.svg) ![Slow](${image})\n`,
+    );
+    try {
+      await expect(
+        run(
+          {
+            name: "export",
+            deck: "talk",
+            format: "pdf",
+            steps: false,
+            timeout: 1000,
+          },
+          CONFIG,
+        ),
+      ).rejects.toThrow(
+        // Only the image that hasn't loaded.
+        new Error(
+          `The deck didn't finish loading in 1 s. Still loading:\n  the image ${image}`,
+        ),
+      );
+    } finally {
+      stalled.closeAllConnections();
+      stalled.close();
+    }
   });
 
   it("exports one PDF page per step with --steps", async () => {

@@ -54,14 +54,19 @@ export type Command =
       format: ExportFormat;
       out?: string;
       steps: boolean;
+      /** How long the deck may take to load, in ms. Default 30 s. */
+      timeout?: number;
     };
 
 export type ExportFormat = "pdf" | "png";
 
 const COMMANDS = ["dev", "build", "export"] as const;
 
-/** A mistake on the command line, shown without a stack trace. */
-export class UsageError extends Error {}
+/** A problem shown without a stack trace. */
+export class CliError extends Error {}
+
+/** A mistake on the command line, shown with a pointer to the help. */
+export class UsageError extends CliError {}
 
 const OPTIONS = {
   port: { type: "string" },
@@ -222,6 +227,8 @@ export async function main(args: string[]): Promise<number> {
   } catch (error) {
     if (error instanceof UsageError) {
       console.error(`${error.message}\nRun "slidewright --help" for usage.`);
+    } else if (error instanceof CliError) {
+      console.error(error.message);
     } else {
       console.error(error);
     }
@@ -235,10 +242,6 @@ async function exportDeck(
   config: InlineConfig,
 ): Promise<void> {
   const deck = findDeck(command.deck);
-  const chromium = loadChromium([
-    join(dirname(deck), "package.json"),
-    import.meta.url,
-  ]);
   const name = basename(deck, extname(deck));
   const out = resolve(
     command.out ??
@@ -247,6 +250,25 @@ async function exportDeck(
         command.format === "pdf" ? `${name}.pdf` : `${name}-png`,
       ),
   );
+  if (existsSync(out)) {
+    const folder = statSync(out).isDirectory();
+    const path = relative(process.cwd(), out);
+    if (command.format === "pdf" && folder) {
+      throw new UsageError(
+        `${path} is a folder. Give --out a file for the PDF, such as ${join(path, `${name}.pdf`)}.`,
+      );
+    }
+    if (command.format === "png" && !folder) {
+      throw new UsageError(
+        `${path} is a file. Give --out a folder for the PNG files.`,
+      );
+    }
+  }
+  const { chromium, install } = loadChromium([
+    join(dirname(deck), "package.json"),
+    import.meta.url,
+  ]);
+  const timeout = command.timeout ?? 30_000;
   const start = performance.now();
 
   const server = await createServer(
@@ -260,23 +282,38 @@ async function exportDeck(
     await server.listen();
     const url = new URL(server.resolvedUrls!.local[0]!);
     url.search = command.steps ? "print=steps" : "print";
-    const browser = await chromium.launch();
+    const browser = await launch(chromium, install);
     try {
       const page = await browser.newPage({
         // Sharp text in images.
         deviceScaleFactor: command.format === "png" ? 2 : 1,
       });
+      const errors: string[] = [];
+      page.on("pageerror", (error) => errors.push(String(error)));
       await page.goto(url.href);
-      // Code is highlighted, images are loaded and fonts are ready.
-      await page.waitForFunction(() => {
-        const root = document.querySelector("[data-deck-print]");
-        return (
-          root !== null &&
-          root.querySelector('[aria-busy="true"]') === null &&
-          [...root.querySelectorAll("img")].every((image) => image.complete) &&
-          document.fonts.status === "loaded"
+      try {
+        // Code is highlighted, images are loaded and fonts are ready.
+        await page.waitForFunction(
+          () => {
+            const root = document.querySelector("[data-deck-print]");
+            return (
+              root !== null &&
+              root.querySelector('[aria-busy="true"]') === null &&
+              [...root.querySelectorAll("img")].every(
+                (image) => image.complete,
+              ) &&
+              document.fonts.status === "loaded"
+            );
+          },
+          undefined,
+          { timeout },
         );
-      });
+      } catch (error) {
+        if ((error as Error).name !== "TimeoutError") throw error;
+        throw new CliError(
+          stillLoading(await page.evaluate(loadingState), errors, timeout),
+        );
+      }
 
       const pages = page.locator("[data-deck-page]");
       const files = pageFiles(
@@ -326,6 +363,69 @@ async function exportDeck(
 
 const PNG_FILE = /^\d+(-\d+)?\.png$/;
 
+/** Launches Chromium, or explains how to download it. */
+async function launch(chromium: BrowserType, install: string) {
+  try {
+    return await chromium.launch();
+  } catch (error) {
+    if (!/Executable doesn't exist/.test((error as Error).message)) throw error;
+    throw new CliError(
+      `Export needs Chromium, which Playwright hasn't downloaded. Download it with:\n  ${install}`,
+    );
+  }
+}
+
+/**
+ * What the print view still loads, in the browser: code blocks to highlight,
+ * images and fonts. `null` while the print view isn't there. Self-contained,
+ * as Playwright runs it in the page.
+ */
+function loadingState(): {
+  code: number;
+  images: string[];
+  fonts: boolean;
+} | null {
+  const root = document.querySelector("[data-deck-print]");
+  if (root === null) return null;
+  return {
+    code: root.querySelectorAll('[aria-busy="true"]').length,
+    images: [...root.querySelectorAll("img")]
+      .filter((image) => !image.complete)
+      .map((image) => image.currentSrc || image.src),
+    fonts: document.fonts.status !== "loaded",
+  };
+}
+
+/** Why the deck didn't finish loading in `timeout` ms. */
+export function stillLoading(
+  state: ReturnType<typeof loadingState>,
+  errors: readonly string[],
+  timeout: number,
+): string {
+  const time = `${timeout / 1000} s`;
+  if (state === null) {
+    return [
+      `The deck didn't show in ${time}.`,
+      ...(errors.length > 0 ? ["The page reported:", ...indent(errors)] : []),
+    ].join("\n");
+  }
+  const pending = [
+    ...(state.code > 0
+      ? [
+          `${state.code} ${state.code === 1 ? "code block" : "code blocks"} to highlight`,
+        ]
+      : []),
+    ...state.images.map((image) => `the image ${image}`),
+    ...(state.fonts ? ["fonts"] : []),
+  ];
+  return [
+    `The deck didn't finish loading in ${time}. Still loading:`,
+    ...indent(pending),
+  ].join("\n");
+}
+
+const indent = (lines: readonly string[]) => lines.map((line) => `  ${line}`);
+
 /**
  * Image names for print pages, given as [slide index, step]: `03.png` for
  * slide 3, `03-2.png` for slide 3 with two steps revealed, as in the URL hash.
@@ -344,9 +444,13 @@ const PLAYWRIGHT = ["playwright-chromium", "playwright", "playwright-core"];
 
 /**
  * Chromium from the first Playwright package found from one of `bases`: the
- * deck's project first, then the CLI's.
+ * deck's project first, then the CLI's. `install` is the command that
+ * downloads its browser.
  */
-export function loadChromium(bases: string[]): BrowserType {
+export function loadChromium(bases: string[]): {
+  chromium: BrowserType;
+  install: string;
+} {
   for (const base of bases) {
     const require = createRequire(base);
     for (const name of PLAYWRIGHT) {
@@ -356,10 +460,14 @@ export function loadChromium(bases: string[]): BrowserType {
       } catch {
         continue;
       }
-      return (require(path) as { chromium: BrowserType }).chromium;
+      return {
+        chromium: (require(path) as { chromium: BrowserType }).chromium,
+        // `playwright-chromium` has the `playwright` command too.
+        install: `npx ${name === "playwright-core" ? name : "playwright"} install chromium`,
+      };
     }
   }
-  throw new UsageError(
+  throw new CliError(
     "Export needs Playwright. Install it next to the deck with:\n  npm install --save-dev playwright-chromium",
   );
 }
