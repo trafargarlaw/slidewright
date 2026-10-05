@@ -59,7 +59,9 @@ welcome.
 ### 2 — Components and polish (v0.2)
 
 - [x] Components in Markdown through a registry (directive syntax)
-- [ ] MDX support through the Vite plugin, if it fits cleanly
+- ~~MDX support through the Vite plugin, if it fits cleanly~~ Not planned:
+  it doesn't fit, and components come through directives. See
+  [ADR 0001](adr/0001-decks-are-markdown-not-mdx.md).
 - [x] Maths (KaTeX)
 - [x] Diagrams (Mermaid)
 - [x] Icons (Iconify sets)

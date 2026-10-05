@@ -374,6 +374,11 @@ Components are React components. With the CLI, they come from a
 `components` option; in a React app, from the `components` prop of `<Deck>`.
 See [Components](../packages/vite/README.md#components).
 
+A deck is Markdown, not MDX: it has no `import` lines, no JSX and no
+`{expressions}`, so braces and `<` in text stay as written. Directives are
+the way to put a component on a slide. The reasons are in
+[ADR 0001](adr/0001-decks-are-markdown-not-mdx.md).
+
 ## HTML
 
 Inline and block HTML work as in GitHub Flavored Markdown, and any element can
