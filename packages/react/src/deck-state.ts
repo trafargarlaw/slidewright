@@ -143,10 +143,17 @@ export function useDeckPosition(
   const go = useCallback((target: DeckPosition | NavigationAction) => {
     const { current, slideCount, getSteps, controlled, onPositionChange } =
       latest.current;
-    const next =
-      typeof target === "string"
-        ? move(current, target, slideCount, getSteps)
-        : clampPosition(target, slideCount, getSteps);
+    let next: DeckPosition;
+    if (typeof target === "string") {
+      next = move(current, target, slideCount, getSteps);
+    } else if (slideCount === 0) {
+      // The slides haven't arrived, such as while the deck loads. The
+      // position stays as asked, in whole numbers, so a URL hash's slide
+      // opens once they do.
+      next = clampPosition(target, Infinity, () => Infinity);
+    } else {
+      next = clampPosition(target, slideCount, getSteps);
+    }
     if (next.slide === current.slide && next.step === current.step) return;
     if (!controlled) setInternal(next);
     onPositionChange?.(next);

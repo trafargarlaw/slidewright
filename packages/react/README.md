@@ -102,7 +102,9 @@ With `hash`, the URL follows the deck: `#3` is slide 3, and `#3.2` is slide 3
 with two steps revealed. Reloading the page or opening a shared link starts
 the deck there, and changing the hash, by hand or through a link such as
 `[demo](#5)` on a slide, moves the deck. A controlled deck gets the hash's
-position through `onPositionChange`.
+position through `onPositionChange`. When the Markdown comes later, such as
+from a `fetch`, give the deck an empty string until then: the deck opens on
+the hash's slide once the slides are there.
 
 The deck replaces the history entry as it moves, so Back leaves the page
 instead of stepping back through the talk. The hash belongs to the whole
