@@ -8,6 +8,8 @@ import { CheatSheet } from "./CheatSheet";
 import { registerImage } from "@/lib/image-registry";
 import { compileOptions } from "@/lib/compile-options";
 import { parseSource, setSlideNotes } from "@/lib/deck-source";
+import { applySearchReplace } from "@/lib/search-replace";
+import { initUnocss } from "@/styles/unocss";
 import {
   registerCompletion,
   type CompletionRegistration
@@ -58,54 +60,6 @@ function computeChangedLines(original: string, proposed: string): number[] {
     }
   }
   return changed;
-}
-
-function applySearchReplace(original: string, response: string): string {
-  // Strip wrapping code fences (with optional language tag like ```diff, ```markdown)
-  const cleaned = response.replace(/^```[^\n]*\n?/, "").replace(/\n?```\s*$/, "");
-
-  const blocks: { search: string; replace: string }[] = [];
-  const regex =
-    /<<<<<<< SEARCH\n([\s\S]*?)\n?=======\n([\s\S]*?)\n>>>>>>> REPLACE/g;
-  let match;
-  while ((match = regex.exec(cleaned)) !== null) {
-    blocks.push({ search: match[1], replace: match[2] });
-  }
-
-  console.log("[applySearchReplace]", {
-    originalLen: original.length,
-    responseLen: response.length,
-    cleanedLen: cleaned.length,
-    blocksFound: blocks.length,
-    responseFirst200: response.slice(0, 200),
-    responseLast200: response.slice(-200),
-    cleanedFirst200: cleaned.slice(0, 200),
-    searchTexts: blocks.map((b) => b.search.slice(0, 80)),
-  });
-
-  if (blocks.length === 0) return original; // no valid blocks — no change
-
-  let result = original;
-  for (const block of blocks) {
-    if (block.search === "") {
-      // Empty SEARCH = replace entire file (create from scratch)
-      result = block.replace;
-    } else {
-      const idx = result.indexOf(block.search);
-      if (idx !== -1) {
-        result =
-          result.slice(0, idx) +
-          block.replace +
-          result.slice(idx + block.search.length);
-      } else {
-        console.warn("[applySearchReplace] SEARCH text not found in original:", {
-          search: block.search.slice(0, 100),
-        });
-      }
-    }
-  }
-
-  return result;
 }
 
 function renderScriptWithSteps(text: string) {
@@ -211,15 +165,22 @@ interface EditorProps {
 }
 
 export function Editor({ defaultValue, onChange }: EditorProps) {
-  console.log("Editor");
   const completionRef = useRef<CompletionRegistration | null>(null);
   const [markdown, setMarkdown] = useState(defaultValue);
   const [activeTab, setActiveTab] = useState<string>("markdown");
   const [previewView, setPreviewView] = useState<string>("slides");
   const [position, setPosition] = useState<DeckPosition>({ slide: 0, step: 0 });
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (previewRef.current) initUnocss(previewRef.current);
+  }, []);
   const ignoreCursorRef = useRef(false);
   const [aiInstruction, setAiInstruction] = useState("");
+  const [aiNotice, setAiNotice] = useState<{
+    tone: "error" | "info";
+    text: string;
+  } | null>(null);
   const [aiPending, setAiPending] = useState<{
     original: string;
     proposed: string;
@@ -246,21 +207,17 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
         selection: aiEditContextRef.current.selection,
       }),
     }),
-    onFinish: (event) => {
-      console.log("[onFinish]", {
-        isAbort: event.isAbort,
-        isError: event.isError,
-        isDisconnect: event.isDisconnect,
-        finishReason: event.finishReason,
-        partsCount: event.message.parts.length,
-        partTypes: event.message.parts.map((p) => p.type),
+    onError: (error) => {
+      setAiNotice({
+        tone: "error",
+        text: `The AI edit failed: ${error.message}`,
       });
-
+    },
+    onFinish: (event) => {
+      // onError reports errors.
+      if (event.isAbort || event.isError) return;
       const ed = editorRef.current;
-      if (!ed) {
-        console.warn("[onFinish] editorRef is null");
-        return;
-      }
+      if (!ed) return;
 
       // Extract text from the finished message
       const text = event.message.parts
@@ -268,14 +225,24 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
         .map((p) => p.text)
         .join("");
 
-      console.log("[onFinish] extracted text length:", text.length, "first 300:", text.slice(0, 300));
-
       const code = aiEditContextRef.current.code;
-      const proposed = applySearchReplace(code, text);
+      const { text: proposed, applied, skipped } = applySearchReplace(
+        code,
+        text,
+      );
 
       if (proposed === code) {
-        console.warn("[onFinish] proposed === code, no changes applied");
+        setAiNotice({
+          tone: "error",
+          text: "The AI's answer had no changes that fit the deck. Try again, or say more about what to change.",
+        });
         return;
+      }
+      if (skipped > 0) {
+        setAiNotice({
+          tone: "info",
+          text: `${skipped} of the AI's ${applied + skipped} changes didn't fit the deck and were left out.`,
+        });
       }
 
       setAiPending({ original: code, proposed });
@@ -493,11 +460,15 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
       { value: "center", description: "Content centred" },
       { value: "cover", description: "Title slide: large heading, subtitle" },
       { value: "section", description: "Section divider with accent bar" },
+      { value: "statement", description: "One large heading, centred" },
+      { value: "fact", description: "A large number or word, with a caption" },
+      { value: "quote", description: "A large > quote, then its source" },
       { value: "full", description: "No padding" },
       {
         value: "two-cols",
         description: "Content on top, then :::left and :::right columns",
       },
+      { value: "image", description: "Image (from image:) fills the slide" },
       { value: "image-left", description: "Image (from image:) left, content right" },
       { value: "image-right", description: "Content left, image (from image:) right" },
     ];
@@ -711,6 +682,7 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
 
       // Clear previous conversation and send new message
       setAiMessages([]);
+      setAiNotice(null);
       setAiInstruction("");
       sendMessage({ text: message.text });
     },
@@ -724,6 +696,7 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
       decorationsRef.current?.clear();
     }
     setAiPending(null);
+    setAiNotice(null);
     setAiMessages([]);
   }, [setAiMessages]);
 
@@ -739,6 +712,7 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
       decorationsRef.current?.clear();
     }
     setAiPending(null);
+    setAiNotice(null);
     setAiMessages([]);
   }, [aiPending, setAiMessages]);
 
@@ -850,6 +824,24 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
                   </Tooltip>
                 </div>
               )}
+              {aiNotice && (
+                <div
+                  role={aiNotice.tone === "error" ? "alert" : "status"}
+                  className={`flex items-center gap-2 px-3 py-2 border-b border-border text-sm ${aiNotice.tone === "error" ? "text-destructive" : "text-muted-foreground"}`}
+                >
+                  <span className="flex-1 max-h-40 overflow-auto whitespace-pre-line">
+                    {aiNotice.text}
+                  </span>
+                  <Button
+                    size="icon-xs"
+                    variant="ghost"
+                    aria-label="Dismiss"
+                    onClick={() => setAiNotice(null)}
+                  >
+                    <XIcon />
+                  </Button>
+                </div>
+              )}
               {aiLoading && (
                 <AiStreamPanel
                   messages={aiMessages}
@@ -934,7 +926,7 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
             </TabsList>
           </Tabs>
         </div>
-        <PreviewArea>
+        <PreviewArea ref={previewRef}>
           {previewView === "presenter" ? (
             <Presenter
               markdown={markdown}
