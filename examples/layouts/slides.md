@@ -87,7 +87,7 @@ Content on top, then two columns.
 
 ---
 layout: image-right
-image: /hills.svg
+image: hills.svg
 imageAlt: Hills under an evening sky
 ---
 
@@ -99,7 +99,7 @@ Content on the left, and the picture from `image:` on the right.
 
 ---
 layout: image-left
-image: /hills.svg
+image: hills.svg
 imageAlt: Hills under an evening sky
 ---
 
@@ -109,7 +109,7 @@ The picture on the left, and the content on the right.
 
 ---
 layout: image
-image: /hills.svg
+image: hills.svg
 imageAlt: Hills under an evening sky
 ---
 

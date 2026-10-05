@@ -1,6 +1,6 @@
 {
   "name": "@slidewright/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Present, build and export Markdown decks from the command line.",
   "keywords": [
     "cli",
@@ -10,12 +10,12 @@
     "presentation",
     "slides"
   ],
-  "homepage": "https://github.com/trafargarlaw/react-slides/tree/master/packages/cli#readme",
-  "bugs": "https://github.com/trafargarlaw/react-slides/issues",
+  "homepage": "https://github.com/trafargarlaw/slidewright/tree/master/packages/cli#readme",
+  "bugs": "https://github.com/trafargarlaw/slidewright/issues",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/trafargarlaw/react-slides.git",
+    "url": "git+https://github.com/trafargarlaw/slidewright.git",
     "directory": "packages/cli"
   },
   "bin": {

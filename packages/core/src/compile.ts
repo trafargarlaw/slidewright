@@ -11,6 +11,7 @@ import { unified, type PluggableList } from "unified";
 import { VFile } from "vfile";
 import {
   remarkCodeMeta,
+  rehypeSafeDirectiveAttributes,
   rehypeSteps,
   remarkDirectiveElements,
 } from "./plugins";
@@ -20,8 +21,9 @@ import type { CompiledSlide, Slide } from "./types";
 export interface CompileOptions {
   /**
    * Remove dangerous HTML (scripts, event handlers, iframes, `javascript:`
-   * URLs). On by default; pass `false` for decks you trust, or a custom
-   * `hast-util-sanitize` schema.
+   * URLs), and the same from the attributes of directives. On by default;
+   * pass `false` for decks you trust, or a custom `hast-util-sanitize`
+   * schema.
    */
   sanitize?: boolean | Schema;
   /** Extra remark plugins, run after the built-in Markdown extensions. */
@@ -53,10 +55,9 @@ export function createCompiler(options: CompileOptions = {}): SlideCompiler {
     .use(rehypeSteps);
 
   if (sanitize !== false) {
-    processor.use(
-      rehypeSanitize,
-      sanitize === true ? sanitizeSchema : sanitize,
-    );
+    processor
+      .use(rehypeSanitize, sanitize === true ? sanitizeSchema : sanitize)
+      .use(rehypeSafeDirectiveAttributes);
   }
   processor.use(rehypePlugins).freeze();
 
@@ -68,7 +69,7 @@ export function createCompiler(options: CompileOptions = {}): SlideCompiler {
     const override =
       typeof slide === "string" ? undefined : slide.frontmatter.steps;
     const steps =
-      typeof override === "number" && override >= 0
+      typeof override === "number" && Number.isFinite(override) && override >= 0
         ? Math.floor(override)
         : (file.data.steps ?? 0);
 

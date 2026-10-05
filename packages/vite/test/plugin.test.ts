@@ -1,21 +1,28 @@
 import {
+  mkdirSync,
   mkdtempSync,
   readdirSync,
+  realpathSync,
   readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { basename, dirname, join, sep } from "node:path";
+import { stripVTControlCharacters } from "node:util";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   build,
+  createLogger,
   createServer,
   defaultClientConditions,
   type InlineConfig,
+  type Logger,
   type ViteDevServer,
 } from "vite";
+import { builtinLayouts } from "../../react/src/layouts";
 import { slidewright, type SlidewrightOptions } from "../src/index";
+import { LAYOUTS } from "../src/problems";
 
 const DECK = `---
 title: Plugin <test> & co
@@ -30,8 +37,36 @@ title: Plugin <test> & co
 
 let root = "";
 
+const PROBLEMS = `---
+colorScheme: purple
+---
+
+# One
+
+---
+title: Two
+layout: two-columns
+---
+
+\`\`\`ts {1|x}
+const a = 1;
+\`\`\`
+`;
+
+/** A logger that keeps the warnings, without colours. */
+function recordWarnings(): { logger: Logger; warnings: string[] } {
+  const warnings: string[] = [];
+  const logger = createLogger("silent");
+  logger.warn = (message) => {
+    warnings.push(stripVTControlCharacters(message));
+  };
+  return { logger, warnings };
+}
+
 beforeEach(() => {
-  root = mkdtempSync(join(tmpdir(), "slidewright-vite-"));
+  root = realpathSync(mkdtempSync(join(tmpdir(), "slidewright-vite-")));
+  // Problems are printed with paths relative to the working directory.
+  vi.spyOn(process, "cwd").mockReturnValue(root);
   writeFileSync(join(root, "slides.md"), DECK);
   writeFileSync(
     join(root, "style.css"),
@@ -40,6 +75,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   rmSync(root, { recursive: true, force: true });
 });
 
@@ -122,11 +158,50 @@ describe("dev server", () => {
     expect(html).toContain("<title>Talk</title>");
   });
 
+  it("prints the deck's problems at start and after each change", async () => {
+    writeFileSync(join(root, "slides.md"), PROBLEMS);
+    const { logger, warnings } = recordWarnings();
+    server = await createServer({
+      ...config(),
+      customLogger: logger,
+      server: { port: 0, strictPort: false, ws: false },
+      optimizeDeps: { noDiscovery: true },
+    });
+    await server.listen();
+    expect(warnings).toEqual([
+      [
+        "slides.md:2: warning: `colorScheme` must be one of `light`, `dark` or `auto`.",
+        'slides.md:9: warning: Unknown layout "two-columns": the slide shows with the default layout. The layouts are default, center, cover, section, statement, fact, quote, full, two-cols, image, image-left, image-right.',
+        "slides.md:12: warning: `x` in `{1|x}` is not a line range. Use line numbers, ranges such as `3-5`, or `all`, with an optional `@step`.",
+      ].join("\n"),
+    ]);
+
+    // Fixed: nothing to print. A new problem is printed.
+    const deck = join(root, "slides.md");
+    writeFileSync(deck, "# Fixed\n");
+    server.watcher.emit("change", deck);
+    writeFileSync(deck, "---\nsteps: many\n---\n\n# Broken again\n");
+    server.watcher.emit("change", deck);
+    await vi.waitFor(() => expect(warnings).toHaveLength(2));
+    expect(warnings[1]).toBe(
+      "slides.md:2: warning: `steps` must be a number of 0 or more.",
+    );
+
+    // Saved again without a fix: printed once only.
+    server.watcher.emit("change", deck);
+    await new Promise((done) => setTimeout(done, 50));
+    expect(warnings).toHaveLength(2);
+  });
+
   it("fails clearly when the deck file is missing", async () => {
     await expect(serve({ deck: "missing.md" })).rejects.toThrow(
       /Deck file not found: .*missing\.md/,
     );
   });
+});
+
+it("knows every layout of @slidewright/react", () => {
+  expect([...LAYOUTS].sort()).toEqual(Object.keys(builtinLayouts).sort());
 });
 
 describe("build", () => {
@@ -139,8 +214,9 @@ describe("build", () => {
 
     const html = readFileSync(join(outDir, "index.html"), "utf8");
     expect(html).toContain("<title>Plugin &lt;test&gt; &amp; co</title>");
+    // Relative, so the site works from any folder.
     expect(html).toMatch(
-      /<script type="module" crossorigin src="\/assets\/index-[\w-]+\.js">/,
+      /<script type="module" crossorigin src="\.\/assets\/index-[\w-]+\.js">/,
     );
     expect(html).not.toContain("@slidewright/app");
 
@@ -156,6 +232,107 @@ describe("build", () => {
     // The default theme comes first, so the deck's stylesheet wins.
     expect(css.indexOf("--deck-accent:#e11d48")).toBeGreaterThan(
       css.indexOf("--deck-accent:"),
+    );
+  });
+
+  it("prints the deck's problems and still builds", async () => {
+    writeFileSync(join(root, "slides.md"), PROBLEMS);
+    const { logger, warnings } = recordWarnings();
+    const outDir = join(root, "dist");
+    await build({
+      ...config(),
+      customLogger: logger,
+      build: { outDir, emptyOutDir: true },
+    });
+
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]!.split("\n").map((line) => line.split(": ")[0])).toEqual(
+      ["slides.md:2", "slides.md:9", "slides.md:12"],
+    );
+    expect(readdirSync(outDir)).toContain("index.html");
+  });
+
+  it("keeps a base from the config", async () => {
+    const outDir = join(root, "dist");
+    await build({
+      ...config(),
+      base: "/talk/",
+      build: { outDir, emptyOutDir: true },
+    });
+    expect(readFileSync(join(outDir, "index.html"), "utf8")).toContain(
+      'src="/talk/assets/',
+    );
+  });
+
+  it("copies the files that the deck refers to", async () => {
+    const files = [
+      "images/plan.png",
+      "clip.mp4",
+      "poster.jpg",
+      "docs/handout.pdf",
+      "hills one.svg",
+      "logo.png",
+      "demo.mp4",
+    ];
+    for (const file of [...files, "unused.png", "public/icon.svg"]) {
+      mkdirSync(dirname(join(root, file)), { recursive: true });
+      writeFileSync(join(root, file), file);
+    }
+    // Next to the root, outside it.
+    const outside = `${root}-outside.png`;
+    writeFileSync(outside, "outside");
+    writeFileSync(
+      join(root, "slides.md"),
+      `# Files
+
+![Plan](images/plan.png) ![Logo](/logo.png) ![Icon](icon.svg)
+
+<video src="./clip.mp4" poster="poster.jpg"></video>
+
+[Handout](docs/handout.pdf?v=2#page=3) [Folder](docs) [Next](#2)
+[Site](https://example.com/a.png) ![Missing](missing.png)
+![Outside](../${basename(outside)})
+
+::video{src="demo.mp4" title="clip.mp4 missing.mp4"}
+
+---
+layout: image
+image: hills%20one.svg
+---
+`,
+    );
+    const outDir = join(root, "dist");
+    try {
+      await build({ ...config(), build: { outDir, emptyOutDir: true } });
+    } finally {
+      rmSync(outside);
+    }
+
+    const output = readdirSync(outDir, { recursive: true, encoding: "utf8" })
+      .filter((file) => !/^(assets|index\.html)/.test(file))
+      .map((file) => file.split(sep).join("/"));
+    expect(output.sort()).toEqual(
+      // Folders, and the public folder's file.
+      [...files, "docs", "images", "icon.svg"].sort(),
+    );
+    for (const file of files) {
+      expect(readFileSync(join(outDir, file), "utf8")).toBe(file);
+    }
+  });
+
+  it("doesn't copy a file over the built page", async () => {
+    writeFileSync(join(root, "index.html"), "An old page");
+    writeFileSync(join(root, "slides.md"), "# Home\n\n[Home](index.html)\n");
+    const { logger, warnings } = recordWarnings();
+    const outDir = join(root, "dist");
+    await build({
+      ...config(),
+      customLogger: logger,
+      build: { outDir, emptyOutDir: true },
+    });
+    expect(warnings).toEqual([]);
+    expect(readFileSync(join(outDir, "index.html"), "utf8")).toContain(
+      "<title>Slides</title>",
     );
   });
 });

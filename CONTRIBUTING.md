@@ -8,8 +8,8 @@ to set up the repo and what we expect from a pull request.
 You need [Bun](https://bun.sh) 1.3 or newer.
 
 ```sh
-git clone <repo-url>
-cd react-slides
+git clone https://github.com/trafargarlaw/slidewright.git
+cd slidewright
 bun install
 bun run dev
 ```

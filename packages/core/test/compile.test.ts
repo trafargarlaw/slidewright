@@ -79,6 +79,15 @@ describe("steps", () => {
     const deck = parseDeck("---\nsteps: 5\n---\n\nA\n\n<!-- step -->\n\nB");
     expect(compileSlide(deck.slides[0]!).steps).toBe(5);
   });
+
+  it("counts the steps when the override is not a finite number", () => {
+    for (const value of [".inf", "-1", "many"]) {
+      const deck = parseDeck(
+        `---\nsteps: ${value}\n---\n\nA\n\n<!-- step -->\n\nB`,
+      );
+      expect(compileSlide(deck.slides[0]!).steps, value).toBe(1);
+    }
+  });
 });
 
 describe("code blocks", () => {
@@ -197,5 +206,27 @@ describe("sanitising", () => {
   it("can be turned off for trusted decks", () => {
     const compile = createCompiler({ sanitize: false });
     expect(toHtml(compile(dangerous).tree)).toContain("<iframe");
+  });
+
+  const directive =
+    '::embed{onclick="alert(1)" ONLOAD="alert(2)" srcdoc="<script>alert(3)</script>" href="javascript:alert(4)" src=" java&#9;script:alert(5)" poster="VBScript:alert(6)" title="Note: kept" url="https://example.com" on=""}';
+  const attributesOf = (tree: Root) =>
+    findAll(tree, (el) => "dataDirective" in el.properties)[0]!.properties
+      .dataDirectiveAttributes;
+
+  it("removes the same from the attributes of directives", () => {
+    expect(attributesOf(compileSlide(directive).tree)).toBe(
+      '{"title":"Note: kept","url":"https://example.com","on":""}',
+    );
+    expect(
+      attributesOf(compileSlide('::embed{onclick="alert(1)"}').tree),
+    ).toBeUndefined();
+  });
+
+  it("keeps every attribute of a directive in trusted decks", () => {
+    const compile = createCompiler({ sanitize: false });
+    expect(
+      Object.keys(JSON.parse(String(attributesOf(compile(directive).tree)))),
+    ).toHaveLength(9);
   });
 });

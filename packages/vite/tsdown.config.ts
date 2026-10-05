@@ -6,7 +6,7 @@ export default defineConfig([
     format: "esm",
     platform: "node",
     fixedExtension: false,
-    dts: true,
+    dts: { tsconfig: "tsconfig.build.json" },
   },
   {
     // The page script, served to the browser by the plugin. Not in dist:

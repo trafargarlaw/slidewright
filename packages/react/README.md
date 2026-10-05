@@ -10,7 +10,7 @@ The deck follows its `markdown` prop. Edit the source and the deck
 re-renders in place, staying on the current slide and step, so it works for
 live editors, CMS previews and docs sites as well as plain presenting.
 
-The deck format is documented in [docs/syntax.md](../../docs/syntax.md).
+The deck format is documented in the [deck syntax reference](../../docs/syntax.md).
 
 ## Usage
 
@@ -86,6 +86,10 @@ content on a slide are left alone.
 On touch screens, swipe left for the next step and right for the previous
 one. Vertical swipes still scroll the page.
 
+Screen readers announce the slide number and title after each move, such as
+"Slide 2 of 8: Results". When the system asks for reduced motion, steps show
+at once and nothing moves: the controls only fade in.
+
 The overview shows every slide in a grid, fully revealed, starting from the
 current one. Move through it with the arrow keys and press `Enter` to go to a
 slide, or click one. `Escape` or `O` closes it without moving. In
@@ -102,7 +106,9 @@ With `hash`, the URL follows the deck: `#3` is slide 3, and `#3.2` is slide 3
 with two steps revealed. Reloading the page or opening a shared link starts
 the deck there, and changing the hash, by hand or through a link such as
 `[demo](#5)` on a slide, moves the deck. A controlled deck gets the hash's
-position through `onPositionChange`.
+position through `onPositionChange`. When the Markdown comes later, such as
+from a `fetch`, give the deck an empty string until then: the deck opens on
+the hash's slide once the slides are there.
 
 The deck replaces the history entry as it moves, so Back leaves the page
 instead of stepping back through the talk. The hash belongs to the whole
@@ -128,9 +134,9 @@ const [position, setPosition] = useState({ slide: 0, step: 0 });
 />;
 ```
 
-It takes the deck's props for the source, position, layouts, components,
-compiling, colour scheme, keyboard and styling, and the same keys, except `O`,
-`F` and `P`, which stay with the deck.
+It takes the deck's props for the source, position, URL hash, layouts,
+components, compiling, colour scheme, keyboard and styling, and the same keys,
+except `O`, `F` and `P`, which stay with the deck.
 
 The preview shows the next step of the current slide, or the next slide once
 every step is revealed. Notes divided by `[step]` lines (see
@@ -150,8 +156,9 @@ it the window's height and let it take keys from anywhere:
 
 Press `P` on a deck, or use its presenter button, to open the presenter view
 in a second window, for a second screen. The deck and the window move
-together, and keys work in either. `P` or the button again closes the
-window, and it closes with the page.
+together. The keys that move, such as `→` or a number and then `Enter`, work
+in either; `O`, `F` and `P` work on the deck only. `P` or the button again
+closes the window, and it closes with the page.
 
 The window copies the page's stylesheets, the `<link rel="stylesheet">` and
 `<style>` elements in its head, and the attributes of its `<html>` element,
@@ -233,8 +240,9 @@ imageAlt: Fishing boats in a harbour at dawn
 ### Custom layouts
 
 A custom layout is a component, registered by name with `layouts`. It gets
-the slide's content as `children`. Container directives named in its `slots`
-are lifted out of the content and passed in `slots` instead:
+the slide's content as `children`. Container directives named in its `slots`,
+at the top level of the slide, are lifted out of the content and passed in
+`slots` instead:
 
 ```tsx
 import type { LayoutProps } from "@slidewright/react";
@@ -316,9 +324,14 @@ Mind the **gap**.
 :::
 ```
 
-Directives without a registered component render their content in a `div`
-with `data-directive="name"`, so they can be styled with CSS alone. A
-component that throws only breaks its own slide.
+With sanitising on, the default, a component doesn't get event handlers
+(`on…`), `srcdoc`, or `javascript:` and `vbscript:` URLs. Treat the other
+attributes as text that the deck's author wrote.
+
+Every directive renders as a `div` with `data-directive="name"`, which keeps
+its id, classes and step. A registered component renders inside that `div`.
+Without one, the content goes straight in, so a directive can be styled with
+CSS alone. A component that throws only breaks its own slide.
 
 ## Styling
 
@@ -348,21 +361,23 @@ Theme a deck with custom properties on `[data-deck]` or any parent:
 }
 ```
 
-| Property                                   | Controls                                 |
-| ------------------------------------------ | ---------------------------------------- |
-| `--deck-bg`, `--deck-fg`, `--deck-muted`   | Slide background, text, secondary text   |
-| `--deck-accent`                            | Links, focus ring, progress, quotes      |
-| `--deck-border`, `--deck-surface`          | Rules and tables; code backgrounds       |
-| `--deck-backdrop`                          | Letterbox around the slide               |
-| `--deck-font-sans`, `--deck-font-heading`  | Body and heading fonts                   |
-| `--deck-font-mono`                         | Code font                                |
-| `--deck-font-size`, `--deck-line-height`   | Base text size on the canvas             |
-| `--deck-padding`, `--deck-radius`          | Slide padding, corner radius             |
-| `--deck-step-duration`                     | Reveal animation (0 with reduced motion) |
-| `--deck-dim-opacity`                       | Opacity of lines not highlighted in code |
-| `--deck-notes-font-size`                   | Notes text in the presenter view         |
-| `--deck-code-token-*`                      | Syntax colours (`keyword`, `string`, …)  |
-| `--deck-code-added`, `--deck-code-removed` | Added and removed lines in diffs         |
+| Property                                   | Controls                                  |
+| ------------------------------------------ | ----------------------------------------- |
+| `--deck-bg`, `--deck-fg`, `--deck-muted`   | Slide background, text, secondary text    |
+| `--deck-accent`                            | Links, focus ring, progress, quotes       |
+| `--deck-border`, `--deck-surface`          | Rules and tables; code backgrounds        |
+| `--deck-code-foreground`                   | Code text (`--deck-fg` by default)        |
+| `--deck-code-background`                   | Code blocks (`--deck-surface` by default) |
+| `--deck-backdrop`                          | Letterbox around the slide                |
+| `--deck-font-sans`, `--deck-font-heading`  | Body and heading fonts                    |
+| `--deck-font-mono`                         | Code font                                 |
+| `--deck-font-size`, `--deck-line-height`   | Base text size on the canvas              |
+| `--deck-padding`, `--deck-radius`          | Slide padding, corner radius              |
+| `--deck-step-duration`                     | Reveal animation (0 with reduced motion)  |
+| `--deck-dim-opacity`                       | Opacity of lines not highlighted in code  |
+| `--deck-notes-font-size`                   | Notes text in the presenter view          |
+| `--deck-code-token-*`                      | Syntax colours (`keyword`, `string`, …)   |
+| `--deck-code-added`, `--deck-code-removed` | Added and removed lines in diffs          |
 
 Colours use `light-dark()`, so a theme can define both schemes in one value.
 
@@ -383,19 +398,36 @@ adds data attributes for everything else:
 | `[data-line-state]`     | Code line: `highlighted` or `dimmed`         |
 | `[data-line-diff]`      | Code line: `added` or `removed`              |
 | `[data-diff-marker]`    | The `+` or `-` before a diff line            |
-| `[data-deck-controls]`  | Previous/next buttons and counter            |
+| `[data-deck-controls]`  | The buttons and the slide counter            |
 | `[data-deck-progress]`  | Progress bar                                 |
 | `[data-deck-overview]`  | Overview grid                                |
 | `[data-deck-thumbnail]` | A slide in the overview. `data-current`      |
 | `[data-presenter]`      | Presenter root, alongside `data-deck`        |
-| `[data-presenter-note]` | Notes part. `data-note-state`, as for steps  |
+| `[data-presenter-note]` | Notes part. With `[step]`, `data-note-state` |
 | `[data-deck-print]`     | `PrintDeck` root, alongside `data-deck`      |
 | `[data-deck-page]`      | A printed page. `data-page-slide`, `-step`   |
+| `[data-slide-error]`    | A slide that failed to compile or render     |
 
 Thumbnails in the overview are slides too, so slide CSS styles them the same
 way. Scope a rule to `[data-deck-viewport]` to style only the slide being
 presented; the presenter's current slide is in one too.
 
+`data-page-slide` counts from 0, like positions, and `data-page-step` is only
+there with `steps`.
+
 The slide canvas has a fixed size (`canvasWidth` in the headmatter, 980px by
 default) and is scaled to fit, so sizes in slide CSS are canvas pixels and
 look the same at any screen size.
+
+## Types
+
+| Type                  | What it is                                                                   |
+| --------------------- | ---------------------------------------------------------------------------- |
+| `DeckProps`           | The props of `Deck`. See [Props](#props).                                    |
+| `DeckHandle`          | The `ref` of `Deck`: `next()`, `goTo(slide, step?)`, `togglePresenter()`, …  |
+| `DeckPosition`        | `{ slide, step }`. `slide` counts from 0, and step `0` is before any reveal. |
+| `PresenterProps`      | The props of `Presenter`: the deck's props that it takes.                    |
+| `PrintDeckProps`      | The props of `PrintDeck`. See [Printing](#printing).                         |
+| `Layout`              | A layout component, with its optional `slots` list.                          |
+| `LayoutProps`         | The props that a layout gets: `slide`, `children` and `slots`.               |
+| `DirectiveComponents` | The `components` prop: components by directive name.                         |

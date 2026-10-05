@@ -93,8 +93,9 @@ slide. Unknown keys are kept for renderers and plugins.
 
 ## Speaker notes
 
-Put notes in a `<!-- notes … -->` comment anywhere in the slide. Notes are
-Markdown, and several notes comments on one slide are joined together.
+Put notes in a `<!-- notes … -->` comment anywhere in the slide, starting on
+a line of its own. Notes are Markdown, and several notes comments on one slide
+are joined together.
 
 ```md
 # Results
@@ -260,7 +261,7 @@ Old checkout flow
 New checkout flow
 :::
 
-::video{src="/demo.mp4"}
+::video{src="demo.mp4"}
 ```
 
 - `:::name` … `:::` wraps Markdown content. Nest by using more colons on the
@@ -278,8 +279,16 @@ carry `class`, `style` and `data-*` attributes.
 
 When a deck comes from an untrusted source, renderers sanitise the output by
 default: scripts, event handlers, iframes and `javascript:` URLs are removed.
-Trusted local decks can turn sanitising off.
+The attributes of directives lose event handlers, `srcdoc`, and
+`javascript:` and `vbscript:` URLs. Trusted local decks can turn sanitising
+off.
+
+Sanitising also prefixes `id` and `name` attributes with `user-content-`, as
+GitHub does, so they can't clash with the ids of the page around the deck.
+`:::intro{#intro}` gets the id `user-content-intro`: style it with a class, or
+select `#user-content-intro`.
 
 ## Maths
 
-Inline maths uses `$…$` and display maths uses `$$…$$` (LaTeX syntax).
+Inline maths uses `$…$` and display maths uses `$$…$$` (LaTeX syntax). For
+now the renderer shows the LaTeX source; rendering with KaTeX is planned.

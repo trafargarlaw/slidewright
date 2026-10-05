@@ -54,7 +54,11 @@ describe("create", () => {
       name: "my-talk",
       private: true,
       type: "module",
-      scripts: { dev: "slidewright", build: "slidewright build" },
+      scripts: {
+        dev: "slidewright",
+        build: "slidewright build",
+        export: "slidewright export",
+      },
       devDependencies: { "@slidewright/cli": "^0.1.0" },
     });
     expect(read("My Talk", ".gitignore")).toBe("node_modules\ndist\n");

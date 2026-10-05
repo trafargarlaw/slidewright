@@ -204,6 +204,9 @@ export const Route = createFileRoute("/api/ai-edit")({
           stream: toUIMessageStream({
             stream: result.stream,
             sendReasoning: true,
+            // The playground shows it, such as a missing AI_GATEWAY_API_KEY.
+            onError: (error) =>
+              error instanceof Error ? error.message : String(error),
           }),
         });
       },

@@ -10,7 +10,7 @@ import {
 } from "node:fs";
 import { dirname, join, posix } from "node:path";
 
-export const REPOSITORY = "https://github.com/trafargarlaw/react-slides";
+export const REPOSITORY = "https://github.com/trafargarlaw/slidewright";
 
 /** Repository files shown as pages, by route under /docs. */
 export const PAGES: Readonly<Record<string, string>> = {
@@ -23,8 +23,21 @@ export const PAGES: Readonly<Record<string, string>> = {
   roadmap: "docs/ROADMAP.md",
 };
 
-/** Files the example decks show, copied to the site root as they're served there. */
-export const ASSETS: readonly string[] = ["examples/layouts/public/hills.svg"];
+/**
+ * Descriptions for the pages of files outside a package. A package README's
+ * page takes the description in its package.json.
+ */
+export const DESCRIPTIONS: Readonly<Record<string, string>> = {
+  "docs/syntax.md":
+    "Everything a deck can hold on top of GitHub Flavored Markdown.",
+  "docs/ROADMAP.md": "The direction of the project, and what comes next.",
+};
+
+/**
+ * Files the example decks show. The decks refer to them with relative paths,
+ * so they go next to the example pages.
+ */
+export const ASSETS: readonly string[] = ["examples/layouts/hills.svg"];
 
 const ROUTES = new Map(
   Object.entries(PAGES).map(([route, source]) => [source, route]),
@@ -39,6 +52,8 @@ export function toPage(
   markdown: string,
   description?: string,
 ): string {
+  // Git checks files out with CRLF line endings on Windows.
+  markdown = markdown.replaceAll("\r\n", "\n");
   const heading = /^# (.+)\n+/.exec(markdown);
   if (!heading) throw new Error(`${source} doesn't start with a # heading.`);
 
@@ -128,7 +143,7 @@ export function sync(repository: string, site: string): string[] {
     const description = existsSync(manifest)
       ? (JSON.parse(readFileSync(manifest, "utf8")) as { description?: string })
           .description
-      : undefined;
+      : DESCRIPTIONS[source];
     write(
       join(site, "content", "docs", `${route}.md`),
       // Checkouts with core.autocrlf have CRLF line endings.
@@ -142,7 +157,10 @@ export function sync(repository: string, site: string): string[] {
   }
   for (const asset of ASSETS) {
     const file = join(repository, asset);
-    write(join(site, "public", posix.basename(asset)), readFileSync(file));
+    write(
+      join(site, "public", "docs", "examples", posix.basename(asset)),
+      readFileSync(file),
+    );
     read.push(file);
   }
   return read;

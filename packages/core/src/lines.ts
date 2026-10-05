@@ -68,3 +68,36 @@ export function trimBlankLines(lines: string[]): string[] {
 export function isBlankLine(line: string): boolean {
   return line.trim() === "";
 }
+
+/**
+ * The opening lines of the closed fenced code blocks marked by
+ * `markCodeLines`, with their 0-based line index and info string.
+ */
+export function findFences(
+  lines: string[],
+  inCode: boolean[],
+): { line: number; info: string }[] {
+  const fences: { line: number; info: string }[] = [];
+  let open: string | null = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    if (!inCode[i]) {
+      open = null;
+    } else if (open === null) {
+      const marker = FENCE_OPEN.exec(line)!;
+      open = marker[1]!;
+      fences.push({ line: i, info: line.slice(marker[0].length).trim() });
+    } else {
+      const close = FENCE_CLOSE.exec(line);
+      if (
+        close &&
+        close[1]![0] === open[0] &&
+        close[1]!.length >= open.length
+      ) {
+        open = null;
+      }
+    }
+  }
+  return fences;
+}

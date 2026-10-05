@@ -2,7 +2,7 @@
 
 | Example            | Shows                                                                              |
 | ------------------ | ---------------------------------------------------------------------------------- |
-| [layouts](layouts) | Every built-in layout, one slide each, with images from `public/`                  |
+| [layouts](layouts) | Every built-in layout, one slide each, with an image next to the deck              |
 | [code](code)       | Code blocks: titles, line numbers, highlight stages, diffs and notes for each step |
 | [theme](theme)     | A deck with its own look: colours, fonts, a layout made in CSS and slide classes   |
 | [react](react)     | `<Deck>` in a React app: a live editor, a custom layout and a directive component  |

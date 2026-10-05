@@ -8,7 +8,7 @@ import {
   statSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, posix, relative } from "node:path";
+import { join, posix, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import {
@@ -43,6 +43,12 @@ describe("toPage", () => {
   it("quotes titles that YAML would read otherwise", () => {
     expect(toPage("a.md", "# @scope/name: a #tag\n")).toContain(
       'title: "@scope/name: a #tag"',
+    );
+  });
+
+  it("reads files checked out with CRLF line endings", () => {
+    expect(toPage("a.md", "# Title\r\n\r\n```md\r\n[a](b.md)\r\n```\r\n")).toBe(
+      toPage("a.md", "# Title\n\n```md\n[a](b.md)\n```\n"),
     );
   });
 
@@ -150,22 +156,32 @@ describe("sync", () => {
   it("writes every page and asset, and returns the files it read", () => {
     target = mkdtempSync(join(tmpdir(), "slidewright-docs-"));
     const read = sync(repository, target).map((file) =>
-      relative(repository, file),
+      relative(repository, file).replaceAll(sep, "/"),
     );
 
     expect(read).toEqual([
       ...Object.values(PAGES),
-      "examples/layouts/public/hills.svg",
+      "examples/layouts/hills.svg",
     ]);
     for (const route of Object.keys(PAGES)) {
       expect(existsSync(join(target, "content/docs", `${route}.md`))).toBe(
         true,
       );
     }
-    expect(existsSync(join(target, "public/hills.svg"))).toBe(true);
-    expect(
-      readFileSync(join(target, "content/docs/reference/react.md"), "utf8"),
-    ).toMatch(/^description: ".+"$/m);
+    expect(existsSync(join(target, "public/docs/examples/hills.svg"))).toBe(
+      true,
+    );
+  });
+
+  it("gives every page a description", () => {
+    target = mkdtempSync(join(tmpdir(), "slidewright-docs-"));
+    sync(repository, target);
+    for (const route of Object.keys(PAGES)) {
+      expect(
+        readFileSync(join(target, "content/docs", `${route}.md`), "utf8"),
+        route,
+      ).toMatch(/^description: ".+"$/m);
+    }
   });
 
   it("leaves unchanged files alone", () => {
@@ -193,7 +209,10 @@ function sitePages(): Map<string, string> {
   const docs = join(site, "content", "docs");
   for (const file of readdirSync(docs, { recursive: true, encoding: "utf8" })) {
     if (!file.endsWith(".mdx")) continue;
-    const route = file.replace(/(^|\/)index\.mdx$/, "").replace(/\.mdx$/, "");
+    const route = file
+      .replaceAll(sep, "/")
+      .replace(/(^|\/)index\.mdx$/, "")
+      .replace(/\.mdx$/, "");
     pages.set(
       posix.join("docs", route),
       readFileSync(join(docs, file), "utf8"),

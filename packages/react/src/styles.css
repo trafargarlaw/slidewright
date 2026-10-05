@@ -246,6 +246,17 @@
     transition: transform 300ms ease;
   }
 
+  /* With reduced motion, the controls only fade and the bar doesn't grow. */
+  @media (prefers-reduced-motion: reduce) {
+    [data-deck-controls] {
+      transition-property: opacity;
+    }
+
+    [data-deck-progress] {
+      transition: none;
+    }
+  }
+
   /* Overview --------------------------------------------------------------- */
 
   [data-deck-overview] {
@@ -264,12 +275,6 @@
     from {
       opacity: 0;
       transform: scale(0.98);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    [data-deck-overview] {
-      animation: none;
     }
   }
 
@@ -325,6 +330,16 @@
       0 0 0 1px color-mix(in srgb, var(--deck-accent) 55%, var(--deck-border)),
       0 4px 14px rgb(0 0 0 / 0.12);
     transform: translateY(-1px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-deck-overview] {
+      animation: none;
+    }
+
+    [data-deck-thumbnail-frame] {
+      transition-property: box-shadow;
+    }
   }
 
   [data-deck-thumbnail][data-current] [data-deck-thumbnail-frame] {
