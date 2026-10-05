@@ -8,12 +8,11 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { parseDeck } from "@slidewright/core";
-import { PrintDeck, type DirectiveComponents } from "@slidewright/react";
+import { PrintDeck } from "@slidewright/react";
 import { slidewright } from "@slidewright/vite";
 import { renderToString } from "react-dom/server";
 import { build, defaultClientConditions, type InlineConfig } from "vite";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import deckComponents from "../components/components";
 import { components, layouts } from "../react/src/parts";
 
 const example = (...path: string[]) => join(import.meta.dirname, "..", ...path);
@@ -23,14 +22,8 @@ const DECKS = {
   layouts: example("layouts", "slides.md"),
   code: example("code", "slides.md"),
   theme: example("theme", "slides.md"),
-  components: example("components", "slides.md"),
   diagrams: example("diagrams", "slides.md"),
   react: example("react", "src", "slides.md"),
-};
-
-const COMPONENTS: Partial<Record<keyof typeof DECKS, DirectiveComponents>> = {
-  components: deckComponents,
-  react: components,
 };
 
 const read = (deck: string) => readFileSync(deck, "utf8");
@@ -41,7 +34,7 @@ function print(name: keyof typeof DECKS): string {
     <PrintDeck
       markdown={read(DECKS[name])}
       layouts={name === "react" ? layouts : undefined}
-      components={COMPONENTS[name]}
+      components={name === "react" ? components : undefined}
     />,
   );
 }
@@ -95,17 +88,6 @@ describe("react", () => {
   });
 });
 
-describe("components", () => {
-  it("renders the directives with the components next to the deck", () => {
-    const html = print("components");
-    expect(html.match(/class="callout" data-tone="(\w+)"/g)).toEqual([
-      'class="callout" data-tone="warning"',
-      'class="callout" data-tone="info"',
-    ]);
-    expect(html).toContain("Hands up<!-- -->: <strong>3</strong>");
-  });
-});
-
 describe("build", () => {
   let out = "";
   beforeEach(() => {
@@ -132,23 +114,16 @@ describe("build", () => {
       .map((file) => readFileSync(join(out, file), "utf8"))
       .join("\n");
 
-  it.each(["layouts", "code", "theme", "components", "diagrams"] as const)(
+  it.each(["layouts", "code", "theme", "diagrams"] as const)(
     "builds the %s deck as the CLI does",
     async (name) => {
       const root = dirname(DECKS[name]);
-      const file = (name: string) =>
-        existsSync(join(root, name)) ? name : undefined;
+      const css = existsSync(join(root, "style.css")) ? "style.css" : undefined;
       await build(
         config({
           root,
           configFile: false,
-          plugins: [
-            slidewright({
-              deck: "slides.md",
-              css: file("style.css"),
-              components: file("components.tsx"),
-            }),
-          ],
+          plugins: [slidewright({ deck: "slides.md", css })],
         }),
       );
 
@@ -165,10 +140,6 @@ describe("build", () => {
             /^(flow|sequence|state|pie)Diagram.*\.js$/.test(file),
           ),
         ).toHaveLength(4);
-      }
-      if (name === "components") {
-        // The component, whatever quotes the minifier picks.
-        expect(output()).toMatch(/className:["'`]counter["'`]/);
       }
     },
   );

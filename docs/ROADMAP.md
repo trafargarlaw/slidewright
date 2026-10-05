@@ -58,7 +58,9 @@ welcome.
 
 ### 2 — Components and polish (v0.2)
 
-- [x] Components in Markdown through a registry (directive syntax)
+- [x] Components in Markdown through a registry (directive syntax): in a
+      React app, with the `components` prop of `<Deck>`. Not planned for
+      decks of the CLI and the Vite plugin.
 - [ ] MDX support through the Vite plugin, if it fits cleanly
 - [x] Maths (KaTeX)
 - [x] Diagrams (Mermaid)

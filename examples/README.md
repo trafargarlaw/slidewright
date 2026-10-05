@@ -1,13 +1,12 @@
 # Examples
 
-| Example                  | Shows                                                                                   |
-| ------------------------ | --------------------------------------------------------------------------------------- |
-| [layouts](layouts)       | Every built-in layout, one slide each, with an image next to the deck                   |
-| [code](code)             | Code blocks: titles, line numbers, highlight stages, diffs and notes for each step      |
-| [theme](theme)           | A deck with its own look: colours, fonts, a layout made in CSS and slide classes        |
-| [components](components) | React components for directives, in a `components.tsx` next to the deck                 |
-| [diagrams](diagrams)     | Mermaid diagrams in the deck's colours, in a column and on a slide with its own colours |
-| [react](react)           | `<Deck>` in a React app: a live editor, a custom layout and a directive component       |
+| Example              | Shows                                                                                   |
+| -------------------- | --------------------------------------------------------------------------------------- |
+| [layouts](layouts)   | Every built-in layout, one slide each, with an image next to the deck                   |
+| [code](code)         | Code blocks: titles, line numbers, highlight stages, diffs and notes for each step      |
+| [theme](theme)       | A deck with its own look: colours, fonts, a layout made in CSS and slide classes        |
+| [diagrams](diagrams) | Mermaid diagrams in the deck's colours, in a column and on a slide with its own colours |
+| [react](react)       | `<Deck>` in a React app: a live editor, a custom layout and a directive component       |
 
 The deck format is documented in [docs/syntax.md](../docs/syntax.md).
 

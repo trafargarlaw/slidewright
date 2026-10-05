@@ -12,11 +12,6 @@ have the same version. Each entry gives the packages that it changes.
   that has maths. Before, a deck showed the LaTeX source as code.
   `styles.css` now imports KaTeX's stylesheet, so a deck that added
   `rehype-katex` through `compileOptions` can drop it.
-- `vite`, `cli`: A deck can use React components without a React app. The
-  plugin has a `components` option: a module whose default export is an
-  object of components by directive name. The CLI loads `components.tsx`
-  (or `.jsx`, `.ts`, `.js`) next to the deck. The components use the React
-  that renders the deck, so the project doesn't need `react` installed.
 - `react`, `vite`, `cli`: Diagrams. A `mermaid` code block is drawn with
   Mermaid, in the colours and the font of its slide. Mermaid is not a
   dependency: with the CLI and the Vite plugin, install `mermaid` in the
