@@ -116,6 +116,19 @@ class: [roomy, bold]
     expect(screen.getByText("2 / 2")).toBeTruthy();
   });
 
+  it("tells screen readers the slide number and title after each move", () => {
+    render(<Deck markdown={`${THREE_SLIDES}\n---\n\nNo heading`} />);
+    const status = document.querySelector("[data-deck-status]")!;
+    expect(status.getAttribute("aria-live")).toBe("polite");
+    expect(status.textContent).toBe("Slide 1 of 4: One");
+
+    press("ArrowDown");
+    expect(status.textContent).toBe("Slide 2 of 4: Two");
+    // A slide without a title gets its number only.
+    press("End");
+    expect(status.textContent).toBe("Slide 4 of 4");
+  });
+
   it("renders nothing to navigate for an empty deck", () => {
     render(<Deck markdown="" />);
     expect(document.querySelector("[data-slide]")).toBeNull();
@@ -704,7 +717,7 @@ describe("controlling the deck", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(heading()).toBe("Two");
-    expect(screen.getByText("Slide 2 of 3")).toBeTruthy();
+    expect(screen.getByText("2 / 3")).toBeTruthy();
   });
 });
 

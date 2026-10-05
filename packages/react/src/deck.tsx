@@ -349,6 +349,9 @@ export function Deck({
   const slide = deck.slides[current.slide];
   const lastStep = slide ? getSteps(current.slide) : 0;
   const label = `Slide ${current.slide + 1} of ${slideCount}`;
+  // Read out after each move. The title tells a screen reader user where
+  // they are without reading the slide.
+  const status = slide?.title ? `${label}: ${slide.title}` : label;
   const overviewOpen = selected !== null;
 
   return (
@@ -482,7 +485,7 @@ export function Deck({
         ) : null}
 
         <div data-deck-status="" aria-live="polite">
-          {slideCount > 0 ? label : ""}
+          {slideCount > 0 ? status : ""}
         </div>
       </div>
       {/* Outside the deck, so its events don't bubble through the deck's. */}
