@@ -1,6 +1,11 @@
 # Slidewright
 
+[![npm](https://img.shields.io/npm/v/@slidewright/react?label=npm)](https://www.npmjs.com/org/slidewright)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 Write presentations in Markdown, render them with React.
+
+![The playground: Markdown on the left, the slide it makes on the right](docs/playground.png)
 
 - **Markdown first.** One file, slides separated by `---`, per-slide
   frontmatter, speaker notes, step-by-step reveals and code highlighting.
@@ -12,7 +17,8 @@ Write presentations in Markdown, render them with React.
 
 > [!WARNING]
 > Early release. Every API may change until 1.0. See the
-> [roadmap](docs/ROADMAP.md) for what is planned and in progress.
+> [roadmap](docs/ROADMAP.md) for what is planned and in progress, and the
+> [changelog](CHANGELOG.md) for what changed in each version.
 
 ## Quick start
 

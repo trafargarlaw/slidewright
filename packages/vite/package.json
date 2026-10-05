@@ -41,8 +41,8 @@
   "dependencies": {
     "@slidewright/core": "workspace:^",
     "@slidewright/react": "workspace:^",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",
@@ -53,5 +53,8 @@
   },
   "peerDependencies": {
     "vite": "^8.0.0"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
   }
 }
