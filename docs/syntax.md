@@ -367,6 +367,13 @@ New checkout flow
 Inline directives (`:name`) are **not** part of the syntax, so text like
 `Note:this` or `10:30` stays as written.
 
+A deck is Markdown, not MDX: it has no `import` lines, no JSX and no
+`{expressions}`, so braces and `<` in text stay as written. A component is
+a React component that a React app gives to `<Deck>`, in its
+[`components` prop](../packages/react/README.md#components). With the CLI
+and the Vite plugin, a directive is a slot or a `div` to style. The reasons
+are in [ADR 0001](adr/0001-decks-are-markdown-not-mdx.md).
+
 ## HTML
 
 Inline and block HTML work as in GitHub Flavored Markdown, and any element can
