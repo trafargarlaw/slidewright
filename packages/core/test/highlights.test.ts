@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { parseAspectRatio } from "../src/config";
-import { parseCodeMeta, parseHighlightSpec } from "../src/highlights";
+import {
+  findCodeMetaProblems,
+  parseCodeMeta,
+  parseHighlightSpec,
+} from "../src/highlights";
 
 describe("parseCodeMeta", () => {
   it("reads highlights, line numbers, titles and diff in any order", () => {
@@ -29,6 +33,21 @@ describe("parseHighlightSpec", () => {
 
   it("skips invalid parts", () => {
     expect(parseHighlightSpec("x|2|")).toEqual([{ lines: [2] }]);
+  });
+});
+
+describe("findCodeMetaProblems", () => {
+  it("finds nothing in valid or empty meta", () => {
+    expect(findCodeMetaProblems("{1,3-5@2|all|*} lines=10 diff")).toEqual([]);
+    expect(findCodeMetaProblems("{} lines")).toEqual([]);
+    expect(findCodeMetaProblems("")).toEqual([]);
+  });
+
+  it("names each part that parseHighlightSpec skips", () => {
+    expect(findCodeMetaProblems("{x|2|}")).toEqual([
+      "`x` in `{x|2|}` is not a line range. Use line numbers, ranges such as `3-5`, or `all`, with an optional `@step`.",
+      "`{x|2|}` has an empty stage between `|` signs.",
+    ]);
   });
 });
 

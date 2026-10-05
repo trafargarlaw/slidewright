@@ -51,7 +51,11 @@ export function resolveConfig(
   }
 
   if (canvasWidth !== undefined) {
-    if (typeof canvasWidth === "number" && canvasWidth > 0) {
+    if (
+      typeof canvasWidth === "number" &&
+      Number.isFinite(canvasWidth) &&
+      canvasWidth > 0
+    ) {
       config.canvasWidth = canvasWidth;
     } else {
       warn("`canvasWidth` must be a positive number.");

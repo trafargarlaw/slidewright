@@ -1,6 +1,12 @@
 import { parseDocument } from "yaml";
 import { DEFAULT_CONFIG, isPlainObject, resolveConfig } from "./config";
-import { isBlankLine, markCodeLines, trimBlankLines } from "./lines";
+import { findCodeMetaProblems } from "./highlights";
+import {
+  findFences,
+  isBlankLine,
+  markCodeLines,
+  trimBlankLines,
+} from "./lines";
 import type { Deck, DeckConfig, Diagnostic, Slide } from "./types";
 
 const SEPARATOR = /^---[ \t]*$/;
@@ -79,6 +85,15 @@ export function parseDeck(source: string): Deck {
       diagnostics,
     );
 
+    if (own.steps !== undefined && !isStepCount(own.steps)) {
+      diagnostics.push({
+        severity: "warning",
+        message: "`steps` must be a number of 0 or more.",
+        line: draft.frontmatter!.from + 1,
+        slide: index,
+      });
+    }
+
     let layout = "default";
     if (typeof frontmatter.layout === "string" && frontmatter.layout.trim()) {
       layout = frontmatter.layout.trim();
@@ -118,7 +133,29 @@ export function parseDeck(source: string): Deck {
     return slide;
   });
 
-  return { config, slides, diagnostics };
+  const deck: Deck = { config, slides, diagnostics };
+  checkCodeFences(deck, lines, inCode);
+  diagnostics.sort((a, b) => a.line - b.line);
+  return deck;
+}
+
+function isStepCount(value: unknown): boolean {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+/** Reports highlight stages and line numbers that code blocks would skip. */
+function checkCodeFences(deck: Deck, lines: string[], inCode: boolean[]) {
+  for (const { line, info } of findFences(lines, inCode)) {
+    const meta = info.replace(/^\S*/, "");
+    for (const message of findCodeMetaProblems(meta)) {
+      deck.diagnostics.push({
+        severity: "warning",
+        message,
+        line: line + 1,
+        slide: getSlideAtLine(deck, line + 1),
+      });
+    }
+  }
 }
 
 /**

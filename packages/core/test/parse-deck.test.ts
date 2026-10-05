@@ -194,6 +194,45 @@ colorScheme: purple
     ]);
   });
 
+  it("warns about a canvas width that is not a finite number", () => {
+    const deck = parseDeck("---\ncanvasWidth: .inf\n---\n\n# Hi\n");
+    expect(deck.config.canvasWidth).toBe(980);
+    expect(deck.diagnostics).toEqual([
+      {
+        severity: "warning",
+        message: "`canvasWidth` must be a positive number.",
+        line: 2,
+        slide: 0,
+      },
+    ]);
+  });
+
+  it("warns about a steps value that is not a number of 0 or more", () => {
+    const deck = parseDeck(text`
+# One
+
+---
+steps: many
+---
+
+# Two
+
+---
+steps: 2
+---
+
+# Three
+`);
+    expect(deck.diagnostics).toEqual([
+      {
+        severity: "warning",
+        message: "`steps` must be a number of 0 or more.",
+        line: 4,
+        slide: 1,
+      },
+    ]);
+  });
+
   it("does not treat frontmatter-like text at the end of the file as frontmatter", () => {
     const deck = parseDeck(text`
 # One
@@ -202,6 +241,70 @@ colorScheme: purple
 key: value
 `);
     expect(deck.slides[1]!.content).toBe("key: value");
+  });
+});
+
+describe("code fence diagnostics", () => {
+  it("reports highlight stages and line numbers that would be skipped", () => {
+    const deck = parseDeck(text`
+# One
+
+\`\`\`ts {1|3-x|all}
+const a = 1;
+\`\`\`
+
+---
+
+# Two
+
+~~~py {2||4@two} lines=ten
+print(1)
+~~~
+`);
+    expect(deck.diagnostics).toEqual([
+      {
+        severity: "warning",
+        message:
+          "`3-x` in `{1|3-x|all}` is not a line range. Use line numbers, ranges such as `3-5`, or `all`, with an optional `@step`.",
+        line: 3,
+        slide: 0,
+      },
+      {
+        severity: "warning",
+        message: "`{2||4@two}` has an empty stage between `|` signs.",
+        line: 11,
+        slide: 1,
+      },
+      {
+        severity: "warning",
+        message:
+          "`4@two` in `{2||4@two}` is not a line range. Use line numbers, ranges such as `3-5`, or `all`, with an optional `@step`.",
+        line: 11,
+        slide: 1,
+      },
+      {
+        severity: "warning",
+        message: "`lines=ten` must be a whole number, such as `lines=10`.",
+        line: 11,
+        slide: 1,
+      },
+    ]);
+  });
+
+  it("accepts valid meta, and ignores fences that are not closed or are inside code", () => {
+    const deck = parseDeck(text`
+\`\`\`\`md
+\`\`\`ts {nope}
+\`\`\`
+\`\`\`\`
+
+\`\`\`ts {1,3-5@2|all} lines=10 title="a.ts" diff
+x
+\`\`\`
+
+\`\`\`ts {half
+`);
+    expect(deck.diagnostics).toEqual([]);
   });
 });
 

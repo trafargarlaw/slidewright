@@ -68,7 +68,7 @@ export function createCompiler(options: CompileOptions = {}): SlideCompiler {
     const override =
       typeof slide === "string" ? undefined : slide.frontmatter.steps;
     const steps =
-      typeof override === "number" && override >= 0
+      typeof override === "number" && Number.isFinite(override) && override >= 0
         ? Math.floor(override)
         : (file.data.steps ?? 0);
 
