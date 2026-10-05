@@ -50,6 +50,8 @@ slides.md:9: warning: Unknown layout "two-columns": the slide shows with the def
 | `deck` | `slides.md` | The deck file, relative to the Vite root.                                                                   |
 | `css`  |             | One or more stylesheets loaded after the default theme, relative to the Vite root. See [Styling](#styling). |
 
+The type of the options is `SlidewrightOptions`.
+
 ## Styling
 
 Stylesheets in `css` load after the default theme, so they can set theme

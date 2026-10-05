@@ -82,6 +82,18 @@ cursor) to a slide index.
 per step, for a presenter view. See
 [Notes for each step](../../docs/syntax.md#notes-for-each-step).
 
-The types of the deck, its slides and the compiler's output are exported too:
-`Deck`, `DeckConfig`, `Slide`, `Diagnostic`, `CompiledSlide`,
-`CompileOptions` and others.
+## Types
+
+| Type             | What it is                                                                                 |
+| ---------------- | ------------------------------------------------------------------------------------------ |
+| `Deck`           | What `parseDeck` returns: `config`, `slides` and `diagnostics`.                            |
+| `DeckConfig`     | The headmatter settings, with their defaults. Unknown keys stay, for renderers to read.    |
+| `Slide`          | A slide: `index`, `layout`, `frontmatter`, `title`, `content`, `notes` and `range`.        |
+| `Diagnostic`     | A problem in the deck: `severity`, `message`, `line` and, when there is one, `slide`.      |
+| `LineRange`      | The 1-based `start` and `end` lines of a part of the deck source, both included.           |
+| `ColorScheme`    | `"light"`, `"dark"` or `"auto"`.                                                           |
+| `CompileOptions` | The options of `createCompiler`. See [Compiler options](#compiler-options).                |
+| `SlideCompiler`  | What `createCompiler` returns: a function from a `Slide` or Markdown to a `CompiledSlide`. |
+| `CompiledSlide`  | `tree`, the slide's hast root, and `steps`.                                                |
+| `HighlightRange` | A highlight stage from `parseHighlights`: the `step` that starts it, and its `lines`.      |
+| `LineChange`     | `"added"` or `"removed"`: the values of the map from `parseLineChanges`.                   |

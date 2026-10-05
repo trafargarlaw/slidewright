@@ -418,3 +418,16 @@ there with `steps`.
 The slide canvas has a fixed size (`canvasWidth` in the headmatter, 980px by
 default) and is scaled to fit, so sizes in slide CSS are canvas pixels and
 look the same at any screen size.
+
+## Types
+
+| Type                  | What it is                                                                   |
+| --------------------- | ---------------------------------------------------------------------------- |
+| `DeckProps`           | The props of `Deck`. See [Props](#props).                                    |
+| `DeckHandle`          | The `ref` of `Deck`: `next()`, `goTo(slide, step?)`, `togglePresenter()`, …  |
+| `DeckPosition`        | `{ slide, step }`. `slide` counts from 0, and step `0` is before any reveal. |
+| `PresenterProps`      | The props of `Presenter`: the deck's props that it takes.                    |
+| `PrintDeckProps`      | The props of `PrintDeck`. See [Printing](#printing).                         |
+| `Layout`              | A layout component, with its optional `slots` list.                          |
+| `LayoutProps`         | The props that a layout gets: `slide`, `children` and `slots`.               |
+| `DirectiveComponents` | The `components` prop: components by directive name.                         |
