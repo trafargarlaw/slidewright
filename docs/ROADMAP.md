@@ -64,7 +64,7 @@ welcome.
 - [x] Diagrams (Mermaid)
 - [x] Icons (Iconify sets)
 - [x] Transitions
-- [ ] Multi-file decks
+- [x] Multi-file decks
 - [ ] Agent skills describing the deck format
 
 ### 3 — Editor (v0.3)

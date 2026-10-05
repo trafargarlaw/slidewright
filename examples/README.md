@@ -1,15 +1,16 @@
 # Examples
 
-| Example                    | Shows                                                                                    |
-| -------------------------- | ---------------------------------------------------------------------------------------- |
-| [layouts](layouts)         | Every built-in layout, one slide each, with an image next to the deck                    |
-| [code](code)               | Code blocks: titles, line numbers, highlight stages, diffs and notes for each step       |
-| [theme](theme)             | A deck with its own look: colours, fonts, a layout made in CSS and slide classes         |
-| [components](components)   | React components for directives, in a `components.tsx` next to the deck                  |
-| [diagrams](diagrams)       | Mermaid diagrams in the deck's colours, in a column and on a slide with its own colours  |
-| [icons](icons)             | Icons from two Iconify sets: in text, sized and coloured with CSS, and revealed in steps |
-| [transitions](transitions) | Every transition between slides, for the deck and for one slide, and one made in CSS     |
-| [react](react)             | `<Deck>` in a React app: a live editor, a custom layout and a directive component        |
+| Example                    | Shows                                                                                             |
+| -------------------------- | ------------------------------------------------------------------------------------------------- |
+| [layouts](layouts)         | Every built-in layout, one slide each, with an image next to the deck                             |
+| [code](code)               | Code blocks: titles, line numbers, highlight stages, diffs and notes for each step                |
+| [theme](theme)             | A deck with its own look: colours, fonts, a layout made in CSS and slide classes                  |
+| [components](components)   | React components for directives, in a `components.tsx` next to the deck                           |
+| [diagrams](diagrams)       | Mermaid diagrams in the deck's colours, in a column and on a slide with its own colours           |
+| [icons](icons)             | Icons from two Iconify sets: in text, sized and coloured with CSS, and revealed in steps          |
+| [transitions](transitions) | Every transition between slides, for the deck and for one slide, and one made in CSS              |
+| [chapters](chapters)       | A deck in several files: chapters with settings of their own, and a file that a chapter brings in |
+| [react](react)             | `<Deck>` in a React app: a live editor, a custom layout and a directive component                 |
 
 The deck format is documented in [docs/syntax.md](../docs/syntax.md).
 

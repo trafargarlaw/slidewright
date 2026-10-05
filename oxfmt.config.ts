@@ -13,6 +13,7 @@ export default defineConfig({
     ".claude/**",
     "bun.lock",
     "**/slides.md",
+    "examples/chapters/**/*.md",
     "apps/docs/decks/**",
   ],
 });

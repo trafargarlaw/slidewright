@@ -10,12 +10,12 @@ import {
 import type { Deck, DeckConfig, Diagnostic, Slide } from "./types";
 
 const SEPARATOR = /^---[ \t]*$/;
-const FRONTMATTER_START = /^[A-Za-z_$][\w$-]*[ \t]*:(?:[ \t]|$)/;
+export const FRONTMATTER_START = /^[A-Za-z_$][\w$-]*[ \t]*:(?:[ \t]|$)/;
 const NOTES_OPEN = /^[ \t]*<!--[ \t]*notes\b/;
 const HEADING = /^ {0,3}#{1,6}[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/;
 
 /** Headmatter keys that configure the deck rather than the first slide. */
-const DECK_KEYS = new Set([
+export const DECK_KEYS = new Set([
   "theme",
   "colorScheme",
   "aspectRatio",
@@ -24,14 +24,14 @@ const DECK_KEYS = new Set([
 ]);
 
 /** Lines between two separators: `from` inclusive, `to` exclusive, 0-based. */
-interface Chunk {
+export interface Chunk {
   from: number;
   to: number;
   openedBySeparator: boolean;
   closedBySeparator: boolean;
 }
 
-interface Draft {
+export interface Draft {
   separator?: number;
   frontmatter?: Chunk;
   body: Chunk;
@@ -50,12 +50,7 @@ export function parseDeck(source: string): Deck {
   const diagnostics: Diagnostic[] = [];
 
   const drafts = splitSlides(lines, inCode);
-  const startsWithSeparator =
-    drafts[0]?.separator !== undefined &&
-    lines.slice(0, drafts[0].separator).every(isBlankLine);
-  const headmatterChunk = startsWithSeparator
-    ? drafts[0]?.frontmatter
-    : undefined;
+  const headmatterChunk = findHeadmatter(lines, drafts);
 
   let config: DeckConfig = { ...DEFAULT_CONFIG, defaults: {} };
   let headmatter: Record<string, unknown> = {};
@@ -180,7 +175,19 @@ export function getSlideAtLine(deck: Deck, line: number): number {
   return found;
 }
 
-function splitSlides(lines: string[], inCode: boolean[]): Draft[] {
+/** The frontmatter of the first slide, when the file starts with it. */
+export function findHeadmatter(
+  lines: string[],
+  drafts: Draft[],
+): Chunk | undefined {
+  const first = drafts[0];
+  return first?.separator !== undefined &&
+    lines.slice(0, first.separator).every(isBlankLine)
+    ? first.frontmatter
+    : undefined;
+}
+
+export function splitSlides(lines: string[], inCode: boolean[]): Draft[] {
   const separators: number[] = [];
   lines.forEach((line, i) => {
     if (!inCode[i] && SEPARATOR.test(line)) separators.push(i);
@@ -238,7 +245,7 @@ function looksLikeFrontmatter(lines: string[], chunk: Chunk): boolean {
   return first !== undefined && FRONTMATTER_START.test(first);
 }
 
-function readFrontmatter(
+export function readFrontmatter(
   lines: string[],
   chunk: Chunk,
   slide: number,
@@ -361,7 +368,7 @@ function dedent(lines: string[]): string[] {
   return lines.map((line) => line.slice(indent).trimEnd());
 }
 
-function isBlankChunk(lines: string[], chunk: Chunk): boolean {
+export function isBlankChunk(lines: string[], chunk: Chunk): boolean {
   for (let i = chunk.from; i < chunk.to; i++) {
     if (!isBlankLine(lines[i]!)) return false;
   }

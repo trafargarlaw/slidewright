@@ -1,7 +1,7 @@
 # Deck syntax
 
-A deck is one Markdown file. This page is the reference for everything the
-parser understands on top of
+A deck is one Markdown file, or [several](#several-files). This page is the
+reference for everything the parser understands on top of
 [GitHub Flavored Markdown](https://github.github.com/gfm/).
 
 Design goals:
@@ -91,6 +91,61 @@ layout: cover
 
 Slide keys in the headmatter (such as `layout` above) also apply to the first
 slide. Unknown keys are kept for renderers and plugins.
+
+## Several files
+
+A long deck can keep its chapters in files of their own. A slide whose
+frontmatter has `src` stands for the slides of that file:
+
+```md
+---
+title: Shipping faster
+---
+
+# Shipping faster
+
+---
+
+src: chapters/why.md
+---
+
+---
+
+src: chapters/how.md
+class: how
+---
+
+---
+
+# Thank you
+```
+
+- The path is from the folder of the file that has the `src`. A path that
+  starts with `/` is from the root of the project: with the command line,
+  the folder of the deck.
+- The other keys next to `src`, here `class`, go to each slide of the file,
+  unless the slide sets them itself.
+- A slide with `src` has no content of its own: content after its
+  frontmatter is reported, and not shown.
+- A file can have slides with `src` too, so a chapter can bring in a part
+  that other chapters share. A file can't include itself.
+- A file can be in the deck more than once.
+
+A chapter is a deck too, and can be presented alone. Its headmatter can
+have `defaults`, which apply to its slides wherever they are shown. The
+other deck settings (`theme`, `colorScheme`, `aspectRatio` and
+`canvasWidth`) are those of the deck file: in a chapter they count only
+when it is presented alone. The `title` of a chapter's headmatter is the
+title of its first slide.
+
+A file that doesn't exist is reported with the line of its `src`, and the
+rest of the deck still renders.
+
+The [command line](../packages/cli/README.md) and the
+[Vite plugin](../packages/vite/README.md#several-files) read `src`. Parsing
+stays free of the file system: `parseDeck` takes one source, and `joinDeck`
+from [`@slidewright/core`](../packages/core/README.md#decks-in-several-files)
+makes that source from the files.
 
 ## Speaker notes
 

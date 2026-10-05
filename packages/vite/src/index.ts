@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseDeck } from "@slidewright/core";
+import { joinDeck, parseDeck, type JoinedDeck } from "@slidewright/core";
 import {
   normalizePath,
   searchForWorkspaceRoot,
@@ -15,7 +15,11 @@ import { filePattern } from "./pattern";
 import { findProblems, formatProblem } from "./problems";
 
 export interface SlidewrightOptions {
-  /** The deck file, relative to the Vite root. Default `slides.md`. */
+  /**
+   * The deck file, relative to the Vite root. Default `slides.md`. Its
+   * slides with `src` in their frontmatter bring in the slides of other
+   * files.
+   */
   deck?: string;
   /**
    * Stylesheets loaded after the default theme, relative to the Vite root.
@@ -83,17 +87,47 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
   let logger: Logger | undefined;
   // The problems last printed, so saving without fixing them stays quiet.
   let reported = "";
+  // The files that the deck was last read from: the deck file and the files
+  // that its slides bring in with `src`, those that don't exist too.
+  let deckFiles = new Set<string>();
+
+  // The deck as one source, from all of its files.
+  const readDeck = (): JoinedDeck => {
+    const deck = joinDeck(deckFile, {
+      read(file) {
+        try {
+          return readFileSync(file, "utf8");
+        } catch {
+          return undefined;
+        }
+      },
+      // From the folder of the file with the `src`. A path that starts with
+      // `/` is from the root, as in the URLs of the dev server.
+      resolve: (src, from) =>
+        src.startsWith("/")
+          ? resolve(root, `.${src}`)
+          : resolve(dirname(from), src),
+    });
+    deckFiles = new Set(deck.files);
+    return deck;
+  };
 
   // Prints the deck's problems with their file and line. The deck still
   // renders: problems never stop the server or the build.
   const report = () => {
-    const source = readFileSync(deckFile, "utf8");
+    const deck = readDeck();
+    const { source } = deck;
     const text = [
-      ...findProblems(parseDeck(source), source, { mermaid }),
-      ...pickDeckIcons(source).problems,
+      // What is wrong with the files comes before what is wrong in them.
+      ...deck.diagnostics,
+      ...[
+        ...findProblems(parseDeck(source), source, { mermaid }),
+        ...pickDeckIcons(source).problems,
+      ]
+        .sort((a, b) => a.line - b.line)
+        .map((problem) => ({ ...problem, ...deck.locate(problem.line) })),
     ]
-      .sort((a, b) => a.line - b.line)
-      .map((problem) => formatProblem(deckFile, problem))
+      .map((problem) => formatProblem(problem.file, problem))
       .join("\n");
     if (text === reported) return;
     reported = text;
@@ -101,7 +135,7 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
   };
 
   const page = () => {
-    const title = parseDeck(readFileSync(deckFile, "utf8")).config.title;
+    const title = parseDeck(readDeck().source).config.title;
     return pageHtml(title ?? "Slides");
   };
 
@@ -169,13 +203,13 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
     },
 
     watchChange(id) {
-      if (resolve(id) === deckFile && existsSync(deckFile)) report();
+      if (deckFiles.has(resolve(id)) && existsSync(deckFile)) report();
     },
 
     // The deck renders in the browser, so the bundle doesn't see the files it
     // shows. Copy them, at the paths that the dev server serves them at.
     generateBundle() {
-      const deck = parseDeck(readFileSync(deckFile, "utf8"));
+      const deck = parseDeck(readDeck().source);
       for (const fileName of findDeckFiles(deck, root)) {
         this.emitFile({
           type: "asset",
@@ -205,10 +239,13 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
     load(id) {
       if (normalizePath(id) === pageFile) return page();
       if (id !== RESOLVED_DECK_ID) return undefined;
-      const { sets } = pickDeckIcons(readFileSync(deckFile, "utf8"));
+      const { source, files } = readDeck();
+      // The module is made again when one of the deck's files changes.
+      for (const file of files) this.addWatchFile(file);
+      const { sets } = pickDeckIcons(source);
       return [
         ...cssFiles.map((file) => `import ${JSON.stringify(file)};`),
-        `export { default as markdown } from ${JSON.stringify(`${deckFile}?raw`)};`,
+        `export const markdown = ${JSON.stringify(source)};`,
         componentsFile === undefined
           ? "export const components = {};"
           : `export { default as components } from ${JSON.stringify(componentsFile)};`,
@@ -219,11 +256,11 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
       ].join("\n");
     },
 
-    // The deck module has the deck's icons, so it is made again when the
-    // deck changes. Vite can keep a module whose imports changed, and then
-    // only the Markdown would be new.
+    // The deck module has the deck's Markdown and icons, so it is made
+    // again when a file of the deck changes, or when one that was missing
+    // is there.
     hotUpdate({ file, modules }) {
-      if (resolve(file) !== deckFile) return undefined;
+      if (!deckFiles.has(resolve(file))) return undefined;
       const deck = this.environment.moduleGraph.getModuleById(RESOLVED_DECK_ID);
       return deck ? [...modules, deck] : undefined;
     },
