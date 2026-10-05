@@ -10,6 +10,7 @@ import {
 import { tmpdir } from "node:os";
 import { basename, dirname, join, sep } from "node:path";
 import { stripVTControlCharacters } from "node:util";
+import { globSync } from "tinyglobby";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   build,
@@ -22,6 +23,7 @@ import {
 } from "vite";
 import { builtinLayouts } from "../../react/src/layouts";
 import { slidewright, type SlidewrightOptions } from "../src/index";
+import { filePattern } from "../src/pattern";
 import { LAYOUTS } from "../src/problems";
 
 const DECK = `---
@@ -334,5 +336,19 @@ image: hills%20one.svg
     expect(readFileSync(join(outDir, "index.html"), "utf8")).toContain(
       "<title>Slides</title>",
     );
+  });
+});
+
+describe("filePattern", () => {
+  // Where npm installs the page script, in a project folder with glob
+  // characters in its name.
+  it("matches a file in a scoped package", () => {
+    const folder = join(root, "talk [draft]", "node_modules", "@scope", "pkg");
+    mkdirSync(folder, { recursive: true });
+    const file = join(folder, "app.js");
+    writeFileSync(file, "");
+
+    const found = globSync([filePattern(file)], { absolute: true, cwd: root });
+    expect(found.map((path) => realpathSync(path))).toEqual([file]);
   });
 });

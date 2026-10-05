@@ -3,6 +3,18 @@
 All the packages, `@slidewright/core`, `react`, `vite`, `cli` and `create`,
 have the same version. Each entry gives the packages that it changes.
 
+## Unreleased
+
+### Fixed
+
+- `vite`, `cli`: The dev server works on Windows in an installed project,
+  such as one made with `npm create @slidewright`. The fix in 0.1.2 did not
+  cover a page script in `node_modules\@slidewright`, so the page stayed
+  empty, with the same message about `debug`.
+- `vite`, `cli`: On Windows, the build makes the deck's page when the
+  project has an `index.html` file. Before, the built site showed that file
+  in place of the deck.
+
 ## 0.1.2 - 2026-10-05
 
 ### Fixed

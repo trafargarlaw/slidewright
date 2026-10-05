@@ -2,9 +2,14 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseDeck } from "@slidewright/core";
-import { convertPathToPattern } from "tinyglobby";
-import { searchForWorkspaceRoot, type Logger, type Plugin } from "vite";
+import {
+  normalizePath,
+  searchForWorkspaceRoot,
+  type Logger,
+  type Plugin,
+} from "vite";
 import { findDeckFiles } from "./files";
+import { filePattern } from "./pattern";
 import { findProblems, formatProblem } from "./problems";
 
 export interface SlidewrightOptions {
@@ -45,6 +50,7 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
   let root = "";
   let deckFile = "";
   let cssFiles: string[] = [];
+  // Both with `/` separators, as Vite gives ids to the hooks on Windows too.
   let pageFile = "";
   // The build input. Vite resolves symbolic links in the root, so this can
   // differ from `pageFile`.
@@ -75,7 +81,7 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
 
     config(config) {
       const root = resolve(config.root ?? process.cwd());
-      inputFile = resolve(root, "index.html");
+      inputFile = normalizePath(resolve(root, "index.html"));
       return {
         // Relative asset URLs, so the built site works from any folder. The
         // deck moves between slides in the URL hash, with no server routes.
@@ -98,7 +104,7 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
         // Entries are glob patterns: as a path, the app matches no file on
         // Windows, or in a folder such as `talk [draft]`. Then nothing is
         // pre-bundled, and the browser can't load CommonJS dependencies.
-        optimizeDeps: { entries: [convertPathToPattern(APP_FILE)] },
+        optimizeDeps: { entries: [filePattern(APP_FILE)] },
         server: {
           fs: {
             // The page's script and its dependencies can live outside the
@@ -113,7 +119,7 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
       root = config.root;
       deckFile = resolve(root, options.deck ?? "slides.md");
       cssFiles = [options.css ?? []].flat().map((file) => resolve(root, file));
-      pageFile = resolve(root, "index.html");
+      pageFile = normalizePath(resolve(root, "index.html"));
       logger = config.logger;
     },
 
@@ -142,12 +148,13 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
     resolveId(id) {
       if (id === APP_URL) return APP_FILE;
       if (id === DECK_ID) return RESOLVED_DECK_ID;
-      if (id === pageFile || id === inputFile) return pageFile;
+      const file = normalizePath(id);
+      if (file === pageFile || file === inputFile) return pageFile;
       return undefined;
     },
 
     load(id) {
-      if (id === pageFile) return page();
+      if (normalizePath(id) === pageFile) return page();
       if (id !== RESOLVED_DECK_ID) return undefined;
       return [
         ...cssFiles.map((file) => `import ${JSON.stringify(file)};`),
