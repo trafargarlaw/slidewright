@@ -30,6 +30,14 @@ have the same version. Each entry gives the packages that it changes.
   only the icons that the deck uses; in a React app, give `<Deck>`,
   `<Presenter>` and `<PrintDeck>` the new `icons` prop. Without its set, an
   icon shows as its source text, and the plugin prints a warning.
+- `react`, `vite`, `cli`: Transitions between slides. `transition:` in the
+  frontmatter of a slide tells how it comes in: `fade`, `slide`, `slide-up`
+  or `zoom`. Towards an earlier slide, the transition plays the other way.
+  `defaults` in the headmatter gives a transition to every slide. Another
+  name is a transition of your own, with its animations in CSS. The new
+  theme properties `--deck-transition-duration` and
+  `--deck-transition-easing` set the pace. Without `transition`, slides
+  change at once, as before.
 
 ### Changed
 

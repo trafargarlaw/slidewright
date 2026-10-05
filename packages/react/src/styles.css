@@ -36,6 +36,8 @@
     --deck-radius: 10px;
 
     --deck-step-duration: 240ms;
+    --deck-transition-duration: 400ms;
+    --deck-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
     --deck-dim-opacity: 0.32;
     --deck-notes-font-size: 18px;
 
@@ -868,6 +870,117 @@
   [data-slide] [data-step-state="future"] {
     visibility: hidden;
     opacity: 0;
+  }
+
+  /* Transitions ------------------------------------------------------------ */
+
+  /* While the deck moves between two slides, the canvas holds both: the slide
+     that leaves, under the slide that enters. Each has `data-transition`,
+     the name of the transition, and plays its half of it. */
+  [data-slide][data-transition] {
+    --deck-transition-direction: 1;
+    animation: var(--deck-transition-duration) var(--deck-transition-easing)
+      both;
+  }
+
+  /* Towards an earlier slide, the same transition plays the other way. */
+  [data-slide][data-transition-direction="backward"] {
+    --deck-transition-direction: -1;
+  }
+
+  [data-slide][data-transition-state="leaving"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  [data-slide][data-transition="fade"][data-transition-state="entering"] {
+    animation-name: deck-fade-in;
+  }
+
+  [data-slide][data-transition="fade"][data-transition-state="leaving"] {
+    animation-name: deck-fade-out;
+  }
+
+  [data-slide][data-transition="slide"][data-transition-state="entering"] {
+    animation-name: deck-slide-in;
+  }
+
+  [data-slide][data-transition="slide"][data-transition-state="leaving"] {
+    animation-name: deck-slide-out;
+  }
+
+  [data-slide][data-transition="slide-up"][data-transition-state="entering"] {
+    animation-name: deck-slide-up-in;
+  }
+
+  [data-slide][data-transition="slide-up"][data-transition-state="leaving"] {
+    animation-name: deck-slide-up-out;
+  }
+
+  [data-slide][data-transition="zoom"][data-transition-state="entering"] {
+    animation-name: deck-zoom-in;
+  }
+
+  [data-slide][data-transition="zoom"][data-transition-state="leaving"] {
+    animation-name: deck-zoom-out;
+  }
+
+  @keyframes deck-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes deck-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes deck-slide-in {
+    from {
+      translate: calc(100% * var(--deck-transition-direction)) 0;
+    }
+  }
+
+  @keyframes deck-slide-out {
+    to {
+      translate: calc(-100% * var(--deck-transition-direction)) 0;
+    }
+  }
+
+  @keyframes deck-slide-up-in {
+    from {
+      translate: 0 calc(100% * var(--deck-transition-direction));
+    }
+  }
+
+  @keyframes deck-slide-up-out {
+    to {
+      translate: 0 calc(-100% * var(--deck-transition-direction));
+    }
+  }
+
+  @keyframes deck-zoom-in {
+    from {
+      opacity: 0;
+      scale: calc(1 - 0.15 * var(--deck-transition-direction));
+    }
+  }
+
+  @keyframes deck-zoom-out {
+    to {
+      opacity: 0;
+      scale: calc(1 + 0.15 * var(--deck-transition-direction));
+    }
+  }
+
+  /* With no animation, the slide that leaves goes at once. */
+  @media (prefers-reduced-motion: reduce) {
+    [data-slide][data-transition] {
+      animation: none;
+    }
   }
 
   /* Code ------------------------------------------------------------------- */

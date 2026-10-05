@@ -1,0 +1,32 @@
+/* A little slower than the theme, so each transition is easy to see. */
+[data-deck] {
+  --deck-transition-duration: 600ms;
+}
+
+/* The `turn` transition. The slide that enters and the slide that leaves
+   each get an animation; the theme gives them the duration and the easing. */
+[data-slide][data-transition="turn"][data-transition-state="entering"] {
+  animation-name: turn-in;
+}
+
+[data-slide][data-transition="turn"][data-transition-state="leaving"] {
+  animation-name: turn-out;
+}
+
+/* `--deck-transition-direction` is 1 towards a later slide and -1 towards
+   an earlier one, so the slides turn the other way on the way back. */
+@keyframes turn-in {
+  from {
+    opacity: 0;
+    rotate: calc(12deg * var(--deck-transition-direction));
+    scale: 0.8;
+  }
+}
+
+@keyframes turn-out {
+  to {
+    opacity: 0;
+    rotate: calc(-12deg * var(--deck-transition-direction));
+    scale: 0.8;
+  }
+}

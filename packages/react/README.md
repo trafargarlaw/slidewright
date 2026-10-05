@@ -437,6 +437,75 @@ it through its element, or select it:
 Screen readers skip icons. To give one a name, write its element with a
 `title`: `<span data-icon="lucide:rocket" title="Launch"></span>`.
 
+## Transitions
+
+A slide with `transition:` in its frontmatter comes in with an animation.
+The theme has `fade`, `slide`, `slide-up` and `zoom`; the
+[syntax reference](../../docs/syntax.md#transitions) tells what each does.
+`<Deck>` plays them. `<Presenter>` and `<PrintDeck>` change slides at once.
+
+While the deck moves, the canvas holds two slides: the one that leaves,
+then the one that enters. Each has these attributes until the animations of
+both end:
+
+| Attribute                   | Value                                        |
+| --------------------------- | -------------------------------------------- |
+| `data-transition`           | The name, from the later of the slides       |
+| `data-transition-state`     | `entering` or `leaving`                      |
+| `data-transition-direction` | `forward`, or `backward` to an earlier slide |
+
+The slide that leaves stays as it was, at its step and with the state of
+its components. It is `inert` and hidden from screen readers.
+
+The theme properties `--deck-transition-duration` and
+`--deck-transition-easing` set the pace of every transition.
+
+### Your own transitions
+
+A name that the theme doesn't have does nothing until your CSS gives it an
+animation for each of the two slides:
+
+```md
+---
+transition: turn
+---
+```
+
+```css
+[data-slide][data-transition="turn"][data-transition-state="entering"] {
+  animation-name: turn-in;
+}
+
+[data-slide][data-transition="turn"][data-transition-state="leaving"] {
+  animation-name: turn-out;
+}
+
+@keyframes turn-in {
+  from {
+    opacity: 0;
+    rotate: calc(12deg * var(--deck-transition-direction));
+  }
+}
+
+@keyframes turn-out {
+  to {
+    opacity: 0;
+    rotate: calc(-12deg * var(--deck-transition-direction));
+  }
+}
+```
+
+- The theme gives both slides the duration, the easing and
+  `animation-fill-mode: both`. Set `animation-duration` to change the pace
+  of one transition.
+- `--deck-transition-direction` is `1` towards a later slide and `-1`
+  towards an earlier one, so one pair of animations can play both ways.
+- An animation for only one of the slides is enough: the other one waits.
+  The deck takes the slide that leaves away when no animation of the two
+  slides is left, so an animation that repeats for ever is not counted.
+- With reduced motion, the theme gives the animations no duration, so
+  slides change at once.
+
 ## Styling
 
 `styles.css` contains the deck chrome, the built-in layouts and the default
@@ -483,6 +552,8 @@ Theme a deck with custom properties on `[data-deck]` or any parent:
 | `--deck-font-size`, `--deck-line-height`   | Base text size on the canvas              |
 | `--deck-padding`, `--deck-radius`          | Slide padding, corner radius              |
 | `--deck-step-duration`                     | Reveal animation (0 with reduced motion)  |
+| `--deck-transition-duration`               | Transition between slides (400ms)         |
+| `--deck-transition-easing`                 | Its timing function                       |
 | `--deck-dim-opacity`                       | Opacity of lines not highlighted in code  |
 | `--deck-notes-font-size`                   | Notes text in the presenter view          |
 | `--deck-code-token-*`                      | Syntax colours (`keyword`, `string`, …)   |
@@ -499,6 +570,7 @@ adds data attributes for everything else:
 | ----------------------- | -------------------------------------------- |
 | `[data-deck]`           | Root. `data-theme`, `data-color-scheme`      |
 | `[data-slide]`          | A slide. `data-layout`, plus `class:`        |
+| `[data-transition]`     | A slide in a [transition](#transitions)      |
 | `[data-part]`           | Layout regions (`content`, `image`, `left`…) |
 | `[data-slot]`           | Content placed in a layout slot              |
 | `[data-directive]`      | A directive, by name                         |

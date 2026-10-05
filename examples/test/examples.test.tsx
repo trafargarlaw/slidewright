@@ -32,6 +32,7 @@ const DECKS = {
   components: example("components", "slides.md"),
   diagrams: example("diagrams", "slides.md"),
   icons: example("icons", "slides.md"),
+  transitions: example("transitions", "slides.md"),
   react: example("react", "src", "slides.md"),
 };
 
@@ -90,6 +91,28 @@ describe("layouts", () => {
         "image-right",
       ]),
     );
+  });
+});
+
+describe("transitions", () => {
+  it("shows every transition of the theme, and one of its own", () => {
+    const { slides } = parseDeck(read(DECKS.transitions));
+    expect(
+      new Set(slides.map((slide) => slide.frontmatter.transition)),
+    ).toEqual(new Set(["fade", "slide", "slide-up", "zoom", "none", "turn"]));
+
+    const theme = readFileSync(
+      example("..", "packages", "react", "src", "styles.css"),
+      "utf8",
+    );
+    const own = read(example("transitions", "style.css"));
+    for (const name of ["fade", "slide", "slide-up", "zoom"]) {
+      expect(theme).toContain(`@keyframes deck-${name}-in`);
+      expect(theme).toContain(`@keyframes deck-${name}-out`);
+    }
+    expect(theme).not.toContain("turn");
+    expect(own).toContain("@keyframes turn-in");
+    expect(own).toContain("@keyframes turn-out");
   });
 });
 
@@ -159,6 +182,7 @@ describe("build", () => {
     "components",
     "diagrams",
     "icons",
+    "transitions",
   ] as const)("builds the %s deck as the CLI does", async (name) => {
     const root = dirname(DECKS[name]);
     const file = (name: string) =>
@@ -196,6 +220,11 @@ describe("build", () => {
       expect(output()).toMatch(/["'`]party-popper["'`]:/);
       expect(output()).toMatch(/["'`]typescript-icon["'`]:/);
       expect(output()).not.toMatch(/["'`]a-arrow-down["'`]:/);
+    }
+    if (name === "transitions") {
+      // The theme's animations and the deck's own.
+      expect(output()).toContain("deck-slide-up-in");
+      expect(output()).toContain("turn-out");
     }
     if (name === "components") {
       // The component, whatever quotes the minifier picks.

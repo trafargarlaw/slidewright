@@ -41,6 +41,7 @@ import { Presenter } from "./presenter";
 import { usePresenterWindow } from "./presenter-window";
 import { Resources } from "./resources";
 import { RenderedSlide } from "./slide";
+import { useSlideTransition } from "./transition";
 import { useHashSync } from "./url-hash";
 
 export interface DeckProps {
@@ -183,6 +184,14 @@ export function Deck({
       )
     : null;
   const columns = overviewColumns(viewportSize?.width);
+
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const leaving = useSlideTransition(
+    canvasRef,
+    deck.slides,
+    current,
+    scale !== null && slideCount > 0,
+  );
 
   const latest = useRef({ current, slideCount, typed, selected, columns });
   useLayoutEffect(() => {
@@ -364,6 +373,8 @@ export function Deck({
   const allLayouts = useLayouts(layouts);
 
   const slide = deck.slides[current.slide];
+  // Gone when an edit removes it during its transition.
+  const leavingSlide = leaving ? deck.slides[leaving.slide] : undefined;
   const lastStep = slide ? getSteps(current.slide) : 0;
   const label = `Slide ${current.slide + 1} of ${slideCount}`;
   // Read out after each move. The title tells a screen reader user where
@@ -397,18 +408,47 @@ export function Deck({
           onPointerCancel={swipe ? onPointerCancel : undefined}
         >
           <div
+            ref={canvasRef}
             data-deck-canvas=""
             data-measured={scale === null ? undefined : ""}
             style={{ "--deck-scale": scale ?? 1 } as CSSProperties}
           >
+            {/* Keyed by slide, so the slide that leaves keeps its elements
+                and the state of its components until it is gone. */}
+            {leaving && leavingSlide ? (
+              <RenderedSlide
+                key={leaving.slide}
+                slide={leavingSlide}
+                entry={getSlide(leaving.slide)}
+                step={leaving.step}
+                layouts={allLayouts}
+                components={components}
+                label={`Slide ${leaving.slide + 1} of ${slideCount}`}
+                transition={{
+                  name: leaving.name,
+                  state: "leaving",
+                  backward: leaving.backward,
+                }}
+              />
+            ) : null}
             {slide ? (
               <RenderedSlide
+                key={current.slide}
                 slide={slide}
                 entry={getSlide(current.slide)}
                 step={current.step}
                 layouts={allLayouts}
                 components={components}
                 label={label}
+                transition={
+                  leaving
+                    ? {
+                        name: leaving.name,
+                        state: "entering",
+                        backward: leaving.backward,
+                      }
+                    : undefined
+                }
               />
             ) : null}
           </div>
