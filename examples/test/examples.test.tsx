@@ -6,10 +6,10 @@ import {
   rmSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import logos from "@iconify-json/logos/icons.json";
 import lucide from "@iconify-json/lucide/icons.json";
-import { parseDeck } from "@slidewright/core";
+import { joinDeck, parseDeck } from "@slidewright/core";
 import { PrintDeck, type IconSet } from "@slidewright/react";
 import { slidewright } from "@slidewright/vite";
 import { renderToString } from "react-dom/server";
@@ -27,19 +27,28 @@ const DECKS = {
   diagrams: example("diagrams", "slides.md"),
   icons: example("icons", "slides.md"),
   transitions: example("transitions", "slides.md"),
+  chapters: example("chapters", "slides.md"),
   react: example("react", "src", "slides.md"),
 };
 
 // The sets as their packages have them: thousands of icons each.
 const ICONS: readonly IconSet[] = [lucide, logos];
 
-const read = (deck: string) => readFileSync(deck, "utf8");
+const read = (file: string) => readFileSync(file, "utf8");
+
+/** A deck with the slides of the files that it names, as the CLI reads it. */
+const joinFiles = (name: keyof typeof DECKS) =>
+  joinDeck(DECKS[name], {
+    read: (file) => (existsSync(file) ? read(file) : undefined),
+    resolve: (src, from) => resolve(dirname(from), src),
+  });
+const source = (name: keyof typeof DECKS) => joinFiles(name).source;
 
 /** The deck rendered as for printing: every slide, fully revealed. */
 function print(name: keyof typeof DECKS): string {
   return renderToString(
     <PrintDeck
-      markdown={read(DECKS[name])}
+      markdown={source(name)}
       layouts={name === "react" ? layouts : undefined}
       components={name === "react" ? components : undefined}
       icons={name === "icons" ? ICONS : undefined}
@@ -49,13 +58,14 @@ function print(name: keyof typeof DECKS): string {
 
 describe.each(Object.keys(DECKS) as (keyof typeof DECKS)[])("%s", (name) => {
   it("parses without diagnostics", () => {
-    expect(parseDeck(read(DECKS[name])).diagnostics).toEqual([]);
+    expect(joinFiles(name).diagnostics).toEqual([]);
+    expect(parseDeck(source(name)).diagnostics).toEqual([]);
   });
 
   it("renders every slide without errors", () => {
     const html = print(name);
     expect(html.match(/data-deck-page=""/g)).toHaveLength(
-      parseDeck(read(DECKS[name])).slides.length,
+      parseDeck(source(name)).slides.length,
     );
     expect(html).not.toContain("data-slide-error");
   });
@@ -102,6 +112,59 @@ describe("transitions", () => {
     expect(theme).not.toContain("turn");
     expect(own).toContain("@keyframes turn-in");
     expect(own).toContain("@keyframes turn-out");
+  });
+});
+
+describe("chapters", () => {
+  it("is one deck from four files", () => {
+    const joined = joinFiles("chapters");
+    const { config, slides } = parseDeck(joined.source);
+
+    expect(
+      joined.files.map((file) =>
+        file.slice(example("chapters").length + 1).replaceAll("\\", "/"),
+      ),
+    ).toEqual([
+      "slides.md",
+      "chapters/why.md",
+      "chapters/how.md",
+      "shared/questions.md",
+    ]);
+    expect(config.title).toBe("Several files");
+    expect(slides.map((slide) => slide.title)).toEqual([
+      "Several files",
+      "Why",
+      "Decks grow",
+      "How",
+      "A slide with src",
+      "The settings of a chapter",
+      "Questions?",
+      "Back in slides.md",
+    ]);
+    // The chapter's `defaults`, and the `class` next to its `src`.
+    expect(
+      slides.map((slide) => [slide.layout, slide.frontmatter.class]),
+    ).toEqual([
+      ["cover", undefined],
+      ["section", undefined],
+      ["default", undefined],
+      ["section", "how"],
+      ["center", "how"],
+      ["center", "how"],
+      ["statement", "how"],
+      ["center", undefined],
+    ]);
+    // The `defaults` of the deck file reach every slide.
+    expect(
+      slides.every((slide) => slide.frontmatter.transition === "fade"),
+    ).toBe(true);
+  });
+
+  it("has chapters that are decks of their own", () => {
+    for (const chapter of ["why.md", "how.md"]) {
+      const text = read(example("chapters", "chapters", chapter));
+      expect(parseDeck(text).diagnostics).toEqual([]);
+    }
   });
 });
 
@@ -160,6 +223,7 @@ describe("build", () => {
     "diagrams",
     "icons",
     "transitions",
+    "chapters",
   ] as const)("builds the %s deck as the CLI does", async (name) => {
     const root = dirname(DECKS[name]);
     const css = existsSync(join(root, "style.css")) ? "style.css" : undefined;
@@ -195,6 +259,11 @@ describe("build", () => {
       // The theme's animations and the deck's own.
       expect(output()).toContain("deck-slide-up-in");
       expect(output()).toContain("turn-out");
+    }
+    if (name === "chapters") {
+      // The slides of the deck file and of a file that a chapter names.
+      expect(output()).toContain("One deck, several files");
+      expect(output()).toContain("# Questions?");
     }
   });
 

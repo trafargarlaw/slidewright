@@ -1,5 +1,12 @@
 export { parseDeck, getSlideAtLine } from "./parse-deck";
 export {
+  joinDeck,
+  type DeckFiles,
+  type FileDiagnostic,
+  type FileLine,
+  type JoinedDeck,
+} from "./join";
+export {
   createCompiler,
   compileSlide,
   type CompileOptions,

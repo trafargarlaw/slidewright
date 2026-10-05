@@ -101,7 +101,25 @@ function iconsOf(code: string | undefined): unknown {
   return JSON.parse(/const icons = (.*);/.exec(code ?? "")?.[1] ?? "null");
 }
 
+/** The `markdown` that the deck module gives the page. */
+function markdownOf(code: string | undefined): unknown {
+  return JSON.parse(/const markdown = (.*);/.exec(code ?? "")?.[1] ?? "null");
+}
+
 let root = "";
+
+/** Writes a deck whose second slide brings in `chapters/intro.md`. */
+function writeChapters(intro = "# Why\n\n---\n\n# How\n") {
+  mkdirSync(join(root, "chapters"), { recursive: true });
+  writeFileSync(
+    join(root, "slides.md"),
+    "---\ntitle: Talk\n---\n\n# Talk\n\n---\nsrc: chapters/intro.md\n---\n\n---\n\n# Thanks\n",
+  );
+  writeFileSync(join(root, "chapters", "intro.md"), intro);
+}
+
+const titles = (markdown: unknown) =>
+  parseDeck(String(markdown)).slides.map((slide) => slide.title);
 
 const PROBLEMS = `---
 colorScheme: purple
@@ -198,7 +216,89 @@ describe("dev server", () => {
     await serve({ css: ["style.css"] });
     const result = await server!.transformRequest("virtual:slidewright/deck");
     expect(result?.code).toContain('import "/style.css";');
-    expect(result?.code).toContain('from "/slides.md?import&raw"');
+    expect(markdownOf(result?.code)).toBe(DECK);
+  });
+
+  it("joins the files of a deck, and follows each of them", async () => {
+    writeChapters();
+    const html = await (await fetch(await serve())).text();
+    expect(html).toContain("<title>Talk</title>");
+    const result = await server!.transformRequest("virtual:slidewright/deck");
+    expect(titles(markdownOf(result?.code))).toEqual([
+      "Talk",
+      "Why",
+      "How",
+      "Thanks",
+    ]);
+
+    // A saved chapter gives the page its slides.
+    const intro = join(root, "chapters", "intro.md");
+    writeFileSync(intro, "# Why now\n");
+    server!.watcher.emit("change", intro);
+    await vi.waitFor(async () => {
+      const next = await server!.transformRequest("virtual:slidewright/deck");
+      expect(titles(markdownOf(next?.code))).toEqual([
+        "Talk",
+        "Why now",
+        "Thanks",
+      ]);
+    });
+  });
+
+  it("brings in a file once it is there", async () => {
+    writeChapters();
+    const intro = join(root, "chapters", "intro.md");
+    rmSync(intro);
+    const { logger, warnings } = recordWarnings();
+    server = await createServer({
+      ...config(),
+      customLogger: logger,
+      server: { port: 0, strictPort: false, ws: false },
+      optimizeDeps: { noDiscovery: true },
+    });
+    await server.listen();
+    expect(warnings).toEqual([
+      "slides.md:8: error: No file `chapters/intro.md`: its slides are left out. The path is from the folder of this file.",
+    ]);
+    const result = await server.transformRequest("virtual:slidewright/deck");
+    expect(titles(markdownOf(result?.code))).toEqual(["Talk", "Thanks"]);
+
+    writeFileSync(intro, "# Why\n");
+    server.watcher.emit("add", intro);
+    await vi.waitFor(async () => {
+      const next = await server!.transformRequest("virtual:slidewright/deck");
+      expect(titles(markdownOf(next?.code))).toEqual(["Talk", "Why", "Thanks"]);
+    });
+  });
+
+  it("prints the problems of each file with its own lines", async () => {
+    writeChapters(
+      "# Why\n\n---\nlayout: two-columns\n---\n\n# How :lucide:rocket:\n",
+    );
+    const { logger, warnings } = recordWarnings();
+    server = await createServer({
+      ...config(),
+      customLogger: logger,
+      server: { port: 0, strictPort: false, ws: false },
+      optimizeDeps: { noDiscovery: true },
+    });
+    await server.listen();
+
+    const intro = join("chapters", "intro.md");
+    expect(
+      warnings[0]!.split("\n").map((line) => line.slice(0, intro.length + 30)),
+    ).toEqual([
+      `${intro}:4: warning: Unknown layout "t`,
+      `${intro}:7: warning: The icon \`:lucide`,
+    ]);
+
+    // A saved chapter prints what is wrong with it now.
+    writeFileSync(join(root, intro), "---\nsteps: many\n---\n\n# Why\n");
+    server.watcher.emit("change", join(root, intro));
+    await vi.waitFor(() => expect(warnings).toHaveLength(2));
+    expect(warnings[1]).toBe(
+      `${intro}:2: warning: \`steps\` must be a number of 0 or more.`,
+    );
   });
 
   it("gives the page Mermaid when the project has it", async () => {
@@ -390,6 +490,28 @@ describe("build", () => {
     // The default theme comes first, so the deck's stylesheet wins.
     expect(css.indexOf("--deck-accent:#e11d48")).toBeGreaterThan(
       css.indexOf("--deck-accent:"),
+    );
+  });
+
+  it("builds the files of a deck into one page", async () => {
+    writeChapters("# Why\n\n![Plan](images/plan.png)\n");
+    mkdirSync(join(root, "images"));
+    writeFileSync(join(root, "images", "plan.png"), "png");
+    const outDir = join(root, "dist");
+    await build({ ...config(), build: { outDir, emptyOutDir: true } });
+
+    expect(readFileSync(join(outDir, "index.html"), "utf8")).toContain(
+      "<title>Talk</title>",
+    );
+    const script = readdirSync(join(outDir, "assets"))
+      .filter((name) => /^index-.*\.js$/.test(name))
+      .map((name) => readFileSync(join(outDir, "assets", name), "utf8"))
+      .join("\n");
+    expect(script).toContain("# Why");
+    expect(script).toContain("# Thanks");
+    // A file that a chapter shows, at its path from the root.
+    expect(readFileSync(join(outDir, "images", "plan.png"), "utf8")).toBe(
+      "png",
     );
   });
 

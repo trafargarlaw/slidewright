@@ -33,6 +33,14 @@ have the same version. Each entry gives the packages that it changes.
   theme properties `--deck-transition-duration` and
   `--deck-transition-easing` set the pace. Without `transition`, slides
   change at once, as before.
+- `core`, `vite`, `cli`: A deck can be several files. A slide with `src` in
+  its frontmatter, such as `src: chapters/why.md`, stands for the slides of
+  that file. Its other keys go to each of those slides, a chapter's own
+  `defaults` apply to its slides, and a file can bring in files of its own.
+  The CLI and the Vite plugin follow every file of the deck, and print a
+  problem with the file and the line that it is in. `core` has the new
+  `joinDeck`, which makes one source from the files and reads them through
+  a function that you give, so parsing still needs no file system.
 
 ### Changed
 
