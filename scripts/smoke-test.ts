@@ -14,6 +14,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { stripVTControlCharacters } from "node:util";
 
 const PACKAGES = ["core", "react", "vite", "cli", "create"];
 const repository = resolve(import.meta.dirname, "..");
@@ -21,8 +22,17 @@ const work = mkdtempSync(join(tmpdir(), "slidewright-smoke-"));
 const tarballs = join(work, "tarballs");
 // Glob characters in the path, as Vite reads some paths as glob patterns.
 const deck = join(work, "deck [draft]");
-// The installed command, without npx: npx adds nothing to check here.
-const slidewright = join(deck, "node_modules", ".bin", "slidewright");
+// The installed command's script, run with node. On Windows, the command in
+// node_modules/.bin is a wrapper: stopping it leaves the dev server running.
+// `npm run build` checks the command itself.
+const slidewright = join(
+  deck,
+  "node_modules",
+  "@slidewright",
+  "cli",
+  "bin",
+  "slidewright.js",
+);
 
 function run(command: string, args: string[], cwd: string): string {
   const result = spawnSync(command, args, { cwd, encoding: "utf8" });
@@ -48,7 +58,7 @@ const tarball = (name: string) => {
 
 /** Starts the dev server and checks the page script it serves. */
 async function checkDevServer(): Promise<void> {
-  const server = spawn(slidewright, ["--port", "0"], { cwd: deck });
+  const server = spawn("node", [slidewright, "--port", "0"], { cwd: deck });
   try {
     const url = await new Promise<string>((found, failed) => {
       let output = "";
@@ -58,7 +68,10 @@ async function checkDevServer(): Promise<void> {
       ).unref();
       server.stdout.on("data", (data: Buffer) => {
         output += data.toString();
-        const match = /https?:\/\/localhost:\d+\//.exec(output);
+        // On Windows, Vite colours the URL in a pipe too.
+        const match = /https?:\/\/localhost:\d+\//.exec(
+          stripVTControlCharacters(output),
+        );
         if (match) found(match[0]);
       });
       server.stderr.on("data", (data: Buffer) => (output += data.toString()));
@@ -135,7 +148,7 @@ try {
 
   await checkDevServer();
 
-  const exported = spawnSync(slidewright, ["export"], {
+  const exported = spawnSync("node", [slidewright, "export"], {
     cwd: deck,
     encoding: "utf8",
   });
