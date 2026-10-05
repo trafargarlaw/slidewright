@@ -1,0 +1,4 @@
+/* `class: how`, next to the `src` of the chapter, is on each of its slides. */
+[data-slide].how h1 {
+  color: var(--deck-accent);
+}

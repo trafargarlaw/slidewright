@@ -4,6 +4,7 @@ import { Component, useMemo, type ReactNode } from "react";
 import { SlideContext, type DirectiveComponents } from "./context";
 import { resolveLayout, type Layout } from "./layouts";
 import { renderSlide } from "./render";
+import { transitionAttributes, type SlideTransition } from "./transition";
 
 /** A compiled slide, or the error a plugin threw while compiling it. */
 export interface CompiledEntry {
@@ -20,6 +21,8 @@ interface RenderedSlideProps {
   layouts: Readonly<Record<string, Layout>>;
   components: DirectiveComponents;
   label: string;
+  /** Set while the deck moves between this slide and another one. */
+  transition?: SlideTransition;
 }
 
 /**
@@ -33,10 +36,17 @@ export function RenderedSlide({
   layouts,
   components,
   label,
+  transition,
 }: RenderedSlideProps) {
-  if (entry.error !== undefined) return <SlideError error={entry.error} />;
+  if (entry.error !== undefined) {
+    return <SlideError error={entry.error} transition={transition} />;
+  }
   return (
-    <SlideErrorBoundary key={slide.index} resetKey={entry.tree}>
+    <SlideErrorBoundary
+      key={slide.index}
+      resetKey={entry.tree}
+      transition={transition}
+    >
       <SlideView
         slide={slide}
         tree={entry.tree}
@@ -44,6 +54,7 @@ export function RenderedSlide({
         layout={resolveLayout(layouts, slide.layout)}
         components={components}
         label={label}
+        transition={transition}
       />
     </SlideErrorBoundary>
   );
@@ -56,6 +67,7 @@ interface SlideViewProps {
   layout: Layout;
   components: DirectiveComponents;
   label: string;
+  transition?: SlideTransition;
 }
 
 export function SlideView({
@@ -65,6 +77,7 @@ export function SlideView({
   layout: LayoutComponent,
   components,
   label,
+  transition,
 }: SlideViewProps) {
   const content = useMemo(
     () => renderSlide(tree, step, LayoutComponent.slots ?? []),
@@ -79,6 +92,7 @@ export function SlideView({
       className={toClassName(slide.frontmatter.class)}
       aria-roledescription="slide"
       aria-label={label}
+      {...transitionAttributes(transition)}
     >
       <SlideContext value={context}>
         <LayoutComponent slide={slide} slots={content.slots}>
@@ -90,9 +104,20 @@ export function SlideView({
 }
 
 /** Shown in place of a slide that failed to compile or render. */
-export function SlideError({ error }: { error: unknown }) {
+export function SlideError({
+  error,
+  transition,
+}: {
+  error: unknown;
+  transition?: SlideTransition;
+}) {
   return (
-    <section data-slide="" data-slide-error="" role="alert">
+    <section
+      data-slide=""
+      data-slide-error=""
+      role="alert"
+      {...transitionAttributes(transition)}
+    >
       <p>This slide could not be rendered.</p>
       <pre>{error instanceof Error ? error.message : String(error)}</pre>
     </section>
@@ -104,6 +129,7 @@ interface BoundaryProps {
   resetKey: unknown;
   /** Shown instead of the error message. */
   fallback?: ReactNode;
+  transition?: SlideTransition;
   children: ReactNode;
 }
 
@@ -126,7 +152,14 @@ export class SlideErrorBoundary extends Component<
 
   override render() {
     if (this.state.failed) {
-      return this.props.fallback ?? <SlideError error={this.state.error} />;
+      return (
+        this.props.fallback ?? (
+          <SlideError
+            error={this.state.error}
+            transition={this.props.transition}
+          />
+        )
+      );
     }
     return this.props.children;
   }

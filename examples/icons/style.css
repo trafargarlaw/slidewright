@@ -1,0 +1,23 @@
+/* A row of large icons. An icon is as tall as the text of its element. */
+.reasons {
+  display: flex;
+  gap: 0.5em;
+  margin: 0.2em 0 0.3em;
+  font-size: 3em;
+  line-height: 1;
+}
+
+.reasons p {
+  margin: 0;
+}
+
+/* An icon has the colour of its text. */
+.accent {
+  color: var(--deck-accent);
+}
+
+/* The logos, larger than the text around them. */
+[data-layout="two-cols"] svg[data-icon^="logos:"] {
+  height: 1.8em;
+  margin-right: 0.3em;
+}

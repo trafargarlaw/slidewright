@@ -6,7 +6,8 @@ import { getSlideAtLine } from "@slidewright/core";
 import { Deck, Presenter, type DeckPosition } from "@slidewright/react";
 import { CheatSheet } from "./CheatSheet";
 import { registerImage } from "@/lib/image-registry";
-import { compileOptions } from "@/lib/compile-options";
+import { compileOptions, loadMermaid } from "@/lib/compile-options";
+import { useIcons } from "@/lib/icons";
 import { parseSource, setSlideNotes } from "@/lib/deck-source";
 import { applySearchReplace } from "@/lib/search-replace";
 import { initUnocss } from "@/styles/unocss";
@@ -169,6 +170,7 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
   const [markdown, setMarkdown] = useState(defaultValue);
   const [activeTab, setActiveTab] = useState<string>("markdown");
   const [previewView, setPreviewView] = useState<string>("slides");
+  const icons = useIcons();
   const [position, setPosition] = useState<DeckPosition>({ slide: 0, step: 0 });
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -934,6 +936,8 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
               onPositionChange={setPosition}
               hash
               compileOptions={compileOptions}
+              mermaid={loadMermaid}
+              icons={icons}
               style={{ flex: 1, minHeight: 0 }}
             />
           ) : (
@@ -943,6 +947,8 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
               onPositionChange={setPosition}
               hash
               compileOptions={compileOptions}
+              mermaid={loadMermaid}
+              icons={icons}
               style={{ flex: 1, minHeight: 0 }}
             />
           )}

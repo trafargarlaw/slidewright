@@ -6,6 +6,9 @@
  * the `--deck-*` custom properties on `[data-deck]` or a parent element.
  */
 
+/* KaTeX's styles and fonts, for maths. */
+@import "katex/dist/katex.min.css" layer(slidewright);
+
 @layer slidewright {
   /* Theme ------------------------------------------------------------------ */
 
@@ -33,6 +36,8 @@
     --deck-radius: 10px;
 
     --deck-step-duration: 240ms;
+    --deck-transition-duration: 400ms;
+    --deck-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
     --deck-dim-opacity: 0.32;
     --deck-notes-font-size: 18px;
 
@@ -751,6 +756,15 @@
     height: auto;
   }
 
+  /* An icon is as tall as the text around it, and has its colour. */
+  [data-deck] :where(svg[data-icon]) {
+    display: inline-block;
+    flex: none;
+    width: auto;
+    height: 1em;
+    vertical-align: -0.125em;
+  }
+
   [data-slide] :where(table) {
     border-collapse: collapse;
     font-size: 0.85em;
@@ -792,10 +806,57 @@
     font-size: 0.85em;
   }
 
-  /* Maths renders as source until KaTeX support lands. */
-  [data-slide] :where(.math-display) {
-    display: block;
+  /* Maths: the LaTeX source shows until KaTeX has loaded. */
+  [data-slide] [data-math="display"] {
+    margin: 0 0 0.75em;
     text-align: center;
+  }
+
+  [data-slide] [data-math="display"] .katex-display {
+    margin: 0;
+  }
+
+  /* KaTeX measures its boxes without their borders. */
+  [data-slide] :where([data-math] *),
+  [data-slide] :where([data-math] *)::before,
+  [data-slide] :where([data-math] *)::after {
+    box-sizing: content-box;
+  }
+
+  /* Diagrams: the Mermaid source shows until the diagram is drawn. */
+  [data-slide] [data-diagram] {
+    /* Shrinks with its diagram when the slide has no room left. */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 0;
+    margin: 0 0 0.75em;
+  }
+
+  [data-slide] [data-diagram] > svg {
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+
+  [data-diagram] :where(pre) {
+    align-self: stretch;
+    margin: 0;
+    font-family: var(--deck-font-mono);
+    font-size: 0.7em;
+  }
+
+  [data-diagram] :where(figcaption) {
+    align-self: stretch;
+    margin-top: 0.5em;
+    color: var(--deck-code-removed);
+    font-size: 0.7em;
+  }
+
+  /* Mermaid measures its labels without their borders. */
+  [data-slide] :where([data-diagram] > svg *),
+  [data-slide] :where([data-diagram] > svg *)::before,
+  [data-slide] :where([data-diagram] > svg *)::after {
+    box-sizing: content-box;
   }
 
   /* Steps ------------------------------------------------------------------ */
@@ -809,6 +870,117 @@
   [data-slide] [data-step-state="future"] {
     visibility: hidden;
     opacity: 0;
+  }
+
+  /* Transitions ------------------------------------------------------------ */
+
+  /* While the deck moves between two slides, the canvas holds both: the slide
+     that leaves, under the slide that enters. Each has `data-transition`,
+     the name of the transition, and plays its half of it. */
+  [data-slide][data-transition] {
+    --deck-transition-direction: 1;
+    animation: var(--deck-transition-duration) var(--deck-transition-easing)
+      both;
+  }
+
+  /* Towards an earlier slide, the same transition plays the other way. */
+  [data-slide][data-transition-direction="backward"] {
+    --deck-transition-direction: -1;
+  }
+
+  [data-slide][data-transition-state="leaving"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  [data-slide][data-transition="fade"][data-transition-state="entering"] {
+    animation-name: deck-fade-in;
+  }
+
+  [data-slide][data-transition="fade"][data-transition-state="leaving"] {
+    animation-name: deck-fade-out;
+  }
+
+  [data-slide][data-transition="slide"][data-transition-state="entering"] {
+    animation-name: deck-slide-in;
+  }
+
+  [data-slide][data-transition="slide"][data-transition-state="leaving"] {
+    animation-name: deck-slide-out;
+  }
+
+  [data-slide][data-transition="slide-up"][data-transition-state="entering"] {
+    animation-name: deck-slide-up-in;
+  }
+
+  [data-slide][data-transition="slide-up"][data-transition-state="leaving"] {
+    animation-name: deck-slide-up-out;
+  }
+
+  [data-slide][data-transition="zoom"][data-transition-state="entering"] {
+    animation-name: deck-zoom-in;
+  }
+
+  [data-slide][data-transition="zoom"][data-transition-state="leaving"] {
+    animation-name: deck-zoom-out;
+  }
+
+  @keyframes deck-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes deck-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes deck-slide-in {
+    from {
+      translate: calc(100% * var(--deck-transition-direction)) 0;
+    }
+  }
+
+  @keyframes deck-slide-out {
+    to {
+      translate: calc(-100% * var(--deck-transition-direction)) 0;
+    }
+  }
+
+  @keyframes deck-slide-up-in {
+    from {
+      translate: 0 calc(100% * var(--deck-transition-direction));
+    }
+  }
+
+  @keyframes deck-slide-up-out {
+    to {
+      translate: 0 calc(-100% * var(--deck-transition-direction));
+    }
+  }
+
+  @keyframes deck-zoom-in {
+    from {
+      opacity: 0;
+      scale: calc(1 - 0.15 * var(--deck-transition-direction));
+    }
+  }
+
+  @keyframes deck-zoom-out {
+    to {
+      opacity: 0;
+      scale: calc(1 + 0.15 * var(--deck-transition-direction));
+    }
+  }
+
+  /* With no animation, the slide that leaves goes at once. */
+  @media (prefers-reduced-motion: reduce) {
+    [data-slide][data-transition] {
+      animation: none;
+    }
   }
 
   /* Code ------------------------------------------------------------------- */
@@ -1023,6 +1195,21 @@
     flex: 1;
     grid-template-columns: 1fr 1fr;
     gap: 2.5em;
+    min-height: 0;
+  }
+
+  /* A diagram in a column shrinks to the room that the column has. */
+  [data-layout="two-cols"] [data-part="columns"]:has([data-diagram]) {
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  [data-layout="two-cols"]
+    :is([data-part="left"], [data-part="right"], [data-slot]):has(
+      > [data-diagram],
+      > [data-slot] > [data-diagram]
+    ) {
+    display: flex;
+    flex-direction: column;
     min-height: 0;
   }
 

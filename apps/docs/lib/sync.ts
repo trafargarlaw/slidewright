@@ -97,8 +97,16 @@ export function codeLines(lines: readonly string[]): boolean[] {
   });
 }
 
-/** Rewrites the relative links of `markdown`, a file at `source`. */
-export function rewriteLinks(markdown: string, source: string): string {
+/**
+ * Rewrites the relative links of `markdown`, a file at `source`. `local`
+ * gives the new address of a repository file that goes along with it: by
+ * default, its page on the site. Links to other files go to GitHub.
+ */
+export function rewriteLinks(
+  markdown: string,
+  source: string,
+  local: (file: string) => string | undefined = toRoute,
+): string {
   const lines = markdown.split("\n");
   const code = codeLines(lines);
   return lines
@@ -117,21 +125,33 @@ export function rewriteLinks(markdown: string, source: string): string {
             ) =>
               span
                 ? match
-                : `${image}[${text}](${resolveLink(url, source, image === "!")}${title})`,
+                : `${image}[${text}](${resolveLink(url, source, image === "!", local)}${title})`,
           ),
     )
     .join("\n");
 }
 
-function resolveLink(url: string, source: string, image: boolean): string {
+/** The page of a repository file, or of the README of a folder. */
+function toRoute(file: string): string | undefined {
+  const route = ROUTES.get(file) ?? ROUTES.get(posix.join(file, "README.md"));
+  return route && `/docs/${route}`;
+}
+
+function resolveLink(
+  url: string,
+  source: string,
+  image: boolean,
+  local: (file: string) => string | undefined,
+): string {
   // Absolute URLs, site paths and anchors on the same page stay as written.
   if (/^([a-z][a-z\d+.-]*:|\/|#)/i.test(url)) return url;
 
   const [path = "", hash] = url.split("#");
   const file = posix.join(posix.dirname(source), path);
-  const route = ROUTES.get(file) ?? ROUTES.get(posix.join(file, "README.md"));
-  if (route) return `/docs/${route}${hash ? `#${hash}` : ""}`;
-  return `${REPOSITORY}/blob/master/${file}${image ? "?raw=true" : ""}${hash ? `#${hash}` : ""}`;
+  const anchor = hash ? `#${hash}` : "";
+  const address = local(file);
+  if (address) return `${address}${anchor}`;
+  return `${REPOSITORY}/blob/master/${file}${image ? "?raw=true" : ""}${anchor}`;
 }
 
 /** Writes the pages and assets into the site. Returns the files read. */

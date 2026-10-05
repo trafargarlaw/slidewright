@@ -11,6 +11,7 @@ import { unified, type PluggableList } from "unified";
 import { VFile } from "vfile";
 import {
   remarkCodeMeta,
+  rehypeIcons,
   rehypeSafeDirectiveAttributes,
   rehypeSteps,
   remarkDirectiveElements,
@@ -52,6 +53,7 @@ export function createCompiler(options: CompileOptions = {}): SlideCompiler {
     .use(remarkPlugins)
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
+    .use(rehypeIcons)
     .use(rehypeSteps);
 
   if (sanitize !== false) {

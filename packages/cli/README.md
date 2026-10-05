@@ -164,13 +164,23 @@ jobs:
 ```text
 talk/
 ├── slides.md    # the deck
+├── chapters/    # optional: more slides, in files that the deck names
 ├── style.css    # optional: theme properties and slide styles
 ├── images/      # optional: images and other files that the deck shows
 └── public/      # optional: files to copy into the site as they are
 ```
 
+- A slide with `src: chapters/why.md` in its frontmatter stands for the
+  slides of that file, so a long deck can be several files. The folder can
+  have any name. See [Several files](../../docs/syntax.md#several-files).
 - `style.css` next to the deck loads after the default theme. See
   [Styling](../vite/README.md#styling).
+- `mermaid` code blocks are drawn as diagrams when the project has Mermaid:
+  `npm install --save-dev mermaid`. See
+  [Diagrams](../vite/README.md#diagrams).
+- `:set:name:` icons, such as `:lucide:rocket:`, are drawn when the project
+  has their set: `npm install --save-dev @iconify-json/lucide`. See
+  [Icons](../vite/README.md#icons).
 - Refer to images and other files with a path from the deck's folder:
   `![Diagram](images/diagram.png)`. The build copies each file that the deck
   refers to. See [Files](../vite/README.md#files).

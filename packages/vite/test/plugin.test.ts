@@ -23,8 +23,10 @@ import {
 } from "vite";
 import { builtinLayouts } from "../../react/src/layouts";
 import { slidewright, type SlidewrightOptions } from "../src/index";
+import { createIconSetLoader, pickIcons } from "../src/icons";
 import { filePattern } from "../src/pattern";
-import { LAYOUTS } from "../src/problems";
+import { findProblems, LAYOUTS } from "../src/problems";
+import { parseDeck } from "@slidewright/core";
 
 const DECK = `---
 title: Plugin <test> & co
@@ -37,7 +39,87 @@ title: Plugin <test> & co
 # Second slide
 `;
 
+const DIAGRAM = "# Flow\n\n```mermaid\nflowchart LR\n  a --> b\n```\n";
+
+/** Installs a stand-in for Mermaid in the project. */
+function installMermaid() {
+  const folder = join(root, "node_modules", "mermaid");
+  mkdirSync(folder, { recursive: true });
+  writeFileSync(
+    join(folder, "package.json"),
+    JSON.stringify({
+      name: "mermaid",
+      version: "0.0.0",
+      type: "module",
+      main: "index.js",
+    }),
+  );
+  writeFileSync(
+    join(folder, "index.js"),
+    `export default {
+  initialize() {},
+  render: async () => ({ svg: "<svg class='stand-in'></svg>" }),
+};
+`,
+  );
+}
+
+const ICONS = {
+  prefix: "lucide",
+  lastModified: 1,
+  width: 24,
+  height: 24,
+  icons: {
+    rocket: { body: '<path d="M4 20 20 4"/>' },
+    "arrow-right": { body: '<path d="M5 12h14"/>' },
+    unused: { body: '<path d="M1 1h1"/>' },
+  },
+  aliases: {
+    "arrow-left": { parent: "arrow-right", hFlip: true },
+    back: { parent: "arrow-left" },
+    launch: { parent: "rocket" },
+  },
+};
+
+/** Installs a small icon set in the project, as `@iconify-json/lucide`. */
+function installIcons() {
+  const folder = join(root, "node_modules", "@iconify-json", "lucide");
+  mkdirSync(folder, { recursive: true });
+  writeFileSync(
+    join(folder, "package.json"),
+    JSON.stringify({
+      name: "@iconify-json/lucide",
+      version: "0.0.0",
+      exports: { "./*": "./*", "./icons.json": "./icons.json" },
+    }),
+  );
+  writeFileSync(join(folder, "icons.json"), JSON.stringify(ICONS));
+}
+
+/** The `icons` that the deck module gives the page. */
+function iconsOf(code: string | undefined): unknown {
+  return JSON.parse(/const icons = (.*);/.exec(code ?? "")?.[1] ?? "null");
+}
+
+/** The `markdown` that the deck module gives the page. */
+function markdownOf(code: string | undefined): unknown {
+  return JSON.parse(/const markdown = (.*);/.exec(code ?? "")?.[1] ?? "null");
+}
+
 let root = "";
+
+/** Writes a deck whose second slide brings in `chapters/intro.md`. */
+function writeChapters(intro = "# Why\n\n---\n\n# How\n") {
+  mkdirSync(join(root, "chapters"), { recursive: true });
+  writeFileSync(
+    join(root, "slides.md"),
+    "---\ntitle: Talk\n---\n\n# Talk\n\n---\nsrc: chapters/intro.md\n---\n\n---\n\n# Thanks\n",
+  );
+  writeFileSync(join(root, "chapters", "intro.md"), intro);
+}
+
+const titles = (markdown: unknown) =>
+  parseDeck(String(markdown)).slides.map((slide) => slide.title);
 
 const PROBLEMS = `---
 colorScheme: purple
@@ -134,7 +216,181 @@ describe("dev server", () => {
     await serve({ css: ["style.css"] });
     const result = await server!.transformRequest("virtual:slidewright/deck");
     expect(result?.code).toContain('import "/style.css";');
-    expect(result?.code).toContain('from "/slides.md?import&raw"');
+    expect(markdownOf(result?.code)).toBe(DECK);
+  });
+
+  it("joins the files of a deck, and follows each of them", async () => {
+    writeChapters();
+    const html = await (await fetch(await serve())).text();
+    expect(html).toContain("<title>Talk</title>");
+    const result = await server!.transformRequest("virtual:slidewright/deck");
+    expect(titles(markdownOf(result?.code))).toEqual([
+      "Talk",
+      "Why",
+      "How",
+      "Thanks",
+    ]);
+
+    // A saved chapter gives the page its slides.
+    const intro = join(root, "chapters", "intro.md");
+    writeFileSync(intro, "# Why now\n");
+    server!.watcher.emit("change", intro);
+    await vi.waitFor(async () => {
+      const next = await server!.transformRequest("virtual:slidewright/deck");
+      expect(titles(markdownOf(next?.code))).toEqual([
+        "Talk",
+        "Why now",
+        "Thanks",
+      ]);
+    });
+  });
+
+  it("brings in a file once it is there", async () => {
+    writeChapters();
+    const intro = join(root, "chapters", "intro.md");
+    rmSync(intro);
+    const { logger, warnings } = recordWarnings();
+    server = await createServer({
+      ...config(),
+      customLogger: logger,
+      server: { port: 0, strictPort: false, ws: false },
+      optimizeDeps: { noDiscovery: true },
+    });
+    await server.listen();
+    expect(warnings).toEqual([
+      "slides.md:8: error: No file `chapters/intro.md`: its slides are left out. The path is from the folder of this file.",
+    ]);
+    const result = await server.transformRequest("virtual:slidewright/deck");
+    expect(titles(markdownOf(result?.code))).toEqual(["Talk", "Thanks"]);
+
+    writeFileSync(intro, "# Why\n");
+    server.watcher.emit("add", intro);
+    await vi.waitFor(async () => {
+      const next = await server!.transformRequest("virtual:slidewright/deck");
+      expect(titles(markdownOf(next?.code))).toEqual(["Talk", "Why", "Thanks"]);
+    });
+  });
+
+  it("prints the problems of each file with its own lines", async () => {
+    writeChapters(
+      "# Why\n\n---\nlayout: two-columns\n---\n\n# How :lucide:rocket:\n",
+    );
+    const { logger, warnings } = recordWarnings();
+    server = await createServer({
+      ...config(),
+      customLogger: logger,
+      server: { port: 0, strictPort: false, ws: false },
+      optimizeDeps: { noDiscovery: true },
+    });
+    await server.listen();
+
+    const intro = join("chapters", "intro.md");
+    expect(
+      warnings[0]!.split("\n").map((line) => line.slice(0, intro.length + 30)),
+    ).toEqual([
+      `${intro}:4: warning: Unknown layout "t`,
+      `${intro}:7: warning: The icon \`:lucide`,
+    ]);
+
+    // A saved chapter prints what is wrong with it now.
+    writeFileSync(join(root, intro), "---\nsteps: many\n---\n\n# Why\n");
+    server.watcher.emit("change", join(root, intro));
+    await vi.waitFor(() => expect(warnings).toHaveLength(2));
+    expect(warnings[1]).toBe(
+      `${intro}:2: warning: \`steps\` must be a number of 0 or more.`,
+    );
+  });
+
+  it("gives the page Mermaid when the project has it", async () => {
+    await serve();
+    const without = await server!.transformRequest("virtual:slidewright/deck");
+    expect(without?.code).toContain("const mermaid = undefined");
+    await server!.close();
+
+    installMermaid();
+    await serve();
+    const result = await server!.transformRequest("virtual:slidewright/deck");
+    expect(result?.code).toMatch(
+      /const mermaid = \(\) => import\("[^"]*mermaid[^"]*"\)/,
+    );
+  });
+
+  it("tells that a diagram needs Mermaid", async () => {
+    writeFileSync(join(root, "slides.md"), DIAGRAM);
+    const { logger, warnings } = recordWarnings();
+    server = await createServer({
+      ...config(),
+      customLogger: logger,
+      server: { port: 0, strictPort: false, ws: false },
+      optimizeDeps: { noDiscovery: true },
+    });
+    await server.listen();
+    expect(warnings).toEqual([
+      "slides.md:3: warning: This `mermaid` block shows as code: the project doesn't have Mermaid to draw the diagram. Add it with `npm install mermaid`.",
+    ]);
+  });
+
+  it("gives the page the icons that the deck uses", async () => {
+    const deck = join(root, "slides.md");
+    writeFileSync(deck, "# Go :lucide:rocket:\n");
+    await serve();
+    const without = await server!.transformRequest("virtual:slidewright/deck");
+    expect(iconsOf(without?.code)).toEqual([]);
+    await server!.close();
+
+    installIcons();
+    await serve();
+    const result = await server!.transformRequest("virtual:slidewright/deck");
+    expect(iconsOf(result?.code)).toEqual([
+      {
+        prefix: "lucide",
+        width: 24,
+        height: 24,
+        icons: { rocket: ICONS.icons.rocket },
+        aliases: {},
+      },
+    ]);
+
+    // A saved deck with another icon gives the page that icon.
+    writeFileSync(deck, "# Back :lucide:back:\n");
+    server!.watcher.emit("change", deck);
+    await vi.waitFor(async () => {
+      const next = await server!.transformRequest("virtual:slidewright/deck");
+      expect(iconsOf(next?.code)).toEqual([
+        {
+          prefix: "lucide",
+          width: 24,
+          height: 24,
+          icons: { "arrow-right": ICONS.icons["arrow-right"] },
+          aliases: {
+            back: ICONS.aliases.back,
+            "arrow-left": ICONS.aliases["arrow-left"],
+          },
+        },
+      ]);
+    });
+  });
+
+  it("tells which icons show as text", async () => {
+    writeFileSync(
+      join(root, "slides.md"),
+      "# Go :lucide:rocket:\n\n:lucide:rockt: and :mdi:home:\n",
+    );
+    installIcons();
+    const { logger, warnings } = recordWarnings();
+    server = await createServer({
+      ...config(),
+      customLogger: logger,
+      server: { port: 0, strictPort: false, ws: false },
+      optimizeDeps: { noDiscovery: true },
+    });
+    await server.listen();
+    expect(warnings).toEqual([
+      [
+        "slides.md:3: warning: The icon `:lucide:rockt:` shows as text: the `lucide` icons have no `rockt`. The names are at https://icon-sets.iconify.design/lucide/.",
+        "slides.md:3: warning: The icon `:mdi:home:` shows as text: the project doesn't have the `mdi` icons. Add them with `npm install @iconify-json/mdi`.",
+      ].join("\n"),
+    ]);
   });
 
   it("serves the page script", async () => {
@@ -237,6 +493,72 @@ describe("build", () => {
     );
   });
 
+  it("builds the files of a deck into one page", async () => {
+    writeChapters("# Why\n\n![Plan](images/plan.png)\n");
+    mkdirSync(join(root, "images"));
+    writeFileSync(join(root, "images", "plan.png"), "png");
+    const outDir = join(root, "dist");
+    await build({ ...config(), build: { outDir, emptyOutDir: true } });
+
+    expect(readFileSync(join(outDir, "index.html"), "utf8")).toContain(
+      "<title>Talk</title>",
+    );
+    const script = readdirSync(join(outDir, "assets"))
+      .filter((name) => /^index-.*\.js$/.test(name))
+      .map((name) => readFileSync(join(outDir, "assets", name), "utf8"))
+      .join("\n");
+    expect(script).toContain("# Why");
+    expect(script).toContain("# Thanks");
+    // A file that a chapter shows, at its path from the root.
+    expect(readFileSync(join(outDir, "images", "plan.png"), "utf8")).toBe(
+      "png",
+    );
+  });
+
+  it("builds Mermaid into the page when the project has it", async () => {
+    writeFileSync(join(root, "slides.md"), DIAGRAM);
+    installMermaid();
+    const { logger, warnings } = recordWarnings();
+    const outDir = join(root, "dist");
+    await build({
+      ...config(),
+      customLogger: logger,
+      build: { outDir, emptyOutDir: true },
+    });
+
+    expect(warnings).toEqual([]);
+    const scripts = readdirSync(join(outDir, "assets"))
+      .filter((name) => name.endsWith(".js"))
+      .map((name) => readFileSync(join(outDir, "assets", name), "utf8"));
+    expect(scripts.join("\n")).toContain("stand-in");
+    // In a file of its own, which the page loads at the first diagram.
+    expect(scripts.find((code) => code.includes("Flow"))).not.toContain(
+      "stand-in",
+    );
+  });
+
+  it("builds the deck's icons into the page", async () => {
+    writeFileSync(join(root, "slides.md"), "# Go :lucide:launch:\n");
+    installIcons();
+    const { logger, warnings } = recordWarnings();
+    const outDir = join(root, "dist");
+    await build({
+      ...config(),
+      customLogger: logger,
+      build: { outDir, emptyOutDir: true },
+    });
+
+    expect(warnings).toEqual([]);
+    const scripts = readdirSync(join(outDir, "assets"))
+      .filter((name) => name.endsWith(".js"))
+      .map((name) => readFileSync(join(outDir, "assets", name), "utf8"))
+      .join("\n");
+    expect(scripts).toContain("M4 20 20 4");
+    // Only the icons of the deck, not the set.
+    expect(scripts).not.toContain("M5 12h14");
+    expect(scripts).not.toContain("M1 1h1");
+  });
+
   it("prints the deck's problems and still builds", async () => {
     writeFileSync(join(root, "slides.md"), PROBLEMS);
     const { logger, warnings } = recordWarnings();
@@ -336,6 +658,110 @@ image: hills%20one.svg
     expect(readFileSync(join(outDir, "index.html"), "utf8")).toContain(
       "<title>Slides</title>",
     );
+  });
+});
+
+describe("findProblems", () => {
+  const lines = (source: string) =>
+    findProblems(parseDeck(source), source, { mermaid: false }).map(
+      (problem) => [problem.line, problem.slide],
+    );
+
+  it("finds each diagram, when the project has no Mermaid", () => {
+    const source = [
+      "# One",
+      "",
+      "```mermaid",
+      "pie",
+      "```",
+      "",
+      "---",
+      "",
+      "~~~ Mermaid {1}",
+      "pie",
+      "~~~",
+    ].join("\n");
+    expect(lines(source)).toEqual([
+      [3, 0],
+      [9, 1],
+    ]);
+    expect(findProblems(parseDeck(source), source)).toEqual([]);
+  });
+
+  it("skips a diagram that a code block shows the source of", () => {
+    const source = [
+      "``````md",
+      "```mermaid",
+      "pie",
+      "```",
+      "``````",
+      "",
+      "```mermaidjs",
+      "```",
+    ].join("\n");
+    expect(lines(source)).toEqual([]);
+  });
+});
+
+describe("pickIcons", () => {
+  const pick = (source: string) => {
+    installIcons();
+    return pickIcons(parseDeck(source), source, createIconSetLoader(root));
+  };
+
+  it("picks the icons of the slides and of the notes", () => {
+    const source = [
+      "# One :lucide:rocket:",
+      "",
+      "<!-- notes",
+      "Say :lucide:arrow-right:",
+      "-->",
+      "",
+      "---",
+      "",
+      "- :lucide:rocket: again",
+    ].join("\n");
+    const { sets, problems } = pick(source);
+    expect(problems).toEqual([]);
+    expect(sets).toHaveLength(1);
+    expect(Object.keys(sets[0]!.icons)).toEqual(["rocket", "arrow-right"]);
+  });
+
+  it("leaves icons in code where they are", () => {
+    const source = "`:lucide:rocket:`\n\n```\n:lucide:unused:\n```";
+    expect(pick(source)).toEqual({ sets: [], problems: [] });
+  });
+
+  it("picks an icon written as HTML", () => {
+    const { sets } = pick('<span data-icon="lucide:launch"></span>');
+    expect(sets[0]?.icons).toEqual({ rocket: ICONS.icons.rocket });
+    expect(sets[0]?.aliases).toEqual({ launch: ICONS.aliases.launch });
+  });
+
+  it("warns once for each icon of a slide, at its first line", () => {
+    const source = [
+      "# One",
+      "",
+      "A :lucide:nope: and a :lucide:nope:",
+      "",
+      "---",
+      "",
+      "# Two",
+      "",
+      ":lucide:nope:",
+      '<span data-icon="lucide:none"></span>',
+    ].join("\n");
+    expect(
+      pick(source).problems.map(({ line, slide, message }) => [
+        line,
+        slide,
+        message.slice(0, 29),
+      ]),
+    ).toEqual([
+      [3, 0, "The icon `:lucide:nope:` show"],
+      [9, 1, "The icon `:lucide:nope:` show"],
+      [10, 1, "The icon `:lucide:none:` show"],
+    ]);
   });
 });
 

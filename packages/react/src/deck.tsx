@@ -21,7 +21,9 @@ import {
   useDeckPosition,
   useLayouts,
 } from "./deck-state";
+import type { MermaidLoader } from "./diagram";
 import { useElementSize } from "./element-size";
+import type { IconSet } from "./icon-sets";
 import { Chevron, FullscreenIcon, GridIcon, PresenterIcon } from "./icons";
 import type { Layout } from "./layouts";
 import {
@@ -37,7 +39,9 @@ import {
 import { Overview } from "./overview";
 import { Presenter } from "./presenter";
 import { usePresenterWindow } from "./presenter-window";
+import { Resources } from "./resources";
 import { RenderedSlide } from "./slide";
+import { useSlideTransition } from "./transition";
 import { useHashSync } from "./url-hash";
 
 export interface DeckProps {
@@ -61,6 +65,17 @@ export interface DeckProps {
   layouts?: Readonly<Record<string, Layout>>;
   /** Components for `:::name` and `::name` directives, by name. */
   components?: DirectiveComponents;
+  /**
+   * Loads Mermaid, to draw `mermaid` code blocks as diagrams:
+   * `() => import("mermaid")`. Without it, they show as code.
+   */
+  mermaid?: MermaidLoader;
+  /**
+   * Icon sets for `:set:name:` icons, in the Iconify format: the
+   * `icons.json` of `@iconify-json/*` packages. Without its set, an icon
+   * shows as its source text.
+   */
+  icons?: readonly IconSet[];
   /**
    * Sanitising and remark/rehype plugins. Keep the object stable between
    * renders: a new object rebuilds the compiler.
@@ -113,6 +128,7 @@ export interface DeckHandle {
 }
 
 const NO_COMPONENTS: DirectiveComponents = {};
+const NO_ICONS: readonly IconSet[] = [];
 const PRESENTER_WINDOW_STYLE: CSSProperties = { height: "100dvh" };
 
 /**
@@ -127,6 +143,8 @@ export function Deck({
   hash = false,
   layouts,
   components = NO_COMPONENTS,
+  mermaid,
+  icons = NO_ICONS,
   compileOptions,
   colorScheme,
   keyboard = "focus",
@@ -166,6 +184,14 @@ export function Deck({
       )
     : null;
   const columns = overviewColumns(viewportSize?.width);
+
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const leaving = useSlideTransition(
+    canvasRef,
+    deck.slides,
+    current,
+    scale !== null && slideCount > 0,
+  );
 
   const latest = useRef({ current, slideCount, typed, selected, columns });
   useLayoutEffect(() => {
@@ -347,6 +373,8 @@ export function Deck({
   const allLayouts = useLayouts(layouts);
 
   const slide = deck.slides[current.slide];
+  // Gone when an edit removes it during its transition.
+  const leavingSlide = leaving ? deck.slides[leaving.slide] : undefined;
   const lastStep = slide ? getSteps(current.slide) : 0;
   const label = `Slide ${current.slide + 1} of ${slideCount}`;
   // Read out after each move. The title tells a screen reader user where
@@ -355,7 +383,7 @@ export function Deck({
   const overviewOpen = selected !== null;
 
   return (
-    <>
+    <Resources mermaid={mermaid} icons={icons}>
       <div
         ref={rootRef}
         data-deck=""
@@ -380,18 +408,47 @@ export function Deck({
           onPointerCancel={swipe ? onPointerCancel : undefined}
         >
           <div
+            ref={canvasRef}
             data-deck-canvas=""
             data-measured={scale === null ? undefined : ""}
             style={{ "--deck-scale": scale ?? 1 } as CSSProperties}
           >
+            {/* Keyed by slide, so the slide that leaves keeps its elements
+                and the state of its components until it is gone. */}
+            {leaving && leavingSlide ? (
+              <RenderedSlide
+                key={leaving.slide}
+                slide={leavingSlide}
+                entry={getSlide(leaving.slide)}
+                step={leaving.step}
+                layouts={allLayouts}
+                components={components}
+                label={`Slide ${leaving.slide + 1} of ${slideCount}`}
+                transition={{
+                  name: leaving.name,
+                  state: "leaving",
+                  backward: leaving.backward,
+                }}
+              />
+            ) : null}
             {slide ? (
               <RenderedSlide
+                key={current.slide}
                 slide={slide}
                 entry={getSlide(current.slide)}
                 step={current.step}
                 layouts={allLayouts}
                 components={components}
                 label={label}
+                transition={
+                  leaving
+                    ? {
+                        name: leaving.name,
+                        state: "entering",
+                        backward: leaving.backward,
+                      }
+                    : undefined
+                }
               />
             ) : null}
           </div>
@@ -497,6 +554,8 @@ export function Deck({
               onPositionChange={go}
               layouts={layouts}
               components={components}
+              mermaid={mermaid}
+              icons={icons}
               compileOptions={compileOptions}
               colorScheme={colorScheme}
               keyboard="global"
@@ -505,7 +564,7 @@ export function Deck({
             presenterWindow.popup.document.body,
           )
         : null}
-    </>
+    </Resources>
   );
 }
 

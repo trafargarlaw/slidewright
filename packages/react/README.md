@@ -28,7 +28,7 @@ deck's aspect ratio. Give it a height as well (through `className` or `style`)
 to fill a fixed box; the slide scales to fit and is letterboxed.
 
 Requires React 19. The package ships with `"use client"` and renders on the
-server; code is highlighted after hydration.
+server; code is highlighted and maths is drawn after hydration.
 
 ## Props
 
@@ -41,6 +41,8 @@ server; code is highlighted after hydration.
 | `hash`             | `false`   | Keeps the position in the URL hash. See [URL hash](#url-hash).                                                                      |
 | `layouts`          |           | Extra layouts by name. A built-in name replaces the built-in layout.                                                                |
 | `components`       |           | Components for `:::name` and `::name` directives, by name.                                                                          |
+| `mermaid`          |           | Loads Mermaid, to draw `mermaid` code blocks: `() => import("mermaid")`. See [Diagrams](#diagrams).                                 |
+| `icons`            |           | Icon sets for `:set:name:` icons, in the Iconify format. See [Icons](#icons).                                                       |
 | `compileOptions`   |           | Sanitising and remark/rehype plugins, passed to the compiler. Keep the object stable.                                               |
 | `colorScheme`      |           | `light`, `dark` or `auto`. Overrides the deck's headmatter.                                                                         |
 | `keyboard`         | `"focus"` | `"focus"`: keys work while the deck has focus. `"global"`: anywhere. `false`: off.                                                  |
@@ -183,17 +185,18 @@ import { PrintDeck } from "@slidewright/react";
 ```
 
 `steps` prints a page for every step instead, so each reveal gets its own
-page. It also takes the deck's `layouts`, `components`, `compileOptions`,
-`colorScheme`, `className` and `style`.
+page. It also takes the deck's `layouts`, `components`, `mermaid`, `icons`,
+`compileOptions`, `colorScheme`, `className` and `style`.
 
 On screen the pages stack with a gap and a shadow, as a preview. When
 printed, each page breaks onto a sheet of its own: the component sets the
 printed page size to the slide size, so give it its own page rather than
 mixing it with other printed content.
 
-Code highlighting loads after the first render. A code block has
-`aria-busy="true"` until its colours are ready, so a script that prints or
-captures the pages can wait for `[aria-busy="true"]` to be gone.
+Code highlighting and maths load after the first render. A code block has
+`aria-busy="true"` until its colours are ready, and maths until it is drawn,
+so a script that prints or captures the pages can wait for
+`[aria-busy="true"]` to be gone.
 
 ## Layouts
 
@@ -333,11 +336,183 @@ its id, classes and step. A registered component renders inside that `div`.
 Without one, the content goes straight in, so a directive can be styled with
 CSS alone. A component that throws only breaks its own slide.
 
+## Diagrams
+
+A `mermaid` code block is drawn as a diagram when the deck can load
+[Mermaid](https://mermaid.js.org). Mermaid is a large package, so
+`@slidewright/react` doesn't depend on it. Install it, and give the deck a
+function that loads it:
+
+```sh
+npm install mermaid
+```
+
+```tsx
+// Outside the component, or the deck gets a new function on every render.
+const loadMermaid = () => import("mermaid");
+
+<Deck markdown={markdown} mermaid={loadMermaid} />;
+```
+
+Mermaid loads in its own chunk with the first diagram that a deck shows.
+Without the `mermaid` prop, the block stays a code block. `Presenter` and
+`PrintDeck` take the same prop.
+
+A diagram is drawn in the colours and the font of the slide it is on: its
+`--deck-bg`, `--deck-fg`, `--deck-accent` and the other colour properties. It
+is drawn again when they change, such as with the colour scheme. The diagram's
+own config, in [frontmatter or a directive](https://mermaid.js.org/config/configuration.html)
+of its source, can set other `themeVariables`.
+
+A diagram is as large as Mermaid draws it, and no wider than the place it is
+in. At the top level of a slide and in the columns of `two-cols`, it shrinks
+when the slide has no more room. Set a size with CSS:
+
+```css
+[data-diagram] > svg {
+  max-height: 300px;
+}
+```
+
+The source shows until the diagram is drawn, and on the server. A source with
+a mistake stays, with Mermaid's message below it. Mermaid runs with
+`securityLevel: "strict"`: labels can't hold scripts, and diagrams have no
+click handlers.
+
+## Icons
+
+`:set:name:` in the text of a deck is an icon: `:lucide:rocket:` is the
+`rocket` of the set `lucide`. The deck draws the icons of the sets in its
+`icons` prop. The sets have the [Iconify](https://iconify.design) format, so
+the `icons.json` of any `@iconify-json/*` package works:
+
+```sh
+npm install @iconify-json/lucide
+```
+
+```tsx
+import lucide from "@iconify-json/lucide/icons.json";
+
+<Deck markdown={markdown} icons={[lucide]} />;
+```
+
+Find the sets and the names of their icons at
+[icon-sets.iconify.design](https://icon-sets.iconify.design). A set has
+thousands of icons. To keep it out of the page's first script, load it with
+`import()` and give it to the deck when it arrives: until then, and for an
+icon that no set has, the deck shows the source text. `Presenter` and
+`PrintDeck` take the same prop. With the Vite plugin or the CLI, the page
+gets only the icons that the deck uses. See
+[Icons](../vite/README.md#icons) in the plugin's README.
+
+Your own icons go in a set of the same shape. A `body` is the content of the
+icon's `<svg>`:
+
+```tsx
+const brand: IconSet = {
+  prefix: "brand",
+  width: 24,
+  height: 24,
+  icons: { logo: { body: '<path fill="currentColor" d="M3 3h18v18H3z"/>' } },
+};
+
+<Deck markdown=":brand:logo: Acme" icons={[lucide, brand]} />;
+```
+
+The deck puts a `body` in the page as it is, so use sets that you trust.
+
+An icon is an `<svg data-icon="set:name">`, as tall as the text around it
+and, when the set draws with `currentColor`, in its colour. Size and colour
+it through its element, or select it:
+
+```css
+[data-slide] h1 svg[data-icon] {
+  color: var(--deck-accent);
+}
+```
+
+Screen readers skip icons. To give one a name, write its element with a
+`title`: `<span data-icon="lucide:rocket" title="Launch"></span>`.
+
+## Transitions
+
+A slide with `transition:` in its frontmatter comes in with an animation.
+The theme has `fade`, `slide`, `slide-up` and `zoom`; the
+[syntax reference](../../docs/syntax.md#transitions) tells what each does.
+`<Deck>` plays them. `<Presenter>` and `<PrintDeck>` change slides at once.
+
+While the deck moves, the canvas holds two slides: the one that leaves,
+then the one that enters. Each has these attributes until the animations of
+both end:
+
+| Attribute                   | Value                                        |
+| --------------------------- | -------------------------------------------- |
+| `data-transition`           | The name, from the later of the slides       |
+| `data-transition-state`     | `entering` or `leaving`                      |
+| `data-transition-direction` | `forward`, or `backward` to an earlier slide |
+
+The slide that leaves stays as it was, at its step and with the state of
+its components. It is `inert` and hidden from screen readers.
+
+The theme properties `--deck-transition-duration` and
+`--deck-transition-easing` set the pace of every transition.
+
+### Your own transitions
+
+A name that the theme doesn't have does nothing until your CSS gives it an
+animation for each of the two slides:
+
+```md
+---
+transition: turn
+---
+```
+
+```css
+[data-slide][data-transition="turn"][data-transition-state="entering"] {
+  animation-name: turn-in;
+}
+
+[data-slide][data-transition="turn"][data-transition-state="leaving"] {
+  animation-name: turn-out;
+}
+
+@keyframes turn-in {
+  from {
+    opacity: 0;
+    rotate: calc(12deg * var(--deck-transition-direction));
+  }
+}
+
+@keyframes turn-out {
+  to {
+    opacity: 0;
+    rotate: calc(-12deg * var(--deck-transition-direction));
+  }
+}
+```
+
+- The theme gives both slides the duration, the easing and
+  `animation-fill-mode: both`. Set `animation-duration` to change the pace
+  of one transition.
+- `--deck-transition-direction` is `1` towards a later slide and `-1`
+  towards an earlier one, so one pair of animations can play both ways.
+- An animation for only one of the slides is enough: the other one waits.
+  The deck takes the slide that leaves away when no animation of the two
+  slides is left, so an animation that repeats for ever is not counted.
+- With reduced motion, the theme gives the animations no duration, so
+  slides change at once.
+
 ## Styling
 
 `styles.css` contains the deck chrome, the built-in layouts and the default
 theme, all inside the `slidewright` cascade layer. Any rule in your own CSS
 outside a layer wins over it.
+
+For maths, it imports KaTeX's stylesheet and fonts
+(`katex/dist/katex.min.css`) into the same layer. Your bundler resolves that
+import from `node_modules`; KaTeX itself loads with the first slide that has
+maths.
 
 That includes resets. A global `* { margin: 0; padding: 0 }` outside a layer
 strips the slide padding and spacing, so put resets in a layer declared before
@@ -374,6 +549,8 @@ Theme a deck with custom properties on `[data-deck]` or any parent:
 | `--deck-font-size`, `--deck-line-height`   | Base text size on the canvas              |
 | `--deck-padding`, `--deck-radius`          | Slide padding, corner radius              |
 | `--deck-step-duration`                     | Reveal animation (0 with reduced motion)  |
+| `--deck-transition-duration`               | Transition between slides (400ms)         |
+| `--deck-transition-easing`                 | Its timing function                       |
 | `--deck-dim-opacity`                       | Opacity of lines not highlighted in code  |
 | `--deck-notes-font-size`                   | Notes text in the presenter view          |
 | `--deck-code-token-*`                      | Syntax colours (`keyword`, `string`, …)   |
@@ -390,6 +567,7 @@ adds data attributes for everything else:
 | ----------------------- | -------------------------------------------- |
 | `[data-deck]`           | Root. `data-theme`, `data-color-scheme`      |
 | `[data-slide]`          | A slide. `data-layout`, plus `class:`        |
+| `[data-transition]`     | A slide in a [transition](#transitions)      |
 | `[data-part]`           | Layout regions (`content`, `image`, `left`…) |
 | `[data-slot]`           | Content placed in a layout slot              |
 | `[data-directive]`      | A directive, by name                         |
@@ -398,6 +576,9 @@ adds data attributes for everything else:
 | `[data-line-state]`     | Code line: `highlighted` or `dimmed`         |
 | `[data-line-diff]`      | Code line: `added` or `removed`              |
 | `[data-diff-marker]`    | The `+` or `-` before a diff line            |
+| `[data-math]`           | Maths: `inline` or `display`                 |
+| `[data-diagram]`        | Diagram figure. `aria-busy` until drawn      |
+| `svg[data-icon]`        | An icon, by `set:name`                       |
 | `[data-deck-controls]`  | The buttons and the slide counter            |
 | `[data-deck-progress]`  | Progress bar                                 |
 | `[data-deck-overview]`  | Overview grid                                |
@@ -431,3 +612,4 @@ look the same at any screen size.
 | `Layout`              | A layout component, with its optional `slots` list.                          |
 | `LayoutProps`         | The props that a layout gets: `slide`, `children` and `slots`.               |
 | `DirectiveComponents` | The `components` prop: components by directive name.                         |
+| `IconSet`             | A set of the `icons` prop: icons in the Iconify format. See [Icons](#icons). |

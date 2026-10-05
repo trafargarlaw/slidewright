@@ -35,9 +35,11 @@ Requires Vite 8.
 ### Problems in the deck
 
 The plugin prints problems in the deck as warnings, with the file and line:
-invalid frontmatter, unknown layouts, and highlight ranges that code blocks
-skip. It prints them when Vite starts and again when a saved change gives
-different problems. The deck still renders, and the build still succeeds.
+invalid frontmatter, unknown layouts, highlight ranges that code blocks
+skip, icons that the project doesn't have, and
+[files of the deck](#several-files) that are missing. It prints them when
+Vite starts and again when a saved change gives different problems. The deck
+still renders, and the build still succeeds.
 
 ```text
 slides.md:9: warning: Unknown layout "two-columns": the slide shows with the default layout. The layouts are default, center, …
@@ -47,10 +49,93 @@ slides.md:9: warning: Unknown layout "two-columns": the slide shows with the def
 
 | Option | Default     | Description                                                                                                 |
 | ------ | ----------- | ----------------------------------------------------------------------------------------------------------- |
-| `deck` | `slides.md` | The deck file, relative to the Vite root.                                                                   |
+| `deck` | `slides.md` | The deck file, relative to the Vite root. It can bring in [other files](#several-files).                    |
 | `css`  |             | One or more stylesheets loaded after the default theme, relative to the Vite root. See [Styling](#styling). |
 
 The type of the options is `SlidewrightOptions`.
+
+## Several files
+
+A deck can keep its chapters in files of their own. A slide with `src` in
+its frontmatter stands for the slides of that file:
+
+```md
+---
+src: chapters/why.md
+---
+```
+
+There is nothing to configure. The plugin joins the files into one deck, and
+a saved change to any of them shows in the open page, on the same slide and
+step. The rules are in the
+[deck syntax reference](../../docs/syntax.md#several-files).
+
+- The path of `src` is from the folder of the file that has it. A path that
+  starts with `/` is from the Vite root.
+- A problem in a chapter is printed with the chapter's file and line.
+- A file that doesn't exist is printed as an error, and its slides are left
+  out. The page gets them when the file is there.
+- The paths of images and other [files](#files) are from the Vite root in
+  every file of the deck, not from the folder of a chapter.
+
+```text
+slides.md:8: error: No file `chapters/intro.md`: its slides are left out. The path is from the folder of this file.
+chapters/why.md:12: warning: Unknown layout "two-columns": the slide shows with the default layout. The layouts are default, center, …
+```
+
+## Diagrams
+
+A `mermaid` code block is drawn as a diagram when the project has
+[Mermaid](https://mermaid.js.org):
+
+```sh
+npm install --save-dev mermaid
+```
+
+````md
+```mermaid
+flowchart LR
+  write[Write] --> rehearse[Rehearse] --> present[Present]
+```
+````
+
+There is nothing to configure. The page loads Mermaid with the first diagram
+that it shows, and the build puts Mermaid in files of their own. Diagrams
+take the colours and the font of their slide, and export waits for them.
+
+Without Mermaid, the block shows as code, and the plugin prints a warning
+with the line of each diagram. Restart Vite after you install Mermaid.
+
+How diagrams are sized and themed is in the
+[`@slidewright/react` README](../react/README.md#diagrams).
+
+## Icons
+
+`:set:name:` in the text of the deck is an icon from an
+[Iconify](https://icon-sets.iconify.design) set. Install the sets that the
+deck uses, each as `@iconify-json/<set>`:
+
+```sh
+npm install --save-dev @iconify-json/lucide
+```
+
+```md
+# :lucide:rocket: Launch day
+```
+
+There is nothing to configure. The plugin reads the deck and gives the page
+only the icons that it uses, not their sets, which have thousands. A set
+that you install while Vite runs is found the next time the deck changes.
+
+An icon whose set is not installed, or whose name the set doesn't have,
+shows as its source text, and the plugin prints a warning with its line:
+
+```text
+slides.md:3: warning: The icon `:lucide:rockt:` shows as text: the `lucide` icons have no `rockt`. The names are at https://icon-sets.iconify.design/lucide/.
+```
+
+How icons are sized, coloured and named for screen readers is in the
+[`@slidewright/react` README](../react/README.md#icons).
 
 ## Styling
 

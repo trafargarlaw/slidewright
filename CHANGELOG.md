@@ -3,6 +3,56 @@
 All the packages, `@slidewright/core`, `react`, `vite`, `cli` and `create`,
 have the same version. Each entry gives the packages that it changes.
 
+## Unreleased
+
+### Added
+
+- `react`, `vite`, `cli`: Maths renders. Inline `$…$`, display `$$…$$` and
+  `math` code fences are drawn with KaTeX, which loads with the first slide
+  that has maths. Before, a deck showed the LaTeX source as code.
+  `styles.css` now imports KaTeX's stylesheet, so a deck that added
+  `rehype-katex` through `compileOptions` can drop it.
+- `react`, `vite`, `cli`: Diagrams. A `mermaid` code block is drawn with
+  Mermaid, in the colours and the font of its slide. Mermaid is not a
+  dependency: with the CLI and the Vite plugin, install `mermaid` in the
+  project; in a React app, give `<Deck>`, `<Presenter>` and `<PrintDeck>`
+  the new `mermaid` prop, `() => import("mermaid")`. Without Mermaid, the
+  block shows as code, as before, and the plugin prints a warning.
+- `core`, `react`, `vite`, `cli`: Icons. `:set:name:` in text, such as
+  `:lucide:rocket:`, is an icon from an Iconify set, as tall as the text and
+  in its colour. The sets are not dependencies: with the CLI and the Vite
+  plugin, install `@iconify-json/<set>` in the project, and the page gets
+  only the icons that the deck uses; in a React app, give `<Deck>`,
+  `<Presenter>` and `<PrintDeck>` the new `icons` prop. Without its set, an
+  icon shows as its source text, and the plugin prints a warning.
+- `react`, `vite`, `cli`: Transitions between slides. `transition:` in the
+  frontmatter of a slide tells how it comes in: `fade`, `slide`, `slide-up`
+  or `zoom`. Towards an earlier slide, the transition plays the other way.
+  `defaults` in the headmatter gives a transition to every slide. Another
+  name is a transition of your own, with its animations in CSS. The new
+  theme properties `--deck-transition-duration` and
+  `--deck-transition-easing` set the pace. Without `transition`, slides
+  change at once, as before.
+- `core`, `vite`, `cli`: A deck can be several files. A slide with `src` in
+  its frontmatter, such as `src: chapters/why.md`, stands for the slides of
+  that file. Its other keys go to each of those slides, a chapter's own
+  `defaults` apply to its slides, and a file can bring in files of its own.
+  The CLI and the Vite plugin follow every file of the deck, and print a
+  problem with the file and the line that it is in. `core` has the new
+  `joinDeck`, which makes one source from the files and reads them through
+  a function that you give, so parsing still needs no file system.
+- A skill for AI agents, in `skills/slidewright`. It teaches an agent such
+  as Claude Code, Codex or Cursor to write and edit decks: the steps, the
+  format in brief, how much fits on a slide, and the reference docs. Add it
+  to a project with `npx skills add trafargarlaw/slidewright`. `create`: the
+  README of a new project tells how.
+
+### Changed
+
+- `core`: Text of the form `:set:name:` now compiles to
+  `<span data-icon="set:name">`, with the text inside. A deck that shows
+  such text as it is can put it in code.
+
 ## 0.1.4 - 2026-10-05
 
 ### Fixed

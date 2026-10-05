@@ -1,9 +1,12 @@
 import type { Element, ElementContent, Properties, Root } from "hast";
 import { toJsxRuntime, type Components } from "hast-util-to-jsx-runtime";
-import type { ReactNode } from "react";
+import { useContext, type ComponentProps, type ReactNode } from "react";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
-import { CodeBlock } from "./code-block";
+import { CodeBlock, textContent } from "./code-block";
+import { Diagram, MermaidContext, isDiagram } from "./diagram";
 import { DIRECTIVE_TAG, Directive } from "./directive";
+import { ICON_TAG, Icon } from "./icon-sets";
+import { Maths, isMaths } from "./maths";
 
 export interface SlideContent {
   /** Content outside the layout's slots. */
@@ -11,9 +14,43 @@ export interface SlideContent {
   slots: Partial<Record<string, ReactNode>>;
 }
 
+type ElementProps<Tag extends "pre" | "code"> = ComponentProps<Tag> & {
+  node?: Element;
+};
+
+const fenceContent = (code: Element) => textContent(code).replace(/\n$/, "");
+
+/**
+ * A fenced code block, display maths (`$$…$$` or a `math` fence), or a
+ * diagram (a `mermaid` fence, when the deck has Mermaid).
+ */
+function Pre({ node, children, ...rest }: ElementProps<"pre">) {
+  const mermaid = useContext(MermaidContext);
+
+  const maths = node?.children.find(isMaths);
+  if (maths) return <Maths display source={fenceContent(maths)} {...rest} />;
+  const diagram = mermaid ? node?.children.find(isDiagram) : undefined;
+  if (mermaid && diagram) {
+    return <Diagram source={fenceContent(diagram)} load={mermaid} {...rest} />;
+  }
+  return (
+    <CodeBlock node={node} {...rest}>
+      {children}
+    </CodeBlock>
+  );
+}
+
+/** Inline code, or inline maths (`$…$`). */
+function Code({ node, children, ...rest }: ElementProps<"code">) {
+  if (!node || !isMaths(node)) return <code {...rest}>{children}</code>;
+  return <Maths source={textContent(node)} {...rest} />;
+}
+
 const COMPONENTS = {
-  pre: CodeBlock,
+  pre: Pre,
+  code: Code,
   [DIRECTIVE_TAG]: Directive,
+  [ICON_TAG]: Icon,
 } as Partial<Components>;
 
 /**
@@ -86,7 +123,8 @@ function toReact(root: Root, step: number): ReactNode {
 
 /**
  * Marks elements with their reveal state (`data-step-state`) and renames
- * directives so they render through `Directive`. Unchanged subtrees are
+ * directives and icons so they render through `Directive` and `Icon`.
+ * Unchanged subtrees are
  * reused rather than copied.
  */
 function prepareChildren<T extends ElementContent | Root["children"][number]>(
@@ -115,7 +153,9 @@ function prepareElement(element: Element, step: number): Element {
   const tagName =
     typeof properties.dataDirective === "string"
       ? DIRECTIVE_TAG
-      : element.tagName;
+      : element.tagName === "span" && typeof properties.dataIcon === "string"
+        ? ICON_TAG
+        : element.tagName;
   const children = prepareChildren(element.children, step);
 
   if (

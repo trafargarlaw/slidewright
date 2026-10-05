@@ -58,11 +58,17 @@ welcome.
 
 ### 2 — Components and polish (v0.2)
 
-- [ ] Components in Markdown through a registry (directive syntax)
-- [ ] MDX support through the Vite plugin, if it fits cleanly
-- [ ] Transitions, diagrams (Mermaid), maths (KaTeX), icons
-- [ ] Multi-file decks
-- [ ] Agent skills describing the deck format
+- [x] Components in Markdown through a registry (directive syntax): in a
+      React app, with the `components` prop of `<Deck>`. Not planned for
+      decks of the CLI and the Vite plugin.
+- ~~MDX support through the Vite plugin, if it fits cleanly~~ Not planned:
+  it doesn't fit. See [ADR 0001](adr/0001-decks-are-markdown-not-mdx.md).
+- [x] Maths (KaTeX)
+- [x] Diagrams (Mermaid)
+- [x] Icons (Iconify sets)
+- [x] Transitions
+- [x] Multi-file decks
+- [x] Agent skills describing the deck format
 
 ### 3 — Editor (v0.3)
 

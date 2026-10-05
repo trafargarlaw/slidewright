@@ -1,7 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseDeck } from "@slidewright/core";
+import { joinDeck, parseDeck, type JoinedDeck } from "@slidewright/core";
 import {
   normalizePath,
   searchForWorkspaceRoot,
@@ -9,11 +10,16 @@ import {
   type Plugin,
 } from "vite";
 import { findDeckFiles } from "./files";
+import { createIconSetLoader, pickIcons, type DeckIcons } from "./icons";
 import { filePattern } from "./pattern";
 import { findProblems, formatProblem } from "./problems";
 
 export interface SlidewrightOptions {
-  /** The deck file, relative to the Vite root. Default `slides.md`. */
+  /**
+   * The deck file, relative to the Vite root. Default `slides.md`. Its
+   * slides with `src` in their frontmatter bring in the slides of other
+   * files.
+   */
   deck?: string;
   /**
    * Stylesheets loaded after the default theme, relative to the Vite root.
@@ -50,6 +56,20 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
   let root = "";
   let deckFile = "";
   let cssFiles: string[] = [];
+  // The project has Mermaid, so the page draws the deck's diagrams.
+  let mermaid = false;
+  // The icons of the deck as it was last read, from the project's icon sets.
+  let loadIconSet = createIconSetLoader(root);
+  let picked: { source: string; icons: DeckIcons } | undefined;
+  const pickDeckIcons = (source: string) => {
+    if (picked?.source !== source) {
+      picked = {
+        source,
+        icons: pickIcons(parseDeck(source), source, loadIconSet),
+      };
+    }
+    return picked.icons;
+  };
   // Both with `/` separators, as Vite gives ids to the hooks on Windows too.
   let pageFile = "";
   // The build input. Vite resolves symbolic links in the root, so this can
@@ -58,13 +78,47 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
   let logger: Logger | undefined;
   // The problems last printed, so saving without fixing them stays quiet.
   let reported = "";
+  // The files that the deck was last read from: the deck file and the files
+  // that its slides bring in with `src`, those that don't exist too.
+  let deckFiles = new Set<string>();
+
+  // The deck as one source, from all of its files.
+  const readDeck = (): JoinedDeck => {
+    const deck = joinDeck(deckFile, {
+      read(file) {
+        try {
+          return readFileSync(file, "utf8");
+        } catch {
+          return undefined;
+        }
+      },
+      // From the folder of the file with the `src`. A path that starts with
+      // `/` is from the root, as in the URLs of the dev server.
+      resolve: (src, from) =>
+        src.startsWith("/")
+          ? resolve(root, `.${src}`)
+          : resolve(dirname(from), src),
+    });
+    deckFiles = new Set(deck.files);
+    return deck;
+  };
 
   // Prints the deck's problems with their file and line. The deck still
   // renders: problems never stop the server or the build.
   const report = () => {
-    const source = readFileSync(deckFile, "utf8");
-    const text = findProblems(parseDeck(source), source)
-      .map((problem) => formatProblem(deckFile, problem))
+    const deck = readDeck();
+    const { source } = deck;
+    const text = [
+      // What is wrong with the files comes before what is wrong in them.
+      ...deck.diagnostics,
+      ...[
+        ...findProblems(parseDeck(source), source, { mermaid }),
+        ...pickDeckIcons(source).problems,
+      ]
+        .sort((a, b) => a.line - b.line)
+        .map((problem) => ({ ...problem, ...deck.locate(problem.line) })),
+    ]
+      .map((problem) => formatProblem(problem.file, problem))
       .join("\n");
     if (text === reported) return;
     reported = text;
@@ -72,7 +126,7 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
   };
 
   const page = () => {
-    const title = parseDeck(readFileSync(deckFile, "utf8")).config.title;
+    const title = parseDeck(readDeck().source).config.title;
     return pageHtml(title ?? "Slides");
   };
 
@@ -82,6 +136,7 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
     config(config) {
       const root = resolve(config.root ?? process.cwd());
       inputFile = normalizePath(resolve(root, "index.html"));
+      mermaid = hasPackage("mermaid", root);
       return {
         // Relative asset URLs, so the built site works from any folder. The
         // deck moves between slides in the URL hash, with no server routes.
@@ -104,7 +159,12 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
         // Entries are glob patterns: as a path, the app matches no file on
         // Windows, or in a folder such as `talk [draft]`. Then nothing is
         // pre-bundled, and the browser can't load CommonJS dependencies.
-        optimizeDeps: { entries: [filePattern(APP_FILE)] },
+        optimizeDeps: {
+          entries: [filePattern(APP_FILE)],
+          // The page asks for Mermaid at the first diagram. Known from the
+          // start, it doesn't make the page load again then.
+          include: mermaid ? ["mermaid"] : [],
+        },
         server: {
           fs: {
             // The page's script and its dependencies can live outside the
@@ -120,6 +180,7 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
       deckFile = resolve(root, options.deck ?? "slides.md");
       cssFiles = [options.css ?? []].flat().map((file) => resolve(root, file));
       pageFile = normalizePath(resolve(root, "index.html"));
+      loadIconSet = createIconSetLoader(root);
       logger = config.logger;
     },
 
@@ -129,13 +190,13 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
     },
 
     watchChange(id) {
-      if (resolve(id) === deckFile && existsSync(deckFile)) report();
+      if (deckFiles.has(resolve(id)) && existsSync(deckFile)) report();
     },
 
     // The deck renders in the browser, so the bundle doesn't see the files it
     // shows. Copy them, at the paths that the dev server serves them at.
     generateBundle() {
-      const deck = parseDeck(readFileSync(deckFile, "utf8"));
+      const deck = parseDeck(readDeck().source);
       for (const fileName of findDeckFiles(deck, root)) {
         this.emitFile({
           type: "asset",
@@ -156,10 +217,27 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
     load(id) {
       if (normalizePath(id) === pageFile) return page();
       if (id !== RESOLVED_DECK_ID) return undefined;
+      const { source, files } = readDeck();
+      // The module is made again when one of the deck's files changes.
+      for (const file of files) this.addWatchFile(file);
+      const { sets } = pickDeckIcons(source);
       return [
         ...cssFiles.map((file) => `import ${JSON.stringify(file)};`),
-        `export { default as markdown } from ${JSON.stringify(`${deckFile}?raw`)};`,
+        `export const markdown = ${JSON.stringify(source)};`,
+        mermaid
+          ? 'export const mermaid = () => import("mermaid");'
+          : "export const mermaid = undefined;",
+        `export const icons = ${JSON.stringify(sets)};`,
       ].join("\n");
+    },
+
+    // The deck module has the deck's Markdown and icons, so it is made
+    // again when a file of the deck changes, or when one that was missing
+    // is there.
+    hotUpdate({ file, modules }) {
+      if (!deckFiles.has(resolve(file))) return undefined;
+      const deck = this.environment.moduleGraph.getModuleById(RESOLVED_DECK_ID);
+      return deck ? [...modules, deck] : undefined;
     },
 
     configureServer(server) {
@@ -209,6 +287,16 @@ function escapeHtml(text: string): string {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+/** Whether a package is installed for the project at `root`. */
+function hasPackage(name: string, root: string): boolean {
+  try {
+    createRequire(resolve(root, "index.html")).resolve(name);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**

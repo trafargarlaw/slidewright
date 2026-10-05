@@ -18,6 +18,7 @@
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "smoke-test": "bun scripts/smoke-test.ts",
+    "skills": "bun scripts/sync-skills.ts",
     "release": "bun scripts/publish.ts"
   },
   "devDependencies": {

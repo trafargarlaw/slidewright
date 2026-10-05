@@ -31,6 +31,41 @@ A compiler takes a slide from `parseDeck` or a slide's Markdown as a string.
 `steps`. For a one-off, `compileSlide(slide)` compiles with the default
 options.
 
+### Decks in several files
+
+`parseDeck` takes one source and never reads a file. For a deck whose slides
+[name other files with `src`](../../docs/syntax.md#several-files), `joinDeck`
+makes that source. You give it the way to read a file:
+
+```ts
+import { readFileSync } from "node:fs";
+import { joinDeck, parseDeck } from "@slidewright/core";
+
+const joined = joinDeck("talk/slides.md", {
+  read(file) {
+    try {
+      return readFileSync(file, "utf8");
+    } catch {
+      return undefined; // no such file
+    }
+  },
+});
+
+const deck = parseDeck(joined.source);
+// joined.files        → every file that the deck asks for, to watch them
+// joined.diagnostics  → files that are missing or that include themselves
+// joined.locate(line) → the file and the line that a line of `source` is from
+```
+
+`read` gets the deck file as you named it, and other files as paths from the
+folder of the file that names them, with `/` between their parts. Give
+`resolve(src, from)` too when paths work another way, such as on Windows or
+in an editor that keeps files in memory.
+
+The lines of `deck.diagnostics` and of each `slide.range` are lines of
+`joined.source`. `joined.locate` turns them into a file and a line.
+`joinDeck` never throws, and a deck without `src` comes back as it is.
+
 ### Compiler options
 
 ```ts
@@ -91,6 +126,10 @@ per step, for a presenter view. See
 | `Slide`          | A slide: `index`, `layout`, `frontmatter`, `title`, `content`, `notes` and `range`.        |
 | `Diagnostic`     | A problem in the deck: `severity`, `message`, `line` and, when there is one, `slide`.      |
 | `LineRange`      | The 1-based `start` and `end` lines of a part of the deck source, both included.           |
+| `DeckFiles`      | How `joinDeck` gets at files: `read` and, when paths need it, `resolve`.                   |
+| `JoinedDeck`     | What `joinDeck` returns: `source`, `files`, `locate` and `diagnostics`.                    |
+| `FileLine`       | A `file` and a 1-based `line` in it: what `locate` returns.                                |
+| `FileDiagnostic` | A `Diagnostic` with the `file` that its `line` is in.                                      |
 | `ColorScheme`    | `"light"`, `"dark"` or `"auto"`.                                                           |
 | `CompileOptions` | The options of `createCompiler`. See [Compiler options](#compiler-options).                |
 | `SlideCompiler`  | What `createCompiler` returns: a function from a `Slide` or Markdown to a `CompiledSlide`. |

@@ -1,7 +1,7 @@
 # Deck syntax
 
-A deck is one Markdown file. This page is the reference for everything the
-parser understands on top of
+A deck is one Markdown file, or [several](#several-files). This page is the
+reference for everything the parser understands on top of
 [GitHub Flavored Markdown](https://github.github.com/gfm/).
 
 Design goals:
@@ -57,9 +57,11 @@ YAML is reported as a diagnostic and the slide renders without settings.
 | `title`  | string | Slide title for navigation. Defaults to the first heading. |
 | `steps`  | number | Overrides the number of steps counted on the slide.        |
 
-Other keys are passed to the layout and renderer (for example `class` or
-`image`). Their meaning is defined by the renderer: the README of
-`@slidewright/react` lists its layouts and the keys they read.
+Other keys are passed to the layout and renderer (for example `class`,
+`image` or [`transition`](#transitions)). Their meaning is defined by the
+renderer: the
+[README of `@slidewright/react`](../packages/react/README.md#layouts) lists
+its layouts and the keys they read.
 
 ## Headmatter
 
@@ -90,6 +92,59 @@ layout: cover
 
 Slide keys in the headmatter (such as `layout` above) also apply to the first
 slide. Unknown keys are kept for renderers and plugins.
+
+## Several files
+
+A long deck can keep its chapters in files of their own. A slide whose
+frontmatter has `src` stands for the slides of that file:
+
+```md
+---
+title: Shipping faster
+---
+
+# Shipping faster
+
+---
+src: chapters/why.md
+---
+
+---
+src: chapters/how.md
+class: how
+---
+
+---
+
+# Thank you
+```
+
+- The path is from the folder of the file that has the `src`. A path that
+  starts with `/` is from the root of the project: with the command line,
+  the folder of the deck.
+- The other keys next to `src`, here `class`, go to each slide of the file,
+  unless the slide sets them itself.
+- A slide with `src` has no content of its own: content after its
+  frontmatter is reported, and not shown.
+- A file can have slides with `src` too, so a chapter can bring in a part
+  that other chapters share. A file can't include itself.
+- A file can be in the deck more than once.
+
+A chapter is a deck too, and can be presented alone. Its headmatter can
+have `defaults`, which apply to its slides wherever they are shown. The
+other deck settings (`theme`, `colorScheme`, `aspectRatio` and
+`canvasWidth`) are those of the deck file: in a chapter they count only
+when it is presented alone. The `title` of a chapter's headmatter is the
+title of its first slide.
+
+A file that doesn't exist is reported with the line of its `src`, and the
+rest of the deck still renders.
+
+The [command line](../packages/cli/README.md) and the
+[Vite plugin](../packages/vite/README.md#several-files) read `src`. Parsing
+stays free of the file system: `parseDeck` takes one source, and `joinDeck`
+from [`@slidewright/core`](../packages/core/README.md#decks-in-several-files)
+makes that source from the files.
 
 ## Speaker notes
 
@@ -196,6 +251,47 @@ const c = a + b;
 - A single stage (`{2,4}`) is a static highlight and takes no steps.
 - `@N` pins a stage to step `N`: `{1@2|3@4}`.
 
+## Transitions
+
+`transition` in the frontmatter of a slide tells how the slide comes in:
+
+```md
+---
+transition: slide
+---
+
+# Next, the numbers
+```
+
+| Name       | The slide comes in                             |
+| ---------- | ---------------------------------------------- |
+| `none`     | At once. This is the default.                  |
+| `fade`     | Fading in, while the slide before fades out.   |
+| `slide`    | From the right, pushing the slide before away. |
+| `slide-up` | From the bottom, pushing the slide before up.  |
+| `zoom`     | Growing and fading in.                         |
+
+- Towards an earlier slide, the transition plays the other way: a slide that
+  came in from the right leaves to the right.
+- A jump between two slides plays the transition of the later one.
+- To give every slide a transition, put it in the headmatter's `defaults`.
+  A slide with its own `transition`, such as `none`, keeps it.
+
+```md
+---
+defaults:
+  transition: fade
+---
+```
+
+Transitions play in the deck that the audience sees, not in the presenter
+view, in print or in an export. When the system asks for reduced motion,
+slides change at once.
+
+Renderers can have more names. With `@slidewright/react`, a name that the
+theme doesn't have is a transition of your own, written in CSS. See
+[Transitions](../packages/react/README.md#transitions).
+
 ## Code blocks
 
 Other options go after the language, in any order:
@@ -272,6 +368,13 @@ New checkout flow
 Inline directives (`:name`) are **not** part of the syntax, so text like
 `Note:this` or `10:30` stays as written.
 
+A deck is Markdown, not MDX: it has no `import` lines, no JSX and no
+`{expressions}`, so braces and `<` in text stay as written. A component is
+a React component that a React app gives to `<Deck>`, in its
+[`components` prop](../packages/react/README.md#components). With the CLI
+and the Vite plugin, a directive is a slot or a `div` to style. The reasons
+are in [ADR 0001](adr/0001-decks-are-markdown-not-mdx.md).
+
 ## HTML
 
 Inline and block HTML work as in GitHub Flavored Markdown, and any element can
@@ -290,5 +393,77 @@ select `#user-content-intro`.
 
 ## Maths
 
-Inline maths uses `$…$` and display maths uses `$$…$$` (LaTeX syntax). For
-now the renderer shows the LaTeX source; rendering with KaTeX is planned.
+Inline maths uses `$…$`, and display maths uses `$$…$$` on lines of its own
+(LaTeX syntax):
+
+```md
+Einstein: $E = mc^2$
+
+$$
+\int_0^1 x^2 \, dx = \frac{1}{3}
+$$
+```
+
+A fenced code block with the language `math` is display maths too, as on
+GitHub.
+
+Two `$` on one line make maths of the text between them, so write `\$` for
+money: `from \$5 to \$10`. One `$` alone stays as written.
+
+Renderers draw maths with [KaTeX](https://katex.org/docs/supported), so the
+LaTeX that KaTeX supports is what a deck can use. LaTeX with a mistake shows
+as its source, in red.
+
+## Icons
+
+`:set:name:` in text is an icon. The set and the name are those of
+[Iconify](https://icon-sets.iconify.design), which has more than 200 open
+icon sets:
+
+```md
+# :lucide:rocket: Launch day
+
+- :lucide:circle-check: Tests pass
+- :logos:github-icon: The code is public
+```
+
+- The set and the name are lower-case letters, digits and `-`, and the set
+  starts with a letter. So a time such as `10:30:45:` is not an icon.
+- An icon stands apart from the letters and digits next to it: `a:b:c:d` has
+  no icon. Icons can follow each other: `:lucide:star::lucide:star:`.
+- Icons work in headings, lists, tables, links and the text of HTML, and
+  take steps like other content. In code and maths, the text stays as
+  written: `` `:lucide:rocket:` `` shows the source.
+
+An icon is as tall as the text around it. Most sets draw in the colour of
+the text; some, such as `logos`, have colours of their own. To change the
+size or the colour, style the element around the icon:
+
+```md
+<span style="color: crimson; font-size: 2em">:lucide:heart:</span>
+```
+
+The sets are separate packages. With the CLI and the Vite plugin, install
+the ones that the deck uses (`npm install @iconify-json/lucide`); in a React
+app, give `<Deck>` its `icons` prop. An icon that the renderer doesn't have
+shows as its source text. See [Icons](../packages/vite/README.md#icons).
+
+## Diagrams
+
+A fenced code block with the language `mermaid` is a diagram, written in
+[Mermaid](https://mermaid.js.org/intro/syntax-reference.html) syntax:
+
+````md
+```mermaid
+flowchart LR
+  write[Write] --> rehearse[Rehearse] --> present[Present]
+```
+````
+
+Renderers draw the diagram in the colours and the font of its slide. A
+diagram takes steps and goes in layout slots like any other block.
+
+Mermaid is a separate package. With the CLI and the Vite plugin, install it
+in the project (`npm install mermaid`); in a React app, give `<Deck>` its
+`mermaid` prop. Without Mermaid, the block shows as code. See
+[Diagrams](../packages/vite/README.md#diagrams).

@@ -1,5 +1,4 @@
 import type { CompileOptions } from "@slidewright/core";
-import rehypeKatex from "rehype-katex";
 import { rehypePastedImages } from "./image-registry";
 
 /**
@@ -7,5 +6,8 @@ import { rehypePastedImages } from "./image-registry";
  * compiler: a new object would rebuild it.
  */
 export const compileOptions: CompileOptions = {
-  rehypePlugins: [rehypeKatex, rehypePastedImages],
+  rehypePlugins: [rehypePastedImages],
 };
+
+/** Loads Mermaid when the deck has its first diagram. */
+export const loadMermaid = () => import("mermaid");

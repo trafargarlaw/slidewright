@@ -31,6 +31,20 @@ npm run dev
 
 Requires Node.js 20.19, or 22.12 and later.
 
+## With an AI agent
+
+The packages have no AI in them. Instead, a skill teaches the deck format to
+an agent such as Claude Code, Codex or Cursor, so that it can write and edit
+decks:
+
+```sh
+npx skills add trafargarlaw/slidewright
+```
+
+The skill is the [`skills/slidewright`](skills/slidewright) folder: the steps
+to make a deck, the format in brief, how much fits on a slide, and the
+reference docs.
+
 ## Repository layout
 
 | Path              | What it is                                  |
@@ -44,6 +58,7 @@ Requires Node.js 20.19, or 22.12 and later.
 | `apps/docs`       | Documentation site                          |
 | `examples/`       | [Example decks](examples) and a React app   |
 | `docs/`           | [Syntax reference](docs/syntax.md), roadmap |
+| `skills/`         | The deck format as a skill for AI agents    |
 
 ## Development
 
