@@ -10,7 +10,7 @@ import {
 } from "node:fs";
 import { dirname, join, posix } from "node:path";
 
-export const REPOSITORY = "https://github.com/trafargarlaw/react-slides";
+export const REPOSITORY = "https://github.com/trafargarlaw/slidewright";
 
 /** Repository files shown as pages, by route under /docs. */
 export const PAGES: Readonly<Record<string, string>> = {
