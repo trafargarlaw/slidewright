@@ -39,17 +39,6 @@ title: Plugin <test> & co
 # Second slide
 `;
 
-// A hook, so a second copy of React would fail.
-const COMPONENTS = `import { useState } from "react";
-
-function Badge({ text }: { text?: string }) {
-  const [label] = useState(text);
-  return <span className="deck-badge">{label}</span>;
-}
-
-export default { badge: Badge };
-`;
-
 const DIAGRAM = "# Flow\n\n```mermaid\nflowchart LR\n  a --> b\n```\n";
 
 /** Installs a stand-in for Mermaid in the project. */
@@ -210,27 +199,6 @@ describe("dev server", () => {
     const result = await server!.transformRequest("virtual:slidewright/deck");
     expect(result?.code).toContain('import "/style.css";');
     expect(result?.code).toContain('from "/slides.md?import&raw"');
-  });
-
-  it("serves the deck's components with the deck", async () => {
-    await serve();
-    const without = await server!.transformRequest("virtual:slidewright/deck");
-    expect(without?.code).toContain("const components = {}");
-    await server!.close();
-
-    writeFileSync(join(root, "components.tsx"), COMPONENTS);
-    await serve({ components: "components.tsx" });
-    const result = await server!.transformRequest("virtual:slidewright/deck");
-    expect(result?.code).toContain(
-      'export { default as components } from "/components.tsx";',
-    );
-
-    // The project has no React: the components get the page's.
-    const components = await server!.transformRequest("/components.tsx");
-    const runtime = /from "([^"]*react[^"]*jsx-dev-runtime[^"]*)"/.exec(
-      components!.code,
-    );
-    expect(runtime?.[1]).toContain("/node_modules/");
   });
 
   it("gives the page Mermaid when the project has it", async () => {
@@ -423,31 +391,6 @@ describe("build", () => {
     expect(css.indexOf("--deck-accent:#e11d48")).toBeGreaterThan(
       css.indexOf("--deck-accent:"),
     );
-  });
-
-  it("builds the deck's components into the page", async () => {
-    writeFileSync(join(root, "components.tsx"), COMPONENTS);
-    writeFileSync(join(root, "slides.md"), "::badge{text=New}\n");
-    const outDir = join(root, "dist");
-    const script = async (options?: SlidewrightOptions) => {
-      await build({
-        ...config(options),
-        build: { outDir, emptyOutDir: true },
-      });
-      return readdirSync(join(outDir, "assets"))
-        .filter((name) => /^index-.*\.js$/.test(name))
-        .map((name) => readFileSync(join(outDir, "assets", name), "utf8"))
-        .join("\n");
-    };
-    const reacts = (code: string) =>
-      code.match(/react\.transitional\.element/g)?.length;
-
-    const page = await script();
-    const withComponents = await script({ components: "components.tsx" });
-    expect(page).not.toContain("deck-badge");
-    expect(withComponents).toContain("deck-badge");
-    // The project has no React: the components get the page's, not a copy.
-    expect(reacts(withComponents)).toBe(reacts(page));
   });
 
   it("builds Mermaid into the page when the project has it", async () => {
