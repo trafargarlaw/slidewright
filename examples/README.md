@@ -22,6 +22,9 @@ bun install
 bun run build
 ```
 
+`bun install` also downloads Chromium, which `export` needs: this workspace
+has `playwright-chromium`.
+
 Then, in this folder:
 
 ```sh

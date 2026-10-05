@@ -18,7 +18,6 @@ import {
   type InlineConfig,
   type ViteDevServer,
 } from "vite";
-import { chromium } from "playwright-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CliError,
@@ -37,6 +36,11 @@ const CONFIG: InlineConfig = {
   logLevel: "silent",
   resolve: { conditions: ["@slidewright/source", ...defaultClientConditions] },
 };
+
+// The Playwright that the CLI loads for a deck without one of its own. The
+// workspace can have another package than the `playwright-core` of the CLI,
+// and with it another browser and another command to download it.
+const { chromium, install } = loadChromium([import.meta.url]);
 
 describe("parse", () => {
   it("presents slides.md by default", () => {
@@ -261,7 +265,7 @@ describe("commands", () => {
     );
     expect(await main(["export", "talk"])).toBe(1);
     expect(output("error")).toBe(
-      "Export needs Chromium, which Playwright hasn't downloaded. Download it with:\n  npx playwright-core install chromium",
+      `Export needs Chromium, which Playwright hasn't downloaded. Download it with:\n  ${install}`,
     );
   });
 });
@@ -287,6 +291,35 @@ describe("pageFiles", () => {
 
 describe("loadChromium", () => {
   const nowhere = join(tmpdir(), "slidewright-no-playwright", "package.json");
+  let root = "";
+
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), "slidewright-playwright-"));
+  });
+
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  /**
+   * A project with stand-ins for Playwright packages, whose browser has the
+   * name of its package. Returns the base to load from.
+   */
+  function project(name: string, ...packages: string[]): string {
+    for (const id of packages) {
+      const folder = join(root, name, "node_modules", id);
+      mkdirSync(folder, { recursive: true });
+      writeFileSync(
+        join(folder, "package.json"),
+        JSON.stringify({ name: id, version: "0.0.0", main: "index.js" }),
+      );
+      writeFileSync(
+        join(folder, "index.js"),
+        `exports.chromium = { name: () => ${JSON.stringify(id)} };\n`,
+      );
+    }
+    return join(root, name, "package.json");
+  }
 
   it("explains how to install Playwright when it is missing", () => {
     expect(() => loadChromium([nowhere])).toThrow(CliError);
@@ -296,9 +329,32 @@ describe("loadChromium", () => {
   });
 
   it("loads Chromium from the first base that has Playwright", () => {
-    const { chromium, install } = loadChromium([nowhere, import.meta.url]);
-    expect(chromium.name()).toBe("chromium");
-    expect(install).toBe("npx playwright-core install chromium");
+    const { chromium } = loadChromium([
+      nowhere,
+      project("deck", "playwright-core"),
+      project("cli", "playwright"),
+    ]);
+    expect(chromium.name()).toBe("playwright-core");
+  });
+
+  it("takes playwright-chromium first, then playwright", () => {
+    const all = ["playwright-core", "playwright", "playwright-chromium"];
+    expect(loadChromium([project("all", ...all)]).chromium.name()).toBe(
+      "playwright-chromium",
+    );
+    expect(
+      loadChromium([
+        project("two", "playwright-core", "playwright"),
+      ]).chromium.name(),
+    ).toBe("playwright");
+  });
+
+  it.each([
+    ["playwright-chromium", "npx playwright install chromium"],
+    ["playwright", "npx playwright install chromium"],
+    ["playwright-core", "npx playwright-core install chromium"],
+  ])("gives the command that downloads the browser of %s", (id, command) => {
+    expect(loadChromium([project("deck", id)]).install).toBe(command);
   });
 });
 
@@ -324,7 +380,7 @@ describe("stillLoading", () => {
   });
 });
 
-// Needs a Chromium download: `npx playwright-core install chromium`.
+// Needs the Chromium download of that Playwright.
 describe.skipIf(!existsSync(chromium.executablePath()))("export", () => {
   let root = "";
   let cwd = "";
