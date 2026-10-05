@@ -3,7 +3,7 @@
 All the packages, `@slidewright/core`, `react`, `vite`, `cli` and `create`,
 have the same version. Each entry gives the packages that it changes.
 
-## Unreleased
+## 0.1.3 - 2026-10-05
 
 ### Fixed
 
