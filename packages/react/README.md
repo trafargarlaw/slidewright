@@ -42,6 +42,7 @@ server; code is highlighted and maths is drawn after hydration.
 | `layouts`          |           | Extra layouts by name. A built-in name replaces the built-in layout.                                                                |
 | `components`       |           | Components for `:::name` and `::name` directives, by name.                                                                          |
 | `mermaid`          |           | Loads Mermaid, to draw `mermaid` code blocks: `() => import("mermaid")`. See [Diagrams](#diagrams).                                 |
+| `icons`            |           | Icon sets for `:set:name:` icons, in the Iconify format. See [Icons](#icons).                                                       |
 | `compileOptions`   |           | Sanitising and remark/rehype plugins, passed to the compiler. Keep the object stable.                                               |
 | `colorScheme`      |           | `light`, `dark` or `auto`. Overrides the deck's headmatter.                                                                         |
 | `keyboard`         | `"focus"` | `"focus"`: keys work while the deck has focus. `"global"`: anywhere. `false`: off.                                                  |
@@ -184,8 +185,8 @@ import { PrintDeck } from "@slidewright/react";
 ```
 
 `steps` prints a page for every step instead, so each reveal gets its own
-page. It also takes the deck's `layouts`, `components`, `compileOptions`,
-`colorScheme`, `className` and `style`.
+page. It also takes the deck's `layouts`, `components`, `mermaid`, `icons`,
+`compileOptions`, `colorScheme`, `className` and `style`.
 
 On screen the pages stack with a gap and a shadow, as a preview. When
 printed, each page breaks onto a sheet of its own: the component sets the
@@ -378,6 +379,61 @@ a mistake stays, with Mermaid's message below it. Mermaid runs with
 `securityLevel: "strict"`: labels can't hold scripts, and diagrams have no
 click handlers.
 
+## Icons
+
+`:set:name:` in the text of a deck is an icon: `:lucide:rocket:` is the
+`rocket` of the set `lucide`. The deck draws the icons of the sets in its
+`icons` prop. The sets have the [Iconify](https://iconify.design) format, so
+the `icons.json` of any `@iconify-json/*` package works:
+
+```sh
+npm install @iconify-json/lucide
+```
+
+```tsx
+import lucide from "@iconify-json/lucide/icons.json";
+
+<Deck markdown={markdown} icons={[lucide]} />;
+```
+
+Find the sets and the names of their icons at
+[icon-sets.iconify.design](https://icon-sets.iconify.design). A set has
+thousands of icons. To keep it out of the page's first script, load it with
+`import()` and give it to the deck when it arrives: until then, and for an
+icon that no set has, the deck shows the source text. `Presenter` and
+`PrintDeck` take the same prop. With the Vite plugin or the CLI, the page
+gets only the icons that the deck uses. See
+[Icons](../vite/README.md#icons) in the plugin's README.
+
+Your own icons go in a set of the same shape. A `body` is the content of the
+icon's `<svg>`:
+
+```tsx
+const brand: IconSet = {
+  prefix: "brand",
+  width: 24,
+  height: 24,
+  icons: { logo: { body: '<path fill="currentColor" d="M3 3h18v18H3z"/>' } },
+};
+
+<Deck markdown=":brand:logo: Acme" icons={[lucide, brand]} />;
+```
+
+The deck puts a `body` in the page as it is, so use sets that you trust.
+
+An icon is an `<svg data-icon="set:name">`, as tall as the text around it
+and, when the set draws with `currentColor`, in its colour. Size and colour
+it through its element, or select it:
+
+```css
+[data-slide] h1 svg[data-icon] {
+  color: var(--deck-accent);
+}
+```
+
+Screen readers skip icons. To give one a name, write its element with a
+`title`: `<span data-icon="lucide:rocket" title="Launch"></span>`.
+
 ## Styling
 
 `styles.css` contains the deck chrome, the built-in layouts and the default
@@ -450,6 +506,7 @@ adds data attributes for everything else:
 | `[data-diff-marker]`    | The `+` or `-` before a diff line            |
 | `[data-math]`           | Maths: `inline` or `display`                 |
 | `[data-diagram]`        | Diagram figure. `aria-busy` until drawn      |
+| `svg[data-icon]`        | An icon, by `set:name`                       |
 | `[data-deck-controls]`  | The buttons and the slide counter            |
 | `[data-deck-progress]`  | Progress bar                                 |
 | `[data-deck-overview]`  | Overview grid                                |
@@ -483,3 +540,4 @@ look the same at any screen size.
 | `Layout`              | A layout component, with its optional `slots` list.                          |
 | `LayoutProps`         | The props that a layout gets: `slide`, `children` and `slots`.               |
 | `DirectiveComponents` | The `components` prop: components by directive name.                         |
+| `IconSet`             | A set of the `icons` prop: icons in the Iconify format. See [Icons](#icons). |

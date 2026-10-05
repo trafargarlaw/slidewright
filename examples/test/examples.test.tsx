@@ -7,8 +7,10 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import logos from "@iconify-json/logos/icons.json";
+import lucide from "@iconify-json/lucide/icons.json";
 import { parseDeck } from "@slidewright/core";
-import { PrintDeck } from "@slidewright/react";
+import { PrintDeck, type IconSet } from "@slidewright/react";
 import { slidewright } from "@slidewright/vite";
 import { renderToString } from "react-dom/server";
 import { build, defaultClientConditions, type InlineConfig } from "vite";
@@ -23,8 +25,12 @@ const DECKS = {
   code: example("code", "slides.md"),
   theme: example("theme", "slides.md"),
   diagrams: example("diagrams", "slides.md"),
+  icons: example("icons", "slides.md"),
   react: example("react", "src", "slides.md"),
 };
+
+// The sets as their packages have them: thousands of icons each.
+const ICONS: readonly IconSet[] = [lucide, logos];
 
 const read = (deck: string) => readFileSync(deck, "utf8");
 
@@ -35,6 +41,7 @@ function print(name: keyof typeof DECKS): string {
       markdown={read(DECKS[name])}
       layouts={name === "react" ? layouts : undefined}
       components={name === "react" ? components : undefined}
+      icons={name === "icons" ? ICONS : undefined}
     />,
   );
 }
@@ -88,6 +95,15 @@ describe("react", () => {
   });
 });
 
+describe("icons", () => {
+  it("draws every icon of the deck", () => {
+    const html = print("icons");
+    expect(html).not.toContain("<span data-icon=");
+    expect(html.match(/<svg data-icon="lucide:[a-z-]+"/g)).toHaveLength(13);
+    expect(html.match(/<svg data-icon="logos:[a-z-]+"/g)).toHaveLength(4);
+  });
+});
+
 describe("build", () => {
   let out = "";
   beforeEach(() => {
@@ -114,7 +130,7 @@ describe("build", () => {
       .map((file) => readFileSync(join(out, file), "utf8"))
       .join("\n");
 
-  it.each(["layouts", "code", "theme", "diagrams"] as const)(
+  it.each(["layouts", "code", "theme", "diagrams", "icons"] as const)(
     "builds the %s deck as the CLI does",
     async (name) => {
       const root = dirname(DECKS[name]);
@@ -140,6 +156,12 @@ describe("build", () => {
             /^(flow|sequence|state|pie)Diagram.*\.js$/.test(file),
           ),
         ).toHaveLength(4);
+      }
+      if (name === "icons") {
+        // The icons of the deck, from this workspace, and not their sets.
+        expect(output()).toMatch(/["'`]party-popper["'`]:/);
+        expect(output()).toMatch(/["'`]typescript-icon["'`]:/);
+        expect(output()).not.toMatch(/["'`]a-arrow-down["'`]:/);
       }
     },
   );

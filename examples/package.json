@@ -18,6 +18,8 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@iconify-json/logos": "^1.2.15",
+    "@iconify-json/lucide": "^1.2.140",
     "@slidewright/cli": "workspace:*",
     "@slidewright/vite": "workspace:*",
     "@types/react": "^19.3.0",

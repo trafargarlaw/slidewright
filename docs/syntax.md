@@ -308,6 +308,40 @@ Renderers draw maths with [KaTeX](https://katex.org/docs/supported), so the
 LaTeX that KaTeX supports is what a deck can use. LaTeX with a mistake shows
 as its source, in red.
 
+## Icons
+
+`:set:name:` in text is an icon. The set and the name are those of
+[Iconify](https://icon-sets.iconify.design), which has more than 200 open
+icon sets:
+
+```md
+# :lucide:rocket: Launch day
+
+- :lucide:circle-check: Tests pass
+- :logos:github-icon: The code is public
+```
+
+- The set and the name are lower-case letters, digits and `-`, and the set
+  starts with a letter. So a time such as `10:30:45:` is not an icon.
+- An icon stands apart from the letters and digits next to it: `a:b:c:d` has
+  no icon. Icons can follow each other: `:lucide:star::lucide:star:`.
+- Icons work in headings, lists, tables, links and the text of HTML, and
+  take steps like other content. In code and maths, the text stays as
+  written: `` `:lucide:rocket:` `` shows the source.
+
+An icon is as tall as the text around it. Most sets draw in the colour of
+the text; some, such as `logos`, have colours of their own. To change the
+size or the colour, style the element around the icon:
+
+```md
+<span style="color: crimson; font-size: 2em">:lucide:heart:</span>
+```
+
+The sets are separate packages. With the CLI and the Vite plugin, install
+the ones that the deck uses (`npm install @iconify-json/lucide`); in a React
+app, give `<Deck>` its `icons` prop. An icon that the renderer doesn't have
+shows as its source text. See [Icons](../packages/vite/README.md#icons).
+
 ## Diagrams
 
 A fenced code block with the language `mermaid` is a diagram, written in

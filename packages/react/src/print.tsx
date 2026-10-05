@@ -2,8 +2,10 @@ import type { ColorScheme, CompileOptions } from "@slidewright/core";
 import type { CSSProperties } from "react";
 import type { DirectiveComponents } from "./context";
 import { canvasProperties, useCompiledDeck, useLayouts } from "./deck-state";
-import { MermaidContext, type MermaidLoader } from "./diagram";
+import type { MermaidLoader } from "./diagram";
+import type { IconSet } from "./icon-sets";
 import type { Layout } from "./layouts";
+import { Resources } from "./resources";
 import { RenderedSlide } from "./slide";
 
 export interface PrintDeckProps {
@@ -23,6 +25,12 @@ export interface PrintDeckProps {
    * `() => import("mermaid")`. Without it, they show as code.
    */
   mermaid?: MermaidLoader;
+  /**
+   * Icon sets for `:set:name:` icons, in the Iconify format: the
+   * `icons.json` of `@iconify-json/*` packages. Without its set, an icon
+   * shows as its source text.
+   */
+  icons?: readonly IconSet[];
   /** Sanitising and remark/rehype plugins. Keep the object stable. */
   compileOptions?: CompileOptions;
   /** Overrides `colorScheme` from the headmatter. */
@@ -32,6 +40,7 @@ export interface PrintDeckProps {
 }
 
 const NO_COMPONENTS: DirectiveComponents = {};
+const NO_ICONS: readonly IconSet[] = [];
 
 /**
  * Renders every slide of a deck at full size, one after the other, for
@@ -43,6 +52,7 @@ export function PrintDeck({
   layouts,
   components = NO_COMPONENTS,
   mermaid,
+  icons = NO_ICONS,
   compileOptions,
   colorScheme,
   className,
@@ -68,7 +78,7 @@ export function PrintDeck({
   });
 
   return (
-    <MermaidContext value={mermaid}>
+    <Resources mermaid={mermaid} icons={icons}>
       <div
         data-deck=""
         data-deck-print=""
@@ -106,7 +116,7 @@ export function PrintDeck({
           </div>
         ))}
       </div>
-    </MermaidContext>
+    </Resources>
   );
 }
 

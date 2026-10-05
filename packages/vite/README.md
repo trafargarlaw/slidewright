@@ -35,8 +35,8 @@ Requires Vite 8.
 ### Problems in the deck
 
 The plugin prints problems in the deck as warnings, with the file and line:
-invalid frontmatter, unknown layouts, and highlight ranges that code blocks
-skip. It prints them when Vite starts and again when a saved change gives
+invalid frontmatter, unknown layouts, highlight ranges that code blocks
+skip, and icons that the project doesn't have. It prints them when Vite starts and again when a saved change gives
 different problems. The deck still renders, and the build still succeeds.
 
 ```text
@@ -77,6 +77,34 @@ with the line of each diagram. Restart Vite after you install Mermaid.
 
 How diagrams are sized and themed is in the
 [`@slidewright/react` README](../react/README.md#diagrams).
+
+## Icons
+
+`:set:name:` in the text of the deck is an icon from an
+[Iconify](https://icon-sets.iconify.design) set. Install the sets that the
+deck uses, each as `@iconify-json/<set>`:
+
+```sh
+npm install --save-dev @iconify-json/lucide
+```
+
+```md
+# :lucide:rocket: Launch day
+```
+
+There is nothing to configure. The plugin reads the deck and gives the page
+only the icons that it uses, not their sets, which have thousands. A set
+that you install while Vite runs is found the next time the deck changes.
+
+An icon whose set is not installed, or whose name the set doesn't have,
+shows as its source text, and the plugin prints a warning with its line:
+
+```text
+slides.md:3: warning: The icon `:lucide:rockt:` shows as text: the `lucide` icons have no `rockt`. The names are at https://icon-sets.iconify.design/lucide/.
+```
+
+How icons are sized, coloured and named for screen readers is in the
+[`@slidewright/react` README](../react/README.md#icons).
 
 ## Styling
 

@@ -1,4 +1,9 @@
-import type { Element, Root as HastRoot, RootContent } from "hast";
+import type {
+  Element,
+  Root as HastRoot,
+  RootContent,
+  Text as HastText,
+} from "hast";
 import type { Root as MdastRoot, Text } from "mdast";
 import type { Directives } from "mdast-util-directive";
 import { SKIP, visit } from "unist-util-visit";
@@ -72,6 +77,89 @@ export function remarkDirectiveElements() {
       return undefined;
     });
   };
+}
+
+// `:set:name:`, as in `:lucide:rocket:`. The set starts with a letter, so a
+// time such as `10:30:45:` is not an icon.
+const ICON = /:([a-z][a-z0-9]*(?:-[a-z0-9]+)*):([a-z0-9]+(?:-[a-z0-9]+)*):/g;
+const WORD = /\w/;
+// Elements whose text is shown as written.
+const LITERAL = new Set([
+  "code",
+  "pre",
+  "kbd",
+  "samp",
+  "script",
+  "style",
+  "textarea",
+  "svg",
+  "math",
+]);
+
+/**
+ * Turns `:set:name:` in text into `span` elements tagged with `data-icon`
+ * (`set:name`, the name of the icon in Iconify). The span keeps the source
+ * text, which is what shows when a renderer doesn't have the icon. Code and
+ * maths are left as written. Runs on the HTML tree, so that the text of HTML
+ * blocks gets icons too.
+ */
+export function rehypeIcons() {
+  return (tree: HastRoot) => {
+    const visitChildren = (parent: HastRoot | Element) => {
+      const children: RootContent[] = [];
+      for (const child of parent.children) {
+        const last = children.at(-1);
+        if (child.type === "text" && last?.type === "text") {
+          // A restored inline directive (`:lucide`) is a text node of its own.
+          children[children.length - 1] = {
+            type: "text",
+            value: last.value + child.value,
+          };
+        } else {
+          children.push(child);
+        }
+      }
+      parent.children = children.flatMap((child): RootContent[] => {
+        if (child.type === "text") return splitIcons(child);
+        if (
+          child.type === "element" &&
+          !LITERAL.has(child.tagName) &&
+          child.properties.dataIcon === undefined
+        ) {
+          visitChildren(child);
+        }
+        return [child];
+      }) as typeof parent.children;
+    };
+    visitChildren(tree);
+  };
+}
+
+function splitIcons(node: HastText): (HastText | Element)[] {
+  const { value } = node;
+  const parts: (HastText | Element)[] = [];
+  let from = 0;
+  for (const match of value.matchAll(ICON)) {
+    const end = match.index + match[0].length;
+    // Part of a longer text, such as `a:b:c:d`.
+    if (WORD.test(value[match.index - 1] ?? "")) continue;
+    if (WORD.test(value[end] ?? "")) continue;
+    if (match.index > from) {
+      parts.push({ type: "text", value: value.slice(from, match.index) });
+    }
+    parts.push({
+      type: "element",
+      tagName: "span",
+      properties: { dataIcon: `${match[1]}:${match[2]}` },
+      children: [{ type: "text", value: match[0] }],
+    });
+    from = end;
+  }
+  if (parts.length === 0) return [node];
+  if (from < value.length) {
+    parts.push({ type: "text", value: value.slice(from) });
+  }
+  return parts;
 }
 
 /**

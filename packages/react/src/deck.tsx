@@ -21,8 +21,9 @@ import {
   useDeckPosition,
   useLayouts,
 } from "./deck-state";
-import { MermaidContext, type MermaidLoader } from "./diagram";
+import type { MermaidLoader } from "./diagram";
 import { useElementSize } from "./element-size";
+import type { IconSet } from "./icon-sets";
 import { Chevron, FullscreenIcon, GridIcon, PresenterIcon } from "./icons";
 import type { Layout } from "./layouts";
 import {
@@ -38,6 +39,7 @@ import {
 import { Overview } from "./overview";
 import { Presenter } from "./presenter";
 import { usePresenterWindow } from "./presenter-window";
+import { Resources } from "./resources";
 import { RenderedSlide } from "./slide";
 import { useHashSync } from "./url-hash";
 
@@ -67,6 +69,12 @@ export interface DeckProps {
    * `() => import("mermaid")`. Without it, they show as code.
    */
   mermaid?: MermaidLoader;
+  /**
+   * Icon sets for `:set:name:` icons, in the Iconify format: the
+   * `icons.json` of `@iconify-json/*` packages. Without its set, an icon
+   * shows as its source text.
+   */
+  icons?: readonly IconSet[];
   /**
    * Sanitising and remark/rehype plugins. Keep the object stable between
    * renders: a new object rebuilds the compiler.
@@ -119,6 +127,7 @@ export interface DeckHandle {
 }
 
 const NO_COMPONENTS: DirectiveComponents = {};
+const NO_ICONS: readonly IconSet[] = [];
 const PRESENTER_WINDOW_STYLE: CSSProperties = { height: "100dvh" };
 
 /**
@@ -134,6 +143,7 @@ export function Deck({
   layouts,
   components = NO_COMPONENTS,
   mermaid,
+  icons = NO_ICONS,
   compileOptions,
   colorScheme,
   keyboard = "focus",
@@ -362,7 +372,7 @@ export function Deck({
   const overviewOpen = selected !== null;
 
   return (
-    <MermaidContext value={mermaid}>
+    <Resources mermaid={mermaid} icons={icons}>
       <div
         ref={rootRef}
         data-deck=""
@@ -505,6 +515,7 @@ export function Deck({
               layouts={layouts}
               components={components}
               mermaid={mermaid}
+              icons={icons}
               compileOptions={compileOptions}
               colorScheme={colorScheme}
               keyboard="global"
@@ -513,7 +524,7 @@ export function Deck({
             presenterWindow.popup.document.body,
           )
         : null}
-    </MermaidContext>
+    </Resources>
   );
 }
 

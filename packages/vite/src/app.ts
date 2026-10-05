@@ -1,22 +1,23 @@
 // The page script of a deck served by the plugin.
 import { parseDeck } from "@slidewright/core";
-import { Deck, PrintDeck } from "@slidewright/react";
+import { Deck, PrintDeck, type IconSet } from "@slidewright/react";
 import "@slidewright/react/styles.css";
 import { createElement } from "react";
 import { createRoot } from "react-dom/client";
-import { markdown, mermaid } from "virtual:slidewright/deck";
+import { icons, markdown, mermaid } from "virtual:slidewright/deck";
 
 // `?print` shows every slide, one per printed page; `?print=steps` every step.
 const print = new URLSearchParams(location.search).get("print");
 const root = createRoot(document.getElementById("app")!);
 
-function render(source: string) {
+function render(source: string, icons: readonly IconSet[]) {
   document.title = parseDeck(source).config.title ?? "Slides";
   root.render(
     print === null
       ? createElement(Deck, {
           markdown: source,
           mermaid,
+          icons,
           hash: true,
           keyboard: "global",
           style: { height: "100%" },
@@ -24,14 +25,17 @@ function render(source: string) {
       : createElement(PrintDeck, {
           markdown: source,
           mermaid,
+          icons,
           steps: print === "steps",
         }),
   );
 }
 
-render(markdown);
+render(markdown, icons);
 
 // Edits to the deck re-render it in place, on the same slide and step.
 import.meta.hot?.accept("virtual:slidewright/deck", (module) => {
-  if (module) render(module.markdown as string);
+  if (module) {
+    render(module.markdown as string, module.icons as readonly IconSet[]);
+  }
 });

@@ -64,7 +64,8 @@ welcome.
 - [ ] MDX support through the Vite plugin, if it fits cleanly
 - [x] Maths (KaTeX)
 - [x] Diagrams (Mermaid)
-- [ ] Transitions, icons
+- [x] Icons (Iconify sets)
+- [ ] Transitions
 - [ ] Multi-file decks
 - [ ] Agent skills describing the deck format
 
