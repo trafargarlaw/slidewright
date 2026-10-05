@@ -32,6 +32,17 @@ in the URL hash and listens to the keyboard anywhere on the page.
 
 Requires Vite 8.
 
+### Problems in the deck
+
+The plugin prints problems in the deck as warnings, with the file and line:
+invalid frontmatter, unknown layouts, and highlight ranges that code blocks
+skip. It prints them when Vite starts and again when a saved change gives
+different problems. The deck still renders, and the build still succeeds.
+
+```text
+slides.md:9: warning: Unknown layout "two-columns": the slide shows with the default layout. The layouts are default, center, …
+```
+
 ## Options
 
 | Option | Default     | Description                                                                                                 |

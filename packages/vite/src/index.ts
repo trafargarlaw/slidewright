@@ -2,7 +2,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseDeck } from "@slidewright/core";
-import { searchForWorkspaceRoot, type Plugin } from "vite";
+import { searchForWorkspaceRoot, type Logger, type Plugin } from "vite";
+import { findProblems, formatProblem } from "./problems";
 
 export interface SlidewrightOptions {
   /** The deck file, relative to the Vite root. Default `slides.md`. */
@@ -45,6 +46,21 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
   // The build input. Vite resolves symbolic links in the root, so this can
   // differ from `pageFile`.
   let inputFile = "";
+  let logger: Logger | undefined;
+  // The problems last printed, so saving without fixing them stays quiet.
+  let reported = "";
+
+  // Prints the deck's problems with their file and line. The deck still
+  // renders: problems never stop the server or the build.
+  const report = () => {
+    const source = readFileSync(deckFile, "utf8");
+    const text = findProblems(parseDeck(source), source)
+      .map((problem) => formatProblem(deckFile, problem))
+      .join("\n");
+    if (text === reported) return;
+    reported = text;
+    if (text) logger?.warn(text);
+  };
 
   const page = () => {
     const title = parseDeck(readFileSync(deckFile, "utf8")).config.title;
@@ -90,10 +106,16 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
         .flat()
         .map((file) => resolve(config.root, file));
       pageFile = resolve(config.root, "index.html");
+      logger = config.logger;
     },
 
     buildStart() {
       if (!existsSync(deckFile)) this.error(`Deck file not found: ${deckFile}`);
+      report();
+    },
+
+    watchChange(id) {
+      if (resolve(id) === deckFile && existsSync(deckFile)) report();
     },
 
     resolveId(id) {

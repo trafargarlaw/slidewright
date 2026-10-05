@@ -79,6 +79,15 @@ describe("steps", () => {
     const deck = parseDeck("---\nsteps: 5\n---\n\nA\n\n<!-- step -->\n\nB");
     expect(compileSlide(deck.slides[0]!).steps).toBe(5);
   });
+
+  it("counts the steps when the override is not a finite number", () => {
+    for (const value of [".inf", "-1", "many"]) {
+      const deck = parseDeck(
+        `---\nsteps: ${value}\n---\n\nA\n\n<!-- step -->\n\nB`,
+      );
+      expect(compileSlide(deck.slides[0]!).steps, value).toBe(1);
+    }
+  });
 });
 
 describe("code blocks", () => {

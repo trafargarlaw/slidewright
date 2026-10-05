@@ -55,19 +55,59 @@ export function parseCodeMeta(meta: string | null | undefined): CodeMeta {
 /** Parses `1|3-5|all` or `1@2|3-5@4` into ranges. Invalid parts are skipped. */
 export function parseHighlightSpec(spec: string): HighlightSpec[] {
   const ranges: HighlightSpec[] = [];
-
   for (const part of spec.split("|")) {
-    const match = /^\s*([^@]*?)\s*(?:@\s*(\d+))?\s*$/.exec(part);
-    if (!match) continue;
-
-    const lines = parseLines(match[1]!);
-    if (!lines) continue;
-
-    const range: HighlightSpec = { lines };
-    if (match[2] !== undefined) range.step = Number(match[2]);
-    ranges.push(range);
+    const range = parseHighlightPart(part);
+    if (range) ranges.push(range);
   }
   return ranges;
+}
+
+function parseHighlightPart(part: string): HighlightSpec | undefined {
+  const match = /^\s*([^@]*?)\s*(?:@\s*(\d+))?\s*$/.exec(part);
+  if (!match) return undefined;
+
+  const lines = parseLines(match[1]!);
+  if (!lines) return undefined;
+
+  const range: HighlightSpec = { lines };
+  if (match[2] !== undefined) range.step = Number(match[2]);
+  return range;
+}
+
+/**
+ * Mistakes in a code fence's meta string that `parseCodeMeta` and
+ * `parseHighlightSpec` skip over, as messages for diagnostics.
+ */
+export function findCodeMetaProblems(meta: string): string[] {
+  const problems: string[] = [];
+
+  const rest = meta.replace(/\{([^}]*)\}/, (block: string, inner: string) => {
+    if (!inner.trim()) return " ";
+    for (const part of inner.split("|")) {
+      if (!part.trim()) {
+        problems.push(`\`${block}\` has an empty stage between \`|\` signs.`);
+      } else if (!parseHighlightPart(part)) {
+        problems.push(
+          `\`${part.trim()}\` in \`${block}\` is not a line range. Use line numbers, ranges such as \`3-5\`, or \`all\`, with an optional \`@step\`.`,
+        );
+      }
+    }
+    return " ";
+  });
+
+  for (const match of rest.matchAll(META_TOKEN)) {
+    const value = match[2] ?? match[3] ?? match[4];
+    if (
+      match[1] === "lines" &&
+      value !== undefined &&
+      !Number.isInteger(Number.parseInt(value, 10))
+    ) {
+      problems.push(
+        `\`lines=${value}\` must be a whole number, such as \`lines=10\`.`,
+      );
+    }
+  }
+  return problems;
 }
 
 /**

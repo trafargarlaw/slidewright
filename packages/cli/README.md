@@ -51,6 +51,9 @@ The deck is `slides.md` by default. Give a file, or a folder that contains
 `slides.md`. Without a command, a `.md` file is presented:
 `slidewright talk.md`.
 
+Each command prints problems in the deck as warnings, with the file and
+line. See [Problems in the deck](../vite/README.md#problems-in-the-deck).
+
 | Option            | Command  | Description                                                     |
 | ----------------- | -------- | --------------------------------------------------------------- |
 | `--port <port>`   | `dev`    | Port to listen on. Default `3030`; the next free port if taken. |
