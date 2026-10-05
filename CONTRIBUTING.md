@@ -24,6 +24,10 @@ This is a Bun workspace monorepo:
   `docs/` and the package READMEs at build time, so edit those files instead.
 - `examples` — example decks and a React app. Their tests check that each
   one parses, renders and builds, so update them with syntax changes.
+- `skills/slidewright` — the deck format as a skill for AI agents. Its
+  `references` are copies of `docs/syntax.md` and of package READMEs: run
+  `bun run skills` after a change to those, and a test fails until you do.
+  `SKILL.md` is written by hand: keep it short, and in step with the format.
 
 Run a script in one workspace with `bun run --filter <package-name> <script>`.
 

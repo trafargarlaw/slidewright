@@ -1,4 +1,3 @@
-import GithubSlugger from "github-slugger";
 import {
   existsSync,
   mkdtempSync,
@@ -19,6 +18,7 @@ import {
   sync,
   toPage,
 } from "../lib/sync";
+import { anchors, prose } from "./markdown";
 
 const site = fileURLToPath(new URL("..", import.meta.url));
 const repository = join(site, "..", "..");
@@ -219,29 +219,6 @@ function sitePages(): Map<string, string> {
     );
   }
   return pages;
-}
-
-/** The lines of `markdown` outside fenced code blocks, without code spans. */
-function prose(markdown: string): string[] {
-  const lines = markdown.split("\n");
-  const code = codeLines(lines);
-  return lines
-    .filter((_, index) => !code[index])
-    .map((line) => line.replace(/(?<!`)(`+)(?!`).*?(?<!`)\1(?!`)/g, ""));
-}
-
-/** The ids the site gives to the headings of a page. */
-function anchors(markdown: string): Set<string> {
-  const slugger = new GithubSlugger();
-  const ids = new Set<string>();
-  for (const line of prose(markdown)) {
-    const heading = /^#{2,6} (.+)/.exec(line);
-    if (heading) {
-      const text = heading[1]!.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1");
-      ids.add(slugger.slug(text));
-    }
-  }
-  return ids;
 }
 
 describe("site links", () => {

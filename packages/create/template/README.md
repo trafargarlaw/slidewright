@@ -17,5 +17,8 @@ Export needs Playwright: add `playwright-chromium` to the dev dependencies
 first. To put the site online, see
 [Deploy](https://github.com/trafargarlaw/slidewright/tree/master/packages/cli#deploy).
 
+To write the deck with an AI agent, teach it the format first:
+`npx skills add trafargarlaw/slidewright`.
+
 Keys: arrows or space to move, `O` for the overview, `F` for fullscreen and
 `P` for the presenter view with your notes.

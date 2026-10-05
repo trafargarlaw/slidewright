@@ -68,7 +68,7 @@ welcome.
 - [x] Icons (Iconify sets)
 - [x] Transitions
 - [x] Multi-file decks
-- [ ] Agent skills describing the deck format
+- [x] Agent skills describing the deck format
 
 ### 3 — Editor (v0.3)
 
