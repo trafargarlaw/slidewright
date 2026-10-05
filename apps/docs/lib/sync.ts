@@ -131,7 +131,12 @@ export function sync(repository: string, site: string): string[] {
       : undefined;
     write(
       join(site, "content", "docs", `${route}.md`),
-      toPage(source, readFileSync(file, "utf8"), description),
+      // Checkouts with core.autocrlf have CRLF line endings.
+      toPage(
+        source,
+        readFileSync(file, "utf8").replace(/\r\n/g, "\n"),
+        description,
+      ),
     );
     read.push(file);
   }
