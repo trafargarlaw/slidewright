@@ -5,10 +5,11 @@ status: accepted
 # Decks are Markdown, not MDX
 
 The v0.2 roadmap had "MDX support through the Vite plugin, if it fits
-cleanly". It doesn't fit, so a deck stays plain Markdown, and React
-components come into it through directives and the `components` module of
-the Vite plugin. MDX would be a second deck format with a second way to
-render it, for little that directives don't already give.
+cleanly". It doesn't fit, so a deck stays plain Markdown. React components
+belong to a React app, which gives them to `<Deck>` for the deck's
+directives. A deck of the CLI or the Vite plugin has none: it is Markdown,
+HTML and CSS. MDX would be a second deck format with a second way to render
+it.
 
 ## Why it doesn't fit
 
@@ -45,9 +46,9 @@ embeddable `<Deck>` and the editor planned for v0.3 could have MDX only by
 shipping its compiler and running deck text as code in the page, which
 goes against sanitising by default.
 
-**Most of its use is already here.** A directive renders a React component
-with attributes and Markdown children, from a module that the plugin loads
-and reloads, without a React app.
+**A React app already has components.** A directive renders a React
+component with attributes and Markdown children, from the `components` prop
+of `<Deck>`.
 
 ## Considered options
 
@@ -56,12 +57,19 @@ and reloads, without a React app.
 - **MDX for single slides, through `src: demo.mdx`.** A smaller surface, but
   the same second way to render, and such slides would have no steps or
   notes until those were built again.
-- **Stay Markdown, components through directives.** Chosen.
+- **A `components` module for decks of the CLI.** A `components.tsx` next
+  to the deck, which the Vite plugin loaded for the deck's directives. It
+  was built, and removed before a release: we don't think that a deck of
+  the CLI needs React components.
+- **Stay Markdown, with components only in a React app.** Chosen.
 
 ## Consequences
 
-Three things that MDX has are not in a deck: props that aren't strings,
-JavaScript expressions in text, and `import` lines. A component can hold
-any logic and import anything, so these are about convenience. If they are
-asked for, the answer should be a small addition to directives, not a
-second format.
+A deck of the CLI or the Vite plugin can't use a React component. A deck
+that needs one is rendered by a React app, with `<Deck components>`.
+
+Three things that MDX has are not in a deck of a React app either: props
+that aren't strings, JavaScript expressions in text, and `import` lines. A
+component can hold any logic and import anything, so these are about
+convenience. If they are asked for, the answer should be a small addition
+to directives, not a second format.
