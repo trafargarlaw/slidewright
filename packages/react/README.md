@@ -317,6 +317,10 @@ Mind the **gap**.
 :::
 ```
 
+With sanitising on, the default, a component doesn't get event handlers
+(`on…`), `srcdoc`, or `javascript:` and `vbscript:` URLs. Treat the other
+attributes as text that the deck's author wrote.
+
 Every directive renders as a `div` with `data-directive="name"`, which keeps
 its id, classes and step. A registered component renders inside that `div`.
 Without one, the content goes straight in, so a directive can be styled with
