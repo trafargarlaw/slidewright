@@ -3,6 +3,16 @@
 All the packages, `@slidewright/core`, `react`, `vite`, `cli` and `create`,
 have the same version. Each entry gives the packages that it changes.
 
+## Unreleased
+
+### Fixed
+
+- `vite`, `cli`: The dev server works on Windows, and in a folder with glob
+  characters in its name, such as `talk [draft]`. Before, the page stayed
+  empty, and the browser showed "The requested module
+  '/node_modules/debug/src/browser.js' does not provide an export named
+  'default'".
+
 ## 0.1.1 - 2026-10-05
 
 ### Security

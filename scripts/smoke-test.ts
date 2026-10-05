@@ -19,7 +19,8 @@ const PACKAGES = ["core", "react", "vite", "cli", "create"];
 const repository = resolve(import.meta.dirname, "..");
 const work = mkdtempSync(join(tmpdir(), "slidewright-smoke-"));
 const tarballs = join(work, "tarballs");
-const deck = join(work, "deck");
+// Glob characters in the path, as Vite reads some paths as glob patterns.
+const deck = join(work, "deck [draft]");
 // The installed command, without npx: npx adds nothing to check here.
 const slidewright = join(deck, "node_modules", ".bin", "slidewright");
 
@@ -106,7 +107,7 @@ try {
       `--package=${tarball("create")}`,
       "--",
       "create-slidewright",
-      "deck",
+      "deck [draft]",
     ],
     work,
   );

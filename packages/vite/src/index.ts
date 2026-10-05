@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseDeck } from "@slidewright/core";
+import { convertPathToPattern } from "tinyglobby";
 import { searchForWorkspaceRoot, type Logger, type Plugin } from "vite";
 import { findDeckFiles } from "./files";
 import { findProblems, formatProblem } from "./problems";
@@ -94,7 +95,10 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
           },
         },
         // The page is virtual, so the dependency scanner starts from the app.
-        optimizeDeps: { entries: [APP_FILE] },
+        // Entries are glob patterns: as a path, the app matches no file on
+        // Windows, or in a folder such as `talk [draft]`. Then nothing is
+        // pre-bundled, and the browser can't load CommonJS dependencies.
+        optimizeDeps: { entries: [convertPathToPattern(APP_FILE)] },
         server: {
           fs: {
             // The page's script and its dependencies can live outside the
