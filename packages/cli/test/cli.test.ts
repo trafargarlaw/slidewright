@@ -197,6 +197,25 @@ describe("commands", () => {
     expect(existsSync(join(root, "talk", "dist"))).toBe(false);
   });
 
+  it("loads components.tsx next to the deck", async () => {
+    writeFileSync(
+      join(root, "talk", "slides.md"),
+      "# Components\n\n::badge{text=New}\n",
+    );
+    writeFileSync(
+      join(root, "talk", "components.tsx"),
+      `function Badge({ text }: { text?: string }) {
+  return <span className="deck-badge">{text}</span>;
+}
+
+export default { badge: Badge };
+`,
+    );
+    await run(parse(["build", "talk", "--out", "site"]), CONFIG);
+
+    expect(site(join(root, "site")).js).toContain("deck-badge");
+  });
+
   it("serves a deck on the given port", async () => {
     server = await run(parse(["dev", "talk", "--port", "0"]), CONFIG);
     const url = server!.resolvedUrls!.local[0]!;

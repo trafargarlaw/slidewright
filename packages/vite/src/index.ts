@@ -20,9 +20,17 @@ export interface SlidewrightOptions {
    * Use them to set theme properties or style slide content.
    */
   css?: string | readonly string[];
+  /**
+   * A module with the React components for the deck's directives, relative
+   * to the Vite root. Its default export is an object of components by
+   * directive name: `export default { callout: Callout }`.
+   */
+  components?: string;
 }
 
 const APP_URL = "/@slidewright/app";
+// `react`, `react-dom` and their entries, such as `react/jsx-runtime`.
+const REACT = /^react(?:-dom)?(?:\/|$)/;
 const DECK_ID = "virtual:slidewright/deck";
 const RESOLVED_DECK_ID = `\0${DECK_ID}`;
 
@@ -50,6 +58,7 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
   let root = "";
   let deckFile = "";
   let cssFiles: string[] = [];
+  let componentsFile: string | undefined;
   // Both with `/` separators, as Vite gives ids to the hooks on Windows too.
   let pageFile = "";
   // The build input. Vite resolves symbolic links in the root, so this can
@@ -119,6 +128,10 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
       root = config.root;
       deckFile = resolve(root, options.deck ?? "slides.md");
       cssFiles = [options.css ?? []].flat().map((file) => resolve(root, file));
+      componentsFile =
+        options.components === undefined
+          ? undefined
+          : resolve(root, options.components);
       pageFile = normalizePath(resolve(root, "index.html"));
       logger = config.logger;
     },
@@ -145,9 +158,18 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
       }
     },
 
-    resolveId(id) {
+    resolveId(id, importer, resolveOptions) {
       if (id === APP_URL) return APP_FILE;
       if (id === DECK_ID) return RESOLVED_DECK_ID;
+      // The deck's own code, such as its components, gets the React that
+      // renders the deck: the project needs no React of its own, and a
+      // second copy would break hooks.
+      if (REACT.test(id) && importer && !inPackage(importer)) {
+        return this.resolve(id, APP_FILE, {
+          ...resolveOptions,
+          skipSelf: true,
+        });
+      }
       const file = normalizePath(id);
       if (file === pageFile || file === inputFile) return pageFile;
       return undefined;
@@ -159,6 +181,9 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
       return [
         ...cssFiles.map((file) => `import ${JSON.stringify(file)};`),
         `export { default as markdown } from ${JSON.stringify(`${deckFile}?raw`)};`,
+        componentsFile === undefined
+          ? "export const components = {};"
+          : `export { default as components } from ${JSON.stringify(componentsFile)};`,
       ].join("\n");
     },
 
@@ -209,6 +234,11 @@ function escapeHtml(text: string): string {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+/** A module of an installed package, or a virtual module. */
+function inPackage(id: string): boolean {
+  return id.startsWith("\0") || normalizePath(id).includes("/node_modules/");
 }
 
 /**

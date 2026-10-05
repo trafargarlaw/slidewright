@@ -58,7 +58,7 @@ welcome.
 
 ### 2 — Components and polish (v0.2)
 
-- [ ] Components in Markdown through a registry (directive syntax)
+- [x] Components in Markdown through a registry (directive syntax)
 - [ ] MDX support through the Vite plugin, if it fits cleanly
 - [x] Maths (KaTeX)
 - [ ] Transitions, diagrams (Mermaid), icons

@@ -163,14 +163,19 @@ jobs:
 
 ```text
 talk/
-├── slides.md    # the deck
-├── style.css    # optional: theme properties and slide styles
-├── images/      # optional: images and other files that the deck shows
-└── public/      # optional: files to copy into the site as they are
+├── slides.md         # the deck
+├── style.css         # optional: theme properties and slide styles
+├── components.tsx    # optional: React components for the deck's directives
+├── images/           # optional: images and other files that the deck shows
+└── public/           # optional: files to copy into the site as they are
 ```
 
 - `style.css` next to the deck loads after the default theme. See
   [Styling](../vite/README.md#styling).
+- `components.tsx` next to the deck gives the React components for the
+  deck's directives: `:::callout` renders the `callout` of its default
+  export. The file can also be `components.jsx`, `.ts` or `.js`. See
+  [Components](../vite/README.md#components).
 - Refer to images and other files with a path from the deck's folder:
   `![Diagram](images/diagram.png)`. The build copies each file that the deck
   refers to. See [Files](../vite/README.md#files).

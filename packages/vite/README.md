@@ -45,12 +45,73 @@ slides.md:9: warning: Unknown layout "two-columns": the slide shows with the def
 
 ## Options
 
-| Option | Default     | Description                                                                                                 |
-| ------ | ----------- | ----------------------------------------------------------------------------------------------------------- |
-| `deck` | `slides.md` | The deck file, relative to the Vite root.                                                                   |
-| `css`  |             | One or more stylesheets loaded after the default theme, relative to the Vite root. See [Styling](#styling). |
+| Option       | Default     | Description                                                                                                             |
+| ------------ | ----------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `deck`       | `slides.md` | The deck file, relative to the Vite root.                                                                               |
+| `css`        |             | One or more stylesheets loaded after the default theme, relative to the Vite root. See [Styling](#styling).             |
+| `components` |             | A module with the React components for the deck's directives, relative to the Vite root. See [Components](#components). |
 
 The type of the options is `SlidewrightOptions`.
+
+## Components
+
+A deck can use React components through
+[directives](../../docs/syntax.md#directives). Put the components in a
+module, and give its path in `components`:
+
+```ts
+slidewright({ deck: "slides.md", components: "components.tsx" });
+```
+
+The default export of the module is an object of components by directive
+name. A component gets the directive's attributes as string props and its
+content as `children`:
+
+```tsx
+// components.tsx
+import { useState, type ReactNode } from "react";
+
+function Callout({
+  tone = "info",
+  children,
+}: {
+  tone?: string;
+  children?: ReactNode;
+}) {
+  return <aside className={`callout ${tone}`}>{children}</aside>;
+}
+
+function Counter({ label = "Count" }: { label?: string }) {
+  const [count, setCount] = useState(0);
+  return (
+    <button type="button" onClick={() => setCount(count + 1)}>
+      {label}: {count}
+    </button>
+  );
+}
+
+export default { callout: Callout, counter: Counter };
+```
+
+```md
+:::callout{tone="warning"}
+Mind the **gap**.
+:::
+
+::counter{label="Hands up"}
+```
+
+The module is part of the page: it can import other modules, stylesheets and
+packages, and a saved change shows in the open page. JSX works in `.tsx` and
+`.jsx` files without more config.
+
+The components use the React that renders the deck, so the project doesn't
+need `react` installed. For types in the editor, install `@types/react`. The
+type of the default export is `DirectiveComponents`, from
+`@slidewright/react`.
+
+How directives render, and what sanitising removes from their attributes, is
+in the [`@slidewright/react` README](../react/README.md#components).
 
 ## Styling
 

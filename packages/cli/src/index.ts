@@ -21,6 +21,8 @@ Commands:
 
 The deck is slides.md by default, or slides.md in the given folder.
 A style.css next to the deck loads after the default theme.
+A components.tsx (or .jsx, .ts, .js) next to the deck gives the React
+components for the deck's directives.
 
 Options for dev:
   --port <port>   Port to listen on (default 3030)
@@ -42,6 +44,11 @@ Options for export:
   -v, --version   Show the version`;
 
 const DEFAULT_PORT = 3030;
+
+// The first of these next to the deck holds its components.
+const COMPONENTS_FILES = ["tsx", "jsx", "ts", "js"].map(
+  (extension) => `components.${extension}`,
+);
 
 export type Command =
   | { name: "help" }
@@ -475,10 +482,13 @@ export function loadChromium(bases: string[]): {
 function viteConfig(deck: string): InlineConfig {
   const root = dirname(deck);
   const css = existsSync(join(root, "style.css")) ? "style.css" : undefined;
+  const components = COMPONENTS_FILES.find((file) =>
+    existsSync(join(root, file)),
+  );
   return {
     root,
     configFile: false,
-    plugins: [slidewright({ deck: basename(deck), css })],
+    plugins: [slidewright({ deck: basename(deck), css, components })],
   };
 }
 

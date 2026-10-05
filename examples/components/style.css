@@ -1,0 +1,30 @@
+.callout {
+  margin: 0 0 0.75em;
+  padding: 0.6em 0.9em;
+  border-left: 4px solid var(--deck-accent);
+  border-radius: 6px;
+  background: var(--deck-surface);
+}
+
+.callout[data-tone="warning"] {
+  border-left-color: #d97706;
+}
+
+.callout > :last-child {
+  margin-bottom: 0;
+}
+
+.counter {
+  padding: 0.4em 0.9em;
+  border: 1px solid var(--deck-border);
+  border-radius: 999px;
+  background: var(--deck-surface);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.counter strong {
+  color: var(--deck-accent);
+  font-variant-numeric: tabular-nums;
+}
