@@ -33,8 +33,11 @@ export const DESCRIPTIONS: Readonly<Record<string, string>> = {
   "docs/ROADMAP.md": "The direction of the project, and what comes next.",
 };
 
-/** Files the example decks show, copied to the site root as they're served there. */
-export const ASSETS: readonly string[] = ["examples/layouts/public/hills.svg"];
+/**
+ * Files the example decks show. The decks refer to them with relative paths,
+ * so they go next to the example pages.
+ */
+export const ASSETS: readonly string[] = ["examples/layouts/hills.svg"];
 
 const ROUTES = new Map(
   Object.entries(PAGES).map(([route, source]) => [source, route]),
@@ -147,7 +150,10 @@ export function sync(repository: string, site: string): string[] {
   }
   for (const asset of ASSETS) {
     const file = join(repository, asset);
-    write(join(site, "public", posix.basename(asset)), readFileSync(file));
+    write(
+      join(site, "public", "docs", "examples", posix.basename(asset)),
+      readFileSync(file),
+    );
     read.push(file);
   }
   return read;

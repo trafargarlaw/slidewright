@@ -14,7 +14,7 @@ Without a folder name, the command asks for one in a terminal, and uses
 my-talk/
 ├── slides.md      # a starter deck that shows the main features
 ├── style.css      # theme properties, loaded after the default theme
-├── package.json   # dev and build scripts with @slidewright/cli
+├── package.json   # dev, build and export scripts with @slidewright/cli
 ├── README.md
 └── .gitignore
 ```

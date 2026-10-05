@@ -155,14 +155,16 @@ describe("sync", () => {
 
     expect(read).toEqual([
       ...Object.values(PAGES),
-      "examples/layouts/public/hills.svg",
+      "examples/layouts/hills.svg",
     ]);
     for (const route of Object.keys(PAGES)) {
       expect(existsSync(join(target, "content/docs", `${route}.md`))).toBe(
         true,
       );
     }
-    expect(existsSync(join(target, "public/hills.svg"))).toBe(true);
+    expect(existsSync(join(target, "public/docs/examples/hills.svg"))).toBe(
+      true,
+    );
   });
 
   it("gives every page a description", () => {

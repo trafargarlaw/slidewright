@@ -6,4 +6,4 @@ next-env.d.ts
 # Copied from elsewhere in the repository by lib/sync.ts.
 /content/docs/reference/*.md
 /content/docs/roadmap.md
-/public/hills.svg
+/public/docs/

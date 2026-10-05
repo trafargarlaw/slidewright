@@ -1,4 +1,5 @@
 import {
+  mkdirSync,
   mkdtempSync,
   readdirSync,
   realpathSync,
@@ -7,7 +8,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, dirname, join, sep } from "node:path";
 import { stripVTControlCharacters } from "node:util";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -213,8 +214,9 @@ describe("build", () => {
 
     const html = readFileSync(join(outDir, "index.html"), "utf8");
     expect(html).toContain("<title>Plugin &lt;test&gt; &amp; co</title>");
+    // Relative, so the site works from any folder.
     expect(html).toMatch(
-      /<script type="module" crossorigin src="\/assets\/index-[\w-]+\.js">/,
+      /<script type="module" crossorigin src="\.\/assets\/index-[\w-]+\.js">/,
     );
     expect(html).not.toContain("@slidewright/app");
 
@@ -248,5 +250,89 @@ describe("build", () => {
       ["slides.md:2", "slides.md:9", "slides.md:12"],
     );
     expect(readdirSync(outDir)).toContain("index.html");
+  });
+
+  it("keeps a base from the config", async () => {
+    const outDir = join(root, "dist");
+    await build({
+      ...config(),
+      base: "/talk/",
+      build: { outDir, emptyOutDir: true },
+    });
+    expect(readFileSync(join(outDir, "index.html"), "utf8")).toContain(
+      'src="/talk/assets/',
+    );
+  });
+
+  it("copies the files that the deck refers to", async () => {
+    const files = [
+      "images/plan.png",
+      "clip.mp4",
+      "poster.jpg",
+      "docs/handout.pdf",
+      "hills one.svg",
+      "logo.png",
+      "demo.mp4",
+    ];
+    for (const file of [...files, "unused.png", "public/icon.svg"]) {
+      mkdirSync(dirname(join(root, file)), { recursive: true });
+      writeFileSync(join(root, file), file);
+    }
+    // Next to the root, outside it.
+    const outside = `${root}-outside.png`;
+    writeFileSync(outside, "outside");
+    writeFileSync(
+      join(root, "slides.md"),
+      `# Files
+
+![Plan](images/plan.png) ![Logo](/logo.png) ![Icon](icon.svg)
+
+<video src="./clip.mp4" poster="poster.jpg"></video>
+
+[Handout](docs/handout.pdf?v=2#page=3) [Folder](docs) [Next](#2)
+[Site](https://example.com/a.png) ![Missing](missing.png)
+![Outside](../${basename(outside)})
+
+::video{src="demo.mp4" title="clip.mp4 missing.mp4"}
+
+---
+layout: image
+image: hills%20one.svg
+---
+`,
+    );
+    const outDir = join(root, "dist");
+    try {
+      await build({ ...config(), build: { outDir, emptyOutDir: true } });
+    } finally {
+      rmSync(outside);
+    }
+
+    const output = readdirSync(outDir, { recursive: true, encoding: "utf8" })
+      .filter((file) => !/^(assets|index\.html)/.test(file))
+      .map((file) => file.split(sep).join("/"));
+    expect(output.sort()).toEqual(
+      // Folders, and the public folder's file.
+      [...files, "docs", "images", "icon.svg"].sort(),
+    );
+    for (const file of files) {
+      expect(readFileSync(join(outDir, file), "utf8")).toBe(file);
+    }
+  });
+
+  it("doesn't copy a file over the built page", async () => {
+    writeFileSync(join(root, "index.html"), "An old page");
+    writeFileSync(join(root, "slides.md"), "# Home\n\n[Home](index.html)\n");
+    const { logger, warnings } = recordWarnings();
+    const outDir = join(root, "dist");
+    await build({
+      ...config(),
+      customLogger: logger,
+      build: { outDir, emptyOutDir: true },
+    });
+    expect(warnings).toEqual([]);
+    expect(readFileSync(join(outDir, "index.html"), "utf8")).toContain(
+      "<title>Slides</title>",
+    );
   });
 });
