@@ -52,6 +52,8 @@ export function toPage(
   markdown: string,
   description?: string,
 ): string {
+  // Git checks files out with CRLF line endings on Windows.
+  markdown = markdown.replaceAll("\r\n", "\n");
   const heading = /^# (.+)\n+/.exec(markdown);
   if (!heading) throw new Error(`${source} doesn't start with a # heading.`);
 
