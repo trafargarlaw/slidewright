@@ -7,7 +7,7 @@ export const docsContentRoute = "/llms.mdx/docs";
 
 export const gitConfig = {
   user: "trafargarlaw",
-  repo: "react-slides",
+  repo: "slidewright",
   branch: "master",
 };
 

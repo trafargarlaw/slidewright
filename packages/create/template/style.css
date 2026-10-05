@@ -1,7 +1,7 @@
 /*
  * Loaded after the default theme. Set theme properties here, or style slide
  * content with ordinary CSS. The properties are listed at
- * https://github.com/trafargarlaw/react-slides/tree/master/packages/react#styling
+ * https://github.com/trafargarlaw/slidewright/tree/master/packages/react#styling
  */
 [data-deck] {
   --deck-accent: #2563eb;

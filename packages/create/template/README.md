@@ -1,6 +1,6 @@
 # Slides
 
-Made with [Slidewright](https://github.com/trafargarlaw/react-slides).
+Made with [Slidewright](https://github.com/trafargarlaw/slidewright).
 
 ```sh
 npm install
