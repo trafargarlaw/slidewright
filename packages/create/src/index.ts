@@ -57,6 +57,7 @@ export function create(
     scripts: {
       dev: "slidewright",
       build: "slidewright build",
+      export: "slidewright export",
     },
     devDependencies: {
       "@slidewright/cli": `^${version}`,

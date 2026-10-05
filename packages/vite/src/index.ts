@@ -3,6 +3,7 @@ import { dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseDeck } from "@slidewright/core";
 import { searchForWorkspaceRoot, type Logger, type Plugin } from "vite";
+import { findDeckFiles } from "./files";
 import { findProblems, formatProblem } from "./problems";
 
 export interface SlidewrightOptions {
@@ -40,6 +41,7 @@ const APP_FILE = fileURLToPath(
  * ```
  */
 export function slidewright(options: SlidewrightOptions = {}): Plugin {
+  let root = "";
   let deckFile = "";
   let cssFiles: string[] = [];
   let pageFile = "";
@@ -74,6 +76,9 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
       const root = resolve(config.root ?? process.cwd());
       inputFile = resolve(root, "index.html");
       return {
+        // Relative asset URLs, so the built site works from any folder. The
+        // deck moves between slides in the URL hash, with no server routes.
+        base: config.base ?? "./",
         build: {
           // The compiler and the largest highlighting grammars, which load
           // only when a deck uses them, are over Vite's default of 500 kB.
@@ -101,11 +106,10 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
     },
 
     configResolved(config) {
-      deckFile = resolve(config.root, options.deck ?? "slides.md");
-      cssFiles = [options.css ?? []]
-        .flat()
-        .map((file) => resolve(config.root, file));
-      pageFile = resolve(config.root, "index.html");
+      root = config.root;
+      deckFile = resolve(root, options.deck ?? "slides.md");
+      cssFiles = [options.css ?? []].flat().map((file) => resolve(root, file));
+      pageFile = resolve(root, "index.html");
       logger = config.logger;
     },
 
@@ -116,6 +120,19 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
 
     watchChange(id) {
       if (resolve(id) === deckFile && existsSync(deckFile)) report();
+    },
+
+    // The deck renders in the browser, so the bundle doesn't see the files it
+    // shows. Copy them, at the paths that the dev server serves them at.
+    generateBundle() {
+      const deck = parseDeck(readFileSync(deckFile, "utf8"));
+      for (const fileName of findDeckFiles(deck, root)) {
+        this.emitFile({
+          type: "asset",
+          fileName,
+          source: readFileSync(resolve(root, fileName)),
+        });
+      }
     },
 
     resolveId(id) {

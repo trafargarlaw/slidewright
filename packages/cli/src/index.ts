@@ -29,8 +29,8 @@ Options for dev:
 
 Options for build:
   --out <dir>     Output folder (default: dist next to the deck)
-  --base <path>   Base path of the site (default /). Use ./ to host the
-                  site from any folder.
+  --base <path>   Base path of the site (default ./, so the site works
+                  from any folder)
 
 Options for export:
   --format <fmt>  pdf (default) or png
@@ -47,7 +47,7 @@ export type Command =
   | { name: "help" }
   | { name: "version" }
   | { name: "dev"; deck: string; port: number; host: boolean; open: boolean }
-  | { name: "build"; deck: string; outDir?: string; base: string }
+  | { name: "build"; deck: string; outDir?: string; base?: string }
   | {
       name: "export";
       deck: string;
@@ -116,7 +116,7 @@ export function parse(args: string[]): Command {
 
   const deck = rest[0] ?? "slides.md";
   if (name === "build") {
-    return { name, deck, outDir: values.out, base: values.base ?? "/" };
+    return { name, deck, outDir: values.out, base: values.base };
   }
   if (name === "export") {
     const format = values.format ?? "pdf";

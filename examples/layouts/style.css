@@ -5,7 +5,7 @@
   flex-direction: column;
   justify-content: center;
   padding: var(--deck-padding);
-  background: url("/hills.svg") center / cover;
+  background: url("hills.svg") center / cover;
   color: #fff;
 }
 

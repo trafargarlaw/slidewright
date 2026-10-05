@@ -56,18 +56,15 @@ describe("parse", () => {
       open: true,
     });
     expect(
-      parse(["build", "talk.md", "--out", "site", "--base", "./"]),
+      parse(["build", "talk.md", "--out", "site", "--base", "/talk/"]),
     ).toEqual({
       name: "build",
       deck: "talk.md",
       outDir: "site",
-      base: "./",
+      base: "/talk/",
     });
-    expect(parse(["build"])).toEqual({
-      name: "build",
-      deck: "slides.md",
-      base: "/",
-    });
+    // The plugin's base applies.
+    expect(parse(["build"])).toEqual({ name: "build", deck: "slides.md" });
   });
 
   it("reads export options", () => {
@@ -172,7 +169,8 @@ describe("commands", () => {
 
     const { html, js } = site(join(root, "talk", "dist"));
     expect(html).toContain("<title>CLI talk</title>");
-    expect(html).toContain('src="/assets/');
+    // Works from any folder.
+    expect(html).toContain('src="./assets/');
     expect(js).toContain("Hello from the CLI");
     expect(output("log")).toMatch(
       /^Built talk\/slides\.md into talk\/dist in \d+\.\ds\.$/,
@@ -185,12 +183,12 @@ describe("commands", () => {
       "[data-deck] { --deck-accent: #e11d48; }\n",
     );
     await run(
-      parse(["build", "talk/slides.md", "--out", "site", "--base", "./"]),
+      parse(["build", "talk/slides.md", "--out", "site", "--base", "/talk/"]),
       CONFIG,
     );
 
     const { html, css } = site(join(root, "site"));
-    expect(html).toContain('src="./assets/');
+    expect(html).toContain('src="/talk/assets/');
     expect(css).toContain("--deck-accent:#e11d48");
     expect(existsSync(join(root, "talk", "dist"))).toBe(false);
   });

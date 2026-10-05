@@ -261,7 +261,7 @@ Old checkout flow
 New checkout flow
 :::
 
-::video{src="/demo.mp4"}
+::video{src="demo.mp4"}
 ```
 
 - `:::name` … `:::` wraps Markdown content. Nest by using more colons on the
