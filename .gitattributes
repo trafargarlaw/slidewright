@@ -1,0 +1,4 @@
+# LF everywhere: a package packed from a CRLF checkout has a carriage return
+# after `node` in the first line of its commands, which fails on macOS and
+# Linux.
+* text=auto eol=lf
