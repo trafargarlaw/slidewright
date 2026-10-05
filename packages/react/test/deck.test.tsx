@@ -994,6 +994,95 @@ const b = 2;
   });
 });
 
+describe("maths", () => {
+  const maths = () =>
+    [...document.querySelectorAll("[data-math]")].map((element) => [
+      element.tagName,
+      element.getAttribute("data-math"),
+    ]);
+  const rendered = () => document.querySelectorAll("[data-math] > .katex");
+  const loaded = { timeout: 10_000 };
+
+  it("shows the source, then renders it once KaTeX loads", async () => {
+    render(
+      <Deck
+        markdown={"Einstein: $E = mc^2$\n\n$$\n\\int_0^1 x^2 \\, dx\n$$"}
+      />,
+    );
+    expect(maths()).toEqual([
+      ["SPAN", "inline"],
+      ["DIV", "display"],
+    ]);
+    expect(slide().querySelector("[data-code]")).toBeNull();
+    // The other tests may have loaded KaTeX already.
+    for (const element of document.querySelectorAll("[data-math] > code")) {
+      expect(element.parentElement?.getAttribute("aria-busy")).toBe("true");
+      expect(["E = mc^2", "\\int_0^1 x^2 \\, dx"]).toContain(
+        element.textContent,
+      );
+    }
+
+    await waitFor(() => expect(rendered()).toHaveLength(1), loaded);
+    expect(slide().querySelector(".katex-display > .katex")).not.toBeNull();
+    expect(slide().querySelector("[aria-busy]")).toBeNull();
+    expect(slide().querySelector("annotation")?.textContent).toBe("E = mc^2");
+  });
+
+  it("renders a math fence as display maths", async () => {
+    render(<Deck markdown={"```math\nx^2\n```"} />);
+    expect(maths()).toEqual([["DIV", "display"]]);
+    await waitFor(
+      () => expect(slide().querySelector(".katex-display")).not.toBeNull(),
+      loaded,
+    );
+  });
+
+  it("leaves other code alone", () => {
+    render(<Deck markdown={"Run `$x$`\n\n```\n$y$\n```"} />);
+    expect(maths()).toEqual([]);
+    expect(slide().querySelector("p > code")?.textContent).toBe("$x$");
+    expect(slide().querySelector("[data-code]")).not.toBeNull();
+  });
+
+  it("reveals maths with steps", async () => {
+    render(
+      <Deck markdown={"$a$ <!-- step --> $b$\n\n<!-- step -->\n\n$$\nc\n$$"} />,
+    );
+    const states = () =>
+      [...document.querySelectorAll("[data-math]")].map((element) =>
+        element.getAttribute("data-step-state"),
+      );
+
+    expect(states()).toEqual([null, "future", "future"]);
+    await waitFor(() => expect(rendered()).toHaveLength(2), loaded);
+    press("ArrowRight");
+    expect(states()).toEqual([null, "current", "future"]);
+  });
+
+  it("shows LaTeX with a mistake as its source", async () => {
+    render(<Deck markdown={"$\\frac{1}{$ and $x$"} />);
+    await waitFor(() => expect(rendered()).toHaveLength(1), loaded);
+    const mistake = slide().querySelector("[data-math] > .katex-error");
+    expect(mistake?.textContent).toBe("\\frac{1}{");
+  });
+
+  it("can't inject markup", async () => {
+    render(
+      <Deck
+        markdown={
+          "$\\href{javascript:alert(1)}{x}$ $\\htmlClass{a}{<img src=x>}$"
+        }
+      />,
+    );
+    await waitFor(
+      () => expect(slide().querySelector("[aria-busy]")).toBeNull(),
+      loaded,
+    );
+    expect(slide().querySelector("[data-math] a")).toBeNull();
+    expect(slide().querySelector("[data-math] img")).toBeNull();
+  });
+});
+
 describe("errors", () => {
   it("contains a failing component to its slide", () => {
     const consoleError = vi

@@ -3,6 +3,16 @@
 All the packages, `@slidewright/core`, `react`, `vite`, `cli` and `create`,
 have the same version. Each entry gives the packages that it changes.
 
+## Unreleased
+
+### Added
+
+- `react`, `vite`, `cli`: Maths renders. Inline `$…$`, display `$$…$$` and
+  `math` code fences are drawn with KaTeX, which loads with the first slide
+  that has maths. Before, a deck showed the LaTeX source as code.
+  `styles.css` now imports KaTeX's stylesheet, so a deck that added
+  `rehype-katex` through `compileOptions` can drop it.
+
 ## 0.1.4 - 2026-10-05
 
 ### Fixed

@@ -290,5 +290,20 @@ select `#user-content-intro`.
 
 ## Maths
 
-Inline maths uses `$…$` and display maths uses `$$…$$` (LaTeX syntax). For
-now the renderer shows the LaTeX source; rendering with KaTeX is planned.
+Inline maths uses `$…$`, and display maths uses `$$…$$` on lines of its own
+(LaTeX syntax):
+
+```md
+Einstein: $E = mc^2$
+
+$$
+\int_0^1 x^2 \, dx = \frac{1}{3}
+$$
+```
+
+A fenced code block with the language `math` is display maths too, as on
+GitHub.
+
+Renderers draw maths with [KaTeX](https://katex.org/docs/supported), so the
+LaTeX that KaTeX supports is what a deck can use. LaTeX with a mistake shows
+as its source, in red.
