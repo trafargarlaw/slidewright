@@ -86,6 +86,10 @@ content on a slide are left alone.
 On touch screens, swipe left for the next step and right for the previous
 one. Vertical swipes still scroll the page.
 
+Screen readers announce the slide number and title after each move, such as
+"Slide 2 of 8: Results". When the system asks for reduced motion, steps show
+at once and nothing moves: the controls only fade in.
+
 The overview shows every slide in a grid, fully revealed, starting from the
 current one. Move through it with the arrow keys and press `Enter` to go to a
 slide, or click one. `Escape` or `O` closes it without moving. In
@@ -152,8 +156,9 @@ it the window's height and let it take keys from anywhere:
 
 Press `P` on a deck, or use its presenter button, to open the presenter view
 in a second window, for a second screen. The deck and the window move
-together, and keys work in either. `P` or the button again closes the
-window, and it closes with the page.
+together. The keys that move, such as `→` or a number and then `Enter`, work
+in either; `O`, `F` and `P` work on the deck only. `P` or the button again
+closes the window, and it closes with the page.
 
 The window copies the page's stylesheets, the `<link rel="stylesheet">` and
 `<style>` elements in its head, and the attributes of its `<html>` element,
