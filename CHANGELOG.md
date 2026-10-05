@@ -25,6 +25,9 @@ have the same version. Each entry gives the packages that it changes.
 - `vite`, `cli`: The terminal shows the deck's problems as warnings, with
   the file and the line. Before, a deck with incorrect frontmatter lost its
   settings, and the build gave no message.
+- `core`: A headmatter `title` that is not a string, such as `title: 1984`,
+  is not used. Before, the parser gave a warning but kept the value, and the
+  build stopped with "text.replaceAll is not a function".
 - `core`: More problems are reported: a `steps` value that is not a number
   of 0 or more, highlight stages and `lines=` values that a code block
   skips, and a canvas width that is not finite. `steps: .inf` no longer

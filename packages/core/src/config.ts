@@ -19,12 +19,19 @@ export function resolveConfig(
   line: number,
   diagnostics: Diagnostic[],
 ): DeckConfig {
-  const config: DeckConfig = { ...headmatter, ...DEFAULT_CONFIG, defaults: {} };
+  const {
+    title,
+    theme,
+    colorScheme,
+    aspectRatio,
+    canvasWidth,
+    defaults,
+    ...other
+  } = headmatter;
+  // The known settings are only set below, once their values are valid.
+  const config: DeckConfig = { ...other, ...DEFAULT_CONFIG, defaults: {} };
   const warn = (message: string) =>
     diagnostics.push({ severity: "warning", message, line, slide: 0 });
-
-  const { title, theme, colorScheme, aspectRatio, canvasWidth, defaults } =
-    headmatter;
 
   if (title !== undefined) {
     if (typeof title === "string") config.title = title;

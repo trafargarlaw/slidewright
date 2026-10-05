@@ -207,6 +207,62 @@ colorScheme: purple
     ]);
   });
 
+  it.each([
+    ["16/9", 16 / 9],
+    ["4:3", 4 / 3],
+    ["16x10", 16 / 10],
+    ["21 / 9", 21 / 9],
+    ["1.6", 1.6],
+    ["2", 2],
+  ])("reads the aspect ratio %s", (value, ratio) => {
+    const deck = parseDeck(`---\naspectRatio: ${value}\n---\n\n# Hi\n`);
+    expect(deck.config.aspectRatio).toBeCloseTo(ratio);
+    expect(deck.diagnostics).toEqual([]);
+  });
+
+  it.each(["0", "-1", "0/9", "16/0", "16/9/4", ".inf"])(
+    "warns about the aspect ratio %s",
+    (value) => {
+      const deck = parseDeck(`---\naspectRatio: ${value}\n---\n\n# Hi\n`);
+      expect(deck.config.aspectRatio).toBeCloseTo(16 / 9);
+      expect(deck.diagnostics.map((d) => d.message)).toEqual([
+        "`aspectRatio` must look like `16/9`, `4:3` or `1.6`.",
+      ]);
+    },
+  );
+
+  it("warns about a title, theme or defaults of the wrong kind", () => {
+    const deck = parseDeck(text`
+---
+title: 42
+theme: " "
+defaults: [roomy]
+---
+
+# Hi
+`);
+    expect(deck.config).toMatchObject({ theme: "default", defaults: {} });
+    expect(deck.config.title).toBeUndefined();
+    expect(deck.diagnostics.map((d) => d.message)).toEqual([
+      "`title` must be a string.",
+      "`theme` must be a non-empty string.",
+      "`defaults` must be a mapping of frontmatter keys.",
+    ]);
+  });
+
+  it("trims the theme and keeps unknown settings", () => {
+    const deck = parseDeck(text`
+---
+theme: " midnight "
+author: Ada
+---
+
+# Hi
+`);
+    expect(deck.config).toMatchObject({ theme: "midnight", author: "Ada" });
+    expect(deck.diagnostics).toEqual([]);
+  });
+
   it("warns about a steps value that is not a number of 0 or more", () => {
     const deck = parseDeck(text`
 # One
