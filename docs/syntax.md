@@ -105,12 +105,10 @@ title: Shipping faster
 # Shipping faster
 
 ---
-
 src: chapters/why.md
 ---
 
 ---
-
 src: chapters/how.md
 class: how
 ---

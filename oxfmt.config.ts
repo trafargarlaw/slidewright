@@ -16,4 +16,10 @@ export default defineConfig({
     "examples/chapters/**/*.md",
     "apps/docs/decks/**",
   ],
+  // The same goes for the decks in the code blocks of the docs: formatted as
+  // Markdown, the frontmatter of a slide gets a blank line that turns it
+  // into text.
+  overrides: [
+    { files: ["**/*.md"], options: { embeddedLanguageFormatting: "off" } },
+  ],
 });
