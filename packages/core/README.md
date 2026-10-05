@@ -44,6 +44,11 @@ createCompiler({
 `sanitizeSchema` is the default schema, to extend for a custom one. Like
 GitHub's, it prefixes `id` and `name` attributes with `user-content-`.
 
+The schema doesn't apply to the attributes of directives, which go to
+components as JSON. With sanitising on, event handlers (attributes such as
+`onclick`), `srcdoc`, and `javascript:` and `vbscript:` URLs are removed from
+them.
+
 ## Output contract for renderers
 
 The compiled tree is plain hast with these annotations:

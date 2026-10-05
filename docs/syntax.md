@@ -279,7 +279,9 @@ carry `class`, `style` and `data-*` attributes.
 
 When a deck comes from an untrusted source, renderers sanitise the output by
 default: scripts, event handlers, iframes and `javascript:` URLs are removed.
-Trusted local decks can turn sanitising off.
+The attributes of directives lose event handlers, `srcdoc`, and
+`javascript:` and `vbscript:` URLs. Trusted local decks can turn sanitising
+off.
 
 Sanitising also prefixes `id` and `name` attributes with `user-content-`, as
 GitHub does, so they can't clash with the ids of the page around the deck.

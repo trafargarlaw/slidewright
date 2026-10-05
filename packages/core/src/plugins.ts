@@ -192,3 +192,42 @@ export function rehypeSteps() {
     file.data.steps = Math.max(counter, highest);
   };
 }
+
+// Event handlers, as React reads prop names, and a whole page in an iframe.
+const UNSAFE_ATTRIBUTE = /^(?:on.|srcdoc$)/i;
+const UNSAFE_URL = /^(?:javascript|vbscript):/i;
+
+/**
+ * Removes event handlers, `srcdoc`, and `javascript:` and `vbscript:` URLs
+ * from the attributes that directives give to components, as sanitising
+ * does for HTML attributes.
+ */
+export function rehypeSafeDirectiveAttributes() {
+  return (tree: HastRoot) => {
+    visit(tree, "element", (node) => {
+      const json = node.properties.dataDirectiveAttributes;
+      if (typeof json !== "string") return;
+      const safe = Object.entries(
+        JSON.parse(json) as Record<string, string>,
+      ).filter(
+        ([name, value]) =>
+          !UNSAFE_ATTRIBUTE.test(name) && !UNSAFE_URL.test(asUrl(value)),
+      );
+      if (safe.length > 0) {
+        node.properties.dataDirectiveAttributes = JSON.stringify(
+          Object.fromEntries(safe),
+        );
+      } else {
+        delete node.properties.dataDirectiveAttributes;
+      }
+    });
+  };
+}
+
+/**
+ * A value as browsers read it as a URL: without tabs and line breaks, and
+ * without spaces and control characters at the start.
+ */
+function asUrl(value: string): string {
+  return value.replace(/[\t\n\r]/g, "").replace(/^[\0- ]+/, "");
+}
