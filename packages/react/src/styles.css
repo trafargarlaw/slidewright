@@ -812,6 +812,42 @@
     box-sizing: content-box;
   }
 
+  /* Diagrams: the Mermaid source shows until the diagram is drawn. */
+  [data-slide] [data-diagram] {
+    /* Shrinks with its diagram when the slide has no room left. */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 0;
+    margin: 0 0 0.75em;
+  }
+
+  [data-slide] [data-diagram] > svg {
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+
+  [data-diagram] :where(pre) {
+    align-self: stretch;
+    margin: 0;
+    font-family: var(--deck-font-mono);
+    font-size: 0.7em;
+  }
+
+  [data-diagram] :where(figcaption) {
+    align-self: stretch;
+    margin-top: 0.5em;
+    color: var(--deck-code-removed);
+    font-size: 0.7em;
+  }
+
+  /* Mermaid measures its labels without their borders. */
+  [data-slide] :where([data-diagram] > svg *),
+  [data-slide] :where([data-diagram] > svg *)::before,
+  [data-slide] :where([data-diagram] > svg *)::after {
+    box-sizing: content-box;
+  }
+
   /* Steps ------------------------------------------------------------------ */
 
   [data-slide] [data-step-state] {
@@ -1037,6 +1073,21 @@
     flex: 1;
     grid-template-columns: 1fr 1fr;
     gap: 2.5em;
+    min-height: 0;
+  }
+
+  /* A diagram in a column shrinks to the room that the column has. */
+  [data-layout="two-cols"] [data-part="columns"]:has([data-diagram]) {
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  [data-layout="two-cols"]
+    :is([data-part="left"], [data-part="right"], [data-slot]):has(
+      > [data-diagram],
+      > [data-slot] > [data-diagram]
+    ) {
+    display: flex;
+    flex-direction: column;
     min-height: 0;
   }
 

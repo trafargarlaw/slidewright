@@ -312,3 +312,23 @@ GitHub.
 Renderers draw maths with [KaTeX](https://katex.org/docs/supported), so the
 LaTeX that KaTeX supports is what a deck can use. LaTeX with a mistake shows
 as its source, in red.
+
+## Diagrams
+
+A fenced code block with the language `mermaid` is a diagram, written in
+[Mermaid](https://mermaid.js.org/intro/syntax-reference.html) syntax:
+
+````md
+```mermaid
+flowchart LR
+  write[Write] --> rehearse[Rehearse] --> present[Present]
+```
+````
+
+Renderers draw the diagram in the colours and the font of its slide. A
+diagram takes steps and goes in layout slots like any other block.
+
+Mermaid is a separate package. With the CLI and the Vite plugin, install it
+in the project (`npm install mermaid`); in a React app, give `<Deck>` its
+`mermaid` prop. Without Mermaid, the block shows as code. See
+[Diagrams](../packages/vite/README.md#diagrams).

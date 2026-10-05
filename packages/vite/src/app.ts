@@ -4,7 +4,7 @@ import { Deck, PrintDeck, type DirectiveComponents } from "@slidewright/react";
 import "@slidewright/react/styles.css";
 import { createElement } from "react";
 import { createRoot } from "react-dom/client";
-import { components, markdown } from "virtual:slidewright/deck";
+import { components, markdown, mermaid } from "virtual:slidewright/deck";
 
 // `?print` shows every slide, one per printed page; `?print=steps` every step.
 const print = new URLSearchParams(location.search).get("print");
@@ -17,6 +17,7 @@ function render(source: string, components: DirectiveComponents) {
       ? createElement(Deck, {
           markdown: source,
           components,
+          mermaid,
           hash: true,
           keyboard: "global",
           style: { height: "100%" },
@@ -24,6 +25,7 @@ function render(source: string, components: DirectiveComponents) {
       : createElement(PrintDeck, {
           markdown: source,
           components,
+          mermaid,
           steps: print === "steps",
         }),
   );

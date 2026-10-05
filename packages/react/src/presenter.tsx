@@ -19,6 +19,7 @@ import {
   useLayouts,
   type CompiledDeck,
 } from "./deck-state";
+import { MermaidContext } from "./diagram";
 import { useElementSize } from "./element-size";
 import { Chevron, PauseIcon, PlayIcon, ResetIcon } from "./icons";
 import {
@@ -41,6 +42,7 @@ export type PresenterProps = Pick<
   | "hash"
   | "layouts"
   | "components"
+  | "mermaid"
   | "compileOptions"
   | "colorScheme"
   | "keyboard"
@@ -63,6 +65,7 @@ export function Presenter({
   hash = false,
   layouts,
   components = NO_COMPONENTS,
+  mermaid,
   compileOptions,
   colorScheme,
   keyboard = "focus",
@@ -149,121 +152,123 @@ export function Presenter({
   const notes = useMemo(() => splitNotes(slide?.notes ?? ""), [slide?.notes]);
 
   return (
-    <div
-      ref={rootRef}
-      data-deck=""
-      data-presenter=""
-      data-theme={theme}
-      data-color-scheme={colorScheme ?? deck.config.colorScheme}
-      className={className}
-      style={{ ...canvasProperties(deck.config), ...style }}
-      role="region"
-      aria-roledescription="presenter view"
-      aria-label={title ?? "Slides"}
-      tabIndex={keyboard === "focus" ? 0 : undefined}
-      onKeyDown={keyboard === "focus" ? handleKey : undefined}
-      onBlur={onBlur}
-    >
-      <figure data-presenter-current="">
-        <figcaption>Current slide</figcaption>
-        <div data-presenter-stage="">
-          <div ref={viewportRef} data-deck-viewport="">
-            <div
-              data-deck-canvas=""
-              data-measured={scale === null ? undefined : ""}
-              style={{ "--deck-scale": scale ?? 1 } as CSSProperties}
-            >
-              {slide ? (
-                <RenderedSlide
-                  slide={slide}
-                  entry={getSlide(current.slide)}
-                  step={current.step}
-                  layouts={allLayouts}
-                  components={components}
-                  label={`Slide ${current.slide + 1} of ${slideCount}`}
-                />
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </figure>
-
-      <div data-presenter-side="">
-        <figure data-presenter-next="">
-          <figcaption>
-            {atEnd
-              ? "Next"
-              : next.slide === current.slide
-                ? "Next step"
-                : "Next slide"}
-          </figcaption>
-          <div ref={previewRef} data-presenter-preview="">
-            {nextSlide ? (
+    <MermaidContext value={mermaid}>
+      <div
+        ref={rootRef}
+        data-deck=""
+        data-presenter=""
+        data-theme={theme}
+        data-color-scheme={colorScheme ?? deck.config.colorScheme}
+        className={className}
+        style={{ ...canvasProperties(deck.config), ...style }}
+        role="region"
+        aria-roledescription="presenter view"
+        aria-label={title ?? "Slides"}
+        tabIndex={keyboard === "focus" ? 0 : undefined}
+        onKeyDown={keyboard === "focus" ? handleKey : undefined}
+        onBlur={onBlur}
+      >
+        <figure data-presenter-current="">
+          <figcaption>Current slide</figcaption>
+          <div data-presenter-stage="">
+            <div ref={viewportRef} data-deck-viewport="">
               <div
                 data-deck-canvas=""
-                data-measured={previewScale === null ? undefined : ""}
-                style={{ "--deck-scale": previewScale ?? 1 } as CSSProperties}
-                inert
+                data-measured={scale === null ? undefined : ""}
+                style={{ "--deck-scale": scale ?? 1 } as CSSProperties}
               >
-                <RenderedSlide
-                  slide={nextSlide}
-                  entry={getSlide(next.slide)}
-                  step={next.step}
-                  layouts={allLayouts}
-                  components={components}
-                  label={`Slide ${next.slide + 1} of ${slideCount}`}
-                />
+                {slide ? (
+                  <RenderedSlide
+                    slide={slide}
+                    entry={getSlide(current.slide)}
+                    step={current.step}
+                    layouts={allLayouts}
+                    components={components}
+                    label={`Slide ${current.slide + 1} of ${slideCount}`}
+                  />
+                ) : null}
               </div>
-            ) : (
-              <p data-presenter-end="">End of the deck</p>
-            )}
+            </div>
           </div>
         </figure>
 
-        {/* A new slide starts its notes at the top. */}
-        <Notes
-          key={current.slide}
-          notes={notes}
-          current={Math.min(current.step, notes.length - 1)}
-          compile={compile}
-          components={components}
-        />
-      </div>
-
-      <div data-presenter-bar="">
-        {slideCount > 0 ? (
-          <div data-presenter-nav="">
-            <button
-              type="button"
-              aria-label="Previous"
-              disabled={current.slide === 0 && current.step === 0}
-              onClick={() => go("prev")}
-            >
-              <Chevron direction="left" />
-            </button>
-            <span data-presenter-counter="">
-              {typed ? (
-                <span data-deck-typed="">{typed}</span>
+        <div data-presenter-side="">
+          <figure data-presenter-next="">
+            <figcaption>
+              {atEnd
+                ? "Next"
+                : next.slide === current.slide
+                  ? "Next step"
+                  : "Next slide"}
+            </figcaption>
+            <div ref={previewRef} data-presenter-preview="">
+              {nextSlide ? (
+                <div
+                  data-deck-canvas=""
+                  data-measured={previewScale === null ? undefined : ""}
+                  style={{ "--deck-scale": previewScale ?? 1 } as CSSProperties}
+                  inert
+                >
+                  <RenderedSlide
+                    slide={nextSlide}
+                    entry={getSlide(next.slide)}
+                    step={next.step}
+                    layouts={allLayouts}
+                    components={components}
+                    label={`Slide ${next.slide + 1} of ${slideCount}`}
+                  />
+                </div>
               ) : (
-                current.slide + 1
-              )}{" "}
-              / {slideCount}
-            </span>
-            <button
-              type="button"
-              aria-label="Next"
-              disabled={
-                current.slide === slideCount - 1 && current.step >= lastStep
-              }
-              onClick={() => go("next")}
-            >
-              <Chevron direction="right" />
-            </button>
-          </div>
-        ) : null}
-        <Timer />
+                <p data-presenter-end="">End of the deck</p>
+              )}
+            </div>
+          </figure>
+
+          {/* A new slide starts its notes at the top. */}
+          <Notes
+            key={current.slide}
+            notes={notes}
+            current={Math.min(current.step, notes.length - 1)}
+            compile={compile}
+            components={components}
+          />
+        </div>
+
+        <div data-presenter-bar="">
+          {slideCount > 0 ? (
+            <div data-presenter-nav="">
+              <button
+                type="button"
+                aria-label="Previous"
+                disabled={current.slide === 0 && current.step === 0}
+                onClick={() => go("prev")}
+              >
+                <Chevron direction="left" />
+              </button>
+              <span data-presenter-counter="">
+                {typed ? (
+                  <span data-deck-typed="">{typed}</span>
+                ) : (
+                  current.slide + 1
+                )}{" "}
+                / {slideCount}
+              </span>
+              <button
+                type="button"
+                aria-label="Next"
+                disabled={
+                  current.slide === slideCount - 1 && current.step >= lastStep
+                }
+                onClick={() => go("next")}
+              >
+                <Chevron direction="right" />
+              </button>
+            </div>
+          ) : null}
+          <Timer />
+        </div>
       </div>
-    </div>
+    </MermaidContext>
   );
 }
 

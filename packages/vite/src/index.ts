@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseDeck } from "@slidewright/core";
@@ -59,6 +60,8 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
   let deckFile = "";
   let cssFiles: string[] = [];
   let componentsFile: string | undefined;
+  // The project has Mermaid, so the page draws the deck's diagrams.
+  let mermaid = false;
   // Both with `/` separators, as Vite gives ids to the hooks on Windows too.
   let pageFile = "";
   // The build input. Vite resolves symbolic links in the root, so this can
@@ -72,7 +75,7 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
   // renders: problems never stop the server or the build.
   const report = () => {
     const source = readFileSync(deckFile, "utf8");
-    const text = findProblems(parseDeck(source), source)
+    const text = findProblems(parseDeck(source), source, { mermaid })
       .map((problem) => formatProblem(deckFile, problem))
       .join("\n");
     if (text === reported) return;
@@ -91,6 +94,7 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
     config(config) {
       const root = resolve(config.root ?? process.cwd());
       inputFile = normalizePath(resolve(root, "index.html"));
+      mermaid = hasPackage("mermaid", root);
       return {
         // Relative asset URLs, so the built site works from any folder. The
         // deck moves between slides in the URL hash, with no server routes.
@@ -113,7 +117,12 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
         // Entries are glob patterns: as a path, the app matches no file on
         // Windows, or in a folder such as `talk [draft]`. Then nothing is
         // pre-bundled, and the browser can't load CommonJS dependencies.
-        optimizeDeps: { entries: [filePattern(APP_FILE)] },
+        optimizeDeps: {
+          entries: [filePattern(APP_FILE)],
+          // The page asks for Mermaid at the first diagram. Known from the
+          // start, it doesn't make the page load again then.
+          include: mermaid ? ["mermaid"] : [],
+        },
         server: {
           fs: {
             // The page's script and its dependencies can live outside the
@@ -184,6 +193,9 @@ export function slidewright(options: SlidewrightOptions = {}): Plugin {
         componentsFile === undefined
           ? "export const components = {};"
           : `export { default as components } from ${JSON.stringify(componentsFile)};`,
+        mermaid
+          ? 'export const mermaid = () => import("mermaid");'
+          : "export const mermaid = undefined;",
       ].join("\n");
     },
 
@@ -234,6 +246,16 @@ function escapeHtml(text: string): string {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+/** Whether a package is installed for the project at `root`. */
+function hasPackage(name: string, root: string): boolean {
+  try {
+    createRequire(resolve(root, "index.html")).resolve(name);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** A module of an installed package, or a virtual module. */

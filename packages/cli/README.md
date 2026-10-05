@@ -176,6 +176,9 @@ talk/
   deck's directives: `:::callout` renders the `callout` of its default
   export. The file can also be `components.jsx`, `.ts` or `.js`. See
   [Components](../vite/README.md#components).
+- `mermaid` code blocks are drawn as diagrams when the project has Mermaid:
+  `npm install --save-dev mermaid`. See
+  [Diagrams](../vite/README.md#diagrams).
 - Refer to images and other files with a path from the deck's folder:
   `![Diagram](images/diagram.png)`. The build copies each file that the deck
   refers to. See [Files](../vite/README.md#files).

@@ -17,6 +17,12 @@ have the same version. Each entry gives the packages that it changes.
   object of components by directive name. The CLI loads `components.tsx`
   (or `.jsx`, `.ts`, `.js`) next to the deck. The components use the React
   that renders the deck, so the project doesn't need `react` installed.
+- `react`, `vite`, `cli`: Diagrams. A `mermaid` code block is drawn with
+  Mermaid, in the colours and the font of its slide. Mermaid is not a
+  dependency: with the CLI and the Vite plugin, install `mermaid` in the
+  project; in a React app, give `<Deck>`, `<Presenter>` and `<PrintDeck>`
+  the new `mermaid` prop, `() => import("mermaid")`. Without Mermaid, the
+  block shows as code, as before, and the plugin prints a warning.
 
 ## 0.1.4 - 2026-10-05
 

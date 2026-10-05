@@ -41,6 +41,7 @@ server; code is highlighted and maths is drawn after hydration.
 | `hash`             | `false`   | Keeps the position in the URL hash. See [URL hash](#url-hash).                                                                      |
 | `layouts`          |           | Extra layouts by name. A built-in name replaces the built-in layout.                                                                |
 | `components`       |           | Components for `:::name` and `::name` directives, by name.                                                                          |
+| `mermaid`          |           | Loads Mermaid, to draw `mermaid` code blocks: `() => import("mermaid")`. See [Diagrams](#diagrams).                                 |
 | `compileOptions`   |           | Sanitising and remark/rehype plugins, passed to the compiler. Keep the object stable.                                               |
 | `colorScheme`      |           | `light`, `dark` or `auto`. Overrides the deck's headmatter.                                                                         |
 | `keyboard`         | `"focus"` | `"focus"`: keys work while the deck has focus. `"global"`: anywhere. `false`: off.                                                  |
@@ -337,6 +338,49 @@ CSS alone. A component that throws only breaks its own slide.
 With the Vite plugin or the CLI, the components come from a file. See
 [Components](../vite/README.md#components) in the plugin's README.
 
+## Diagrams
+
+A `mermaid` code block is drawn as a diagram when the deck can load
+[Mermaid](https://mermaid.js.org). Mermaid is a large package, so
+`@slidewright/react` doesn't depend on it. Install it, and give the deck a
+function that loads it:
+
+```sh
+npm install mermaid
+```
+
+```tsx
+// Outside the component, or the deck gets a new function on every render.
+const loadMermaid = () => import("mermaid");
+
+<Deck markdown={markdown} mermaid={loadMermaid} />;
+```
+
+Mermaid loads in its own chunk with the first diagram that a deck shows.
+Without the `mermaid` prop, the block stays a code block. `Presenter` and
+`PrintDeck` take the same prop.
+
+A diagram is drawn in the colours and the font of the slide it is on: its
+`--deck-bg`, `--deck-fg`, `--deck-accent` and the other colour properties. It
+is drawn again when they change, such as with the colour scheme. The diagram's
+own config, in [frontmatter or a directive](https://mermaid.js.org/config/configuration.html)
+of its source, can set other `themeVariables`.
+
+A diagram is as large as Mermaid draws it, and no wider than the place it is
+in. At the top level of a slide and in the columns of `two-cols`, it shrinks
+when the slide has no more room. Set a size with CSS:
+
+```css
+[data-diagram] > svg {
+  max-height: 300px;
+}
+```
+
+The source shows until the diagram is drawn, and on the server. A source with
+a mistake stays, with Mermaid's message below it. Mermaid runs with
+`securityLevel: "strict"`: labels can't hold scripts, and diagrams have no
+click handlers.
+
 ## Styling
 
 `styles.css` contains the deck chrome, the built-in layouts and the default
@@ -408,6 +452,7 @@ adds data attributes for everything else:
 | `[data-line-diff]`      | Code line: `added` or `removed`              |
 | `[data-diff-marker]`    | The `+` or `-` before a diff line            |
 | `[data-math]`           | Maths: `inline` or `display`                 |
+| `[data-diagram]`        | Diagram figure. `aria-busy` until drawn      |
 | `[data-deck-controls]`  | The buttons and the slide counter            |
 | `[data-deck-progress]`  | Progress bar                                 |
 | `[data-deck-overview]`  | Overview grid                                |
