@@ -57,9 +57,10 @@ YAML is reported as a diagnostic and the slide renders without settings.
 | `title`  | string | Slide title for navigation. Defaults to the first heading. |
 | `steps`  | number | Overrides the number of steps counted on the slide.        |
 
-Other keys are passed to the layout and renderer (for example `class` or
-`image`). Their meaning is defined by the renderer: the README of
-`@slidewright/react` lists its layouts and the keys they read.
+Other keys are passed to the layout and renderer (for example `class`,
+`image` or [`transition`](#transitions)). Their meaning is defined by the
+renderer: the README of `@slidewright/react` lists its layouts and the keys
+they read.
 
 ## Headmatter
 
@@ -195,6 +196,47 @@ const c = a + b;
 - Lines: `3`, `3-5`, `1,3-5`, or `all` (also `*`).
 - A single stage (`{2,4}`) is a static highlight and takes no steps.
 - `@N` pins a stage to step `N`: `{1@2|3@4}`.
+
+## Transitions
+
+`transition` in the frontmatter of a slide tells how the slide comes in:
+
+```md
+---
+transition: slide
+---
+
+# Next, the numbers
+```
+
+| Name       | The slide comes in                             |
+| ---------- | ---------------------------------------------- |
+| `none`     | At once. This is the default.                  |
+| `fade`     | Fading in, while the slide before fades out.   |
+| `slide`    | From the right, pushing the slide before away. |
+| `slide-up` | From the bottom, pushing the slide before up.  |
+| `zoom`     | Growing and fading in.                         |
+
+- Towards an earlier slide, the transition plays the other way: a slide that
+  came in from the right leaves to the right.
+- A jump between two slides plays the transition of the later one.
+- To give every slide a transition, put it in the headmatter's `defaults`.
+  A slide with its own `transition`, such as `none`, keeps it.
+
+```md
+---
+defaults:
+  transition: fade
+---
+```
+
+Transitions play in the deck that the audience sees, not in the presenter
+view, in print or in an export. When the system asks for reduced motion,
+slides change at once.
+
+Renderers can have more names. With `@slidewright/react`, a name that the
+theme doesn't have is a transition of your own, written in CSS. See
+[Transitions](../packages/react/README.md#transitions).
 
 ## Code blocks
 

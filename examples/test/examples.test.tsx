@@ -26,6 +26,7 @@ const DECKS = {
   theme: example("theme", "slides.md"),
   diagrams: example("diagrams", "slides.md"),
   icons: example("icons", "slides.md"),
+  transitions: example("transitions", "slides.md"),
   react: example("react", "src", "slides.md"),
 };
 
@@ -82,6 +83,28 @@ describe("layouts", () => {
   });
 });
 
+describe("transitions", () => {
+  it("shows every transition of the theme, and one of its own", () => {
+    const { slides } = parseDeck(read(DECKS.transitions));
+    expect(
+      new Set(slides.map((slide) => slide.frontmatter.transition)),
+    ).toEqual(new Set(["fade", "slide", "slide-up", "zoom", "none", "turn"]));
+
+    const theme = readFileSync(
+      example("..", "packages", "react", "src", "styles.css"),
+      "utf8",
+    );
+    const own = read(example("transitions", "style.css"));
+    for (const name of ["fade", "slide", "slide-up", "zoom"]) {
+      expect(theme).toContain(`@keyframes deck-${name}-in`);
+      expect(theme).toContain(`@keyframes deck-${name}-out`);
+    }
+    expect(theme).not.toContain("turn");
+    expect(own).toContain("@keyframes turn-in");
+    expect(own).toContain("@keyframes turn-out");
+  });
+});
+
 describe("react", () => {
   it("fills the custom layout and components", () => {
     const html = print("react");
@@ -130,41 +153,50 @@ describe("build", () => {
       .map((file) => readFileSync(join(out, file), "utf8"))
       .join("\n");
 
-  it.each(["layouts", "code", "theme", "diagrams", "icons"] as const)(
-    "builds the %s deck as the CLI does",
-    async (name) => {
-      const root = dirname(DECKS[name]);
-      const css = existsSync(join(root, "style.css")) ? "style.css" : undefined;
-      await build(
-        config({
-          root,
-          configFile: false,
-          plugins: [slidewright({ deck: "slides.md", css })],
-        }),
-      );
+  it.each([
+    "layouts",
+    "code",
+    "theme",
+    "diagrams",
+    "icons",
+    "transitions",
+  ] as const)("builds the %s deck as the CLI does", async (name) => {
+    const root = dirname(DECKS[name]);
+    const css = existsSync(join(root, "style.css")) ? "style.css" : undefined;
+    await build(
+      config({
+        root,
+        configFile: false,
+        plugins: [slidewright({ deck: "slides.md", css })],
+      }),
+    );
 
-      expect(existsSync(join(out, "index.html"))).toBe(true);
-      if (name === "layouts") {
-        expect(existsSync(join(out, "hills.svg"))).toBe(true);
-        expect(output()).toContain(".poster");
-      }
-      if (name === "theme") expect(output()).toContain("#f2925a");
-      if (name === "diagrams") {
-        // Mermaid, from this workspace: a file for each kind of diagram.
-        expect(
-          readdirSync(join(out, "assets")).filter((file) =>
-            /^(flow|sequence|state|pie)Diagram.*\.js$/.test(file),
-          ),
-        ).toHaveLength(4);
-      }
-      if (name === "icons") {
-        // The icons of the deck, from this workspace, and not their sets.
-        expect(output()).toMatch(/["'`]party-popper["'`]:/);
-        expect(output()).toMatch(/["'`]typescript-icon["'`]:/);
-        expect(output()).not.toMatch(/["'`]a-arrow-down["'`]:/);
-      }
-    },
-  );
+    expect(existsSync(join(out, "index.html"))).toBe(true);
+    if (name === "layouts") {
+      expect(existsSync(join(out, "hills.svg"))).toBe(true);
+      expect(output()).toContain(".poster");
+    }
+    if (name === "theme") expect(output()).toContain("#f2925a");
+    if (name === "diagrams") {
+      // Mermaid, from this workspace: a file for each kind of diagram.
+      expect(
+        readdirSync(join(out, "assets")).filter((file) =>
+          /^(flow|sequence|state|pie)Diagram.*\.js$/.test(file),
+        ),
+      ).toHaveLength(4);
+    }
+    if (name === "icons") {
+      // The icons of the deck, from this workspace, and not their sets.
+      expect(output()).toMatch(/["'`]party-popper["'`]:/);
+      expect(output()).toMatch(/["'`]typescript-icon["'`]:/);
+      expect(output()).not.toMatch(/["'`]a-arrow-down["'`]:/);
+    }
+    if (name === "transitions") {
+      // The theme's animations and the deck's own.
+      expect(output()).toContain("deck-slide-up-in");
+      expect(output()).toContain("turn-out");
+    }
+  });
 
   it("builds the React app", async () => {
     await build(

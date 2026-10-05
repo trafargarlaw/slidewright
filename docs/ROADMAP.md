@@ -65,7 +65,7 @@ welcome.
 - [x] Maths (KaTeX)
 - [x] Diagrams (Mermaid)
 - [x] Icons (Iconify sets)
-- [ ] Transitions
+- [x] Transitions
 - [ ] Multi-file decks
 - [ ] Agent skills describing the deck format
 
