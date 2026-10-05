@@ -575,6 +575,32 @@ describe("URL hash", () => {
     expect(hash()).toBe("#3");
   });
 
+  it("opens on the hash's slide when the slides arrive later", () => {
+    setHash("#2.1");
+    // As a deck fetched after the page loads.
+    const { rerender } = render(<Deck markdown="" hash />);
+    expect(hash()).toBe("#2.1");
+
+    rerender(<Deck markdown={THREE_SLIDES} hash />);
+    expect(heading()).toBe("Two");
+    expect(screen.getByText("Revealed").dataset.stepState).toBe("current");
+    expect(hash()).toBe("#2.1");
+  });
+
+  it("gives a controlled deck the hash's position before its slides arrive", () => {
+    setHash("#3");
+    const onPositionChange = vi.fn();
+    render(
+      <Deck
+        markdown=""
+        position={{ slide: 0, step: 0 }}
+        onPositionChange={onPositionChange}
+        hash
+      />,
+    );
+    expect(onPositionChange).toHaveBeenCalledWith({ slide: 2, step: 0 });
+  });
+
   it("keeps a controlled deck and the hash in step", () => {
     setHash("#2");
     const onPositionChange = vi.fn();
@@ -653,6 +679,22 @@ describe("controlling the deck", () => {
     expect(heading()).toBe("Three");
     act(() => ref.current!.prev());
     expect(heading()).toBe("Two");
+  });
+
+  it("reports whole positions before the slides arrive", () => {
+    const ref = createRef<DeckHandle>();
+    const onPositionChange = vi.fn();
+    render(
+      <Deck
+        markdown=""
+        position={{ slide: 0, step: 0 }}
+        onPositionChange={onPositionChange}
+        ref={ref}
+      />,
+    );
+
+    act(() => ref.current!.goTo(2.5, -1));
+    expect(onPositionChange).toHaveBeenLastCalledWith({ slide: 2, step: 0 });
   });
 
   it("navigates with the controls", () => {
