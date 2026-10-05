@@ -99,11 +99,13 @@ folder.
   removes images with these names from the folder first, so the folder holds
   only the current slides.
 
-Export waits until code is highlighted and images and fonts are loaded.
+Export waits until code is highlighted and images and fonts are loaded, for
+up to 30 seconds. After that, it stops and lists what is still loading.
 
 The CLI loads `playwright-chromium`, `playwright` or `playwright-core`,
 whichever the project has. With `playwright-core`, install the browser with
-`npx playwright-core install chromium`.
+`npx playwright-core install chromium`. When the browser isn't downloaded,
+export gives the command that downloads it.
 
 To print or save a PDF from the browser instead, open the deck with `?print`
 added to its address. See [Printing](../vite/README.md#printing).
