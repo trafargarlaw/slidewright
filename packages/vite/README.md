@@ -52,6 +52,32 @@ slides.md:9: warning: Unknown layout "two-columns": the slide shows with the def
 
 The type of the options is `SlidewrightOptions`.
 
+## Diagrams
+
+A `mermaid` code block is drawn as a diagram when the project has
+[Mermaid](https://mermaid.js.org):
+
+```sh
+npm install --save-dev mermaid
+```
+
+````md
+```mermaid
+flowchart LR
+  write[Write] --> rehearse[Rehearse] --> present[Present]
+```
+````
+
+There is nothing to configure. The page loads Mermaid with the first diagram
+that it shows, and the build puts Mermaid in files of their own. Diagrams
+take the colours and the font of their slide, and export waits for them.
+
+Without Mermaid, the block shows as code, and the plugin prints a warning
+with the line of each diagram. Restart Vite after you install Mermaid.
+
+How diagrams are sized and themed is in the
+[`@slidewright/react` README](../react/README.md#diagrams).
+
 ## Styling
 
 Stylesheets in `css` load after the default theme, so they can set theme

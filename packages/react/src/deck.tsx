@@ -21,6 +21,7 @@ import {
   useDeckPosition,
   useLayouts,
 } from "./deck-state";
+import { MermaidContext, type MermaidLoader } from "./diagram";
 import { useElementSize } from "./element-size";
 import { Chevron, FullscreenIcon, GridIcon, PresenterIcon } from "./icons";
 import type { Layout } from "./layouts";
@@ -61,6 +62,11 @@ export interface DeckProps {
   layouts?: Readonly<Record<string, Layout>>;
   /** Components for `:::name` and `::name` directives, by name. */
   components?: DirectiveComponents;
+  /**
+   * Loads Mermaid, to draw `mermaid` code blocks as diagrams:
+   * `() => import("mermaid")`. Without it, they show as code.
+   */
+  mermaid?: MermaidLoader;
   /**
    * Sanitising and remark/rehype plugins. Keep the object stable between
    * renders: a new object rebuilds the compiler.
@@ -127,6 +133,7 @@ export function Deck({
   hash = false,
   layouts,
   components = NO_COMPONENTS,
+  mermaid,
   compileOptions,
   colorScheme,
   keyboard = "focus",
@@ -355,7 +362,7 @@ export function Deck({
   const overviewOpen = selected !== null;
 
   return (
-    <>
+    <MermaidContext value={mermaid}>
       <div
         ref={rootRef}
         data-deck=""
@@ -497,6 +504,7 @@ export function Deck({
               onPositionChange={go}
               layouts={layouts}
               components={components}
+              mermaid={mermaid}
               compileOptions={compileOptions}
               colorScheme={colorScheme}
               keyboard="global"
@@ -505,7 +513,7 @@ export function Deck({
             presenterWindow.popup.document.body,
           )
         : null}
-    </>
+    </MermaidContext>
   );
 }
 

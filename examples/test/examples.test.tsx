@@ -22,6 +22,7 @@ const DECKS = {
   layouts: example("layouts", "slides.md"),
   code: example("code", "slides.md"),
   theme: example("theme", "slides.md"),
+  diagrams: example("diagrams", "slides.md"),
   react: example("react", "src", "slides.md"),
 };
 
@@ -113,7 +114,7 @@ describe("build", () => {
       .map((file) => readFileSync(join(out, file), "utf8"))
       .join("\n");
 
-  it.each(["layouts", "code", "theme"] as const)(
+  it.each(["layouts", "code", "theme", "diagrams"] as const)(
     "builds the %s deck as the CLI does",
     async (name) => {
       const root = dirname(DECKS[name]);
@@ -132,6 +133,14 @@ describe("build", () => {
         expect(output()).toContain(".poster");
       }
       if (name === "theme") expect(output()).toContain("#f2925a");
+      if (name === "diagrams") {
+        // Mermaid, from this workspace: a file for each kind of diagram.
+        expect(
+          readdirSync(join(out, "assets")).filter((file) =>
+            /^(flow|sequence|state|pie)Diagram.*\.js$/.test(file),
+          ),
+        ).toHaveLength(4);
+      }
     },
   );
 

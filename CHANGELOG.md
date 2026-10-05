@@ -12,6 +12,12 @@ have the same version. Each entry gives the packages that it changes.
   that has maths. Before, a deck showed the LaTeX source as code.
   `styles.css` now imports KaTeX's stylesheet, so a deck that added
   `rehype-katex` through `compileOptions` can drop it.
+- `react`, `vite`, `cli`: Diagrams. A `mermaid` code block is drawn with
+  Mermaid, in the colours and the font of its slide. Mermaid is not a
+  dependency: with the CLI and the Vite plugin, install `mermaid` in the
+  project; in a React app, give `<Deck>`, `<Presenter>` and `<PrintDeck>`
+  the new `mermaid` prop, `() => import("mermaid")`. Without Mermaid, the
+  block shows as code, as before, and the plugin prints a warning.
 
 ## 0.1.4 - 2026-10-05
 

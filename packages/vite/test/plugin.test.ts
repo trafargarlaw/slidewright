@@ -24,7 +24,8 @@ import {
 import { builtinLayouts } from "../../react/src/layouts";
 import { slidewright, type SlidewrightOptions } from "../src/index";
 import { filePattern } from "../src/pattern";
-import { LAYOUTS } from "../src/problems";
+import { findProblems, LAYOUTS } from "../src/problems";
+import { parseDeck } from "@slidewright/core";
 
 const DECK = `---
 title: Plugin <test> & co
@@ -36,6 +37,31 @@ title: Plugin <test> & co
 
 # Second slide
 `;
+
+const DIAGRAM = "# Flow\n\n```mermaid\nflowchart LR\n  a --> b\n```\n";
+
+/** Installs a stand-in for Mermaid in the project. */
+function installMermaid() {
+  const folder = join(root, "node_modules", "mermaid");
+  mkdirSync(folder, { recursive: true });
+  writeFileSync(
+    join(folder, "package.json"),
+    JSON.stringify({
+      name: "mermaid",
+      version: "0.0.0",
+      type: "module",
+      main: "index.js",
+    }),
+  );
+  writeFileSync(
+    join(folder, "index.js"),
+    `export default {
+  initialize() {},
+  render: async () => ({ svg: "<svg class='stand-in'></svg>" }),
+};
+`,
+  );
+}
 
 let root = "";
 
@@ -135,6 +161,35 @@ describe("dev server", () => {
     const result = await server!.transformRequest("virtual:slidewright/deck");
     expect(result?.code).toContain('import "/style.css";');
     expect(result?.code).toContain('from "/slides.md?import&raw"');
+  });
+
+  it("gives the page Mermaid when the project has it", async () => {
+    await serve();
+    const without = await server!.transformRequest("virtual:slidewright/deck");
+    expect(without?.code).toContain("const mermaid = undefined");
+    await server!.close();
+
+    installMermaid();
+    await serve();
+    const result = await server!.transformRequest("virtual:slidewright/deck");
+    expect(result?.code).toMatch(
+      /const mermaid = \(\) => import\("[^"]*mermaid[^"]*"\)/,
+    );
+  });
+
+  it("tells that a diagram needs Mermaid", async () => {
+    writeFileSync(join(root, "slides.md"), DIAGRAM);
+    const { logger, warnings } = recordWarnings();
+    server = await createServer({
+      ...config(),
+      customLogger: logger,
+      server: { port: 0, strictPort: false, ws: false },
+      optimizeDeps: { noDiscovery: true },
+    });
+    await server.listen();
+    expect(warnings).toEqual([
+      "slides.md:3: warning: This `mermaid` block shows as code: the project doesn't have Mermaid to draw the diagram. Add it with `npm install mermaid`.",
+    ]);
   });
 
   it("serves the page script", async () => {
@@ -237,6 +292,28 @@ describe("build", () => {
     );
   });
 
+  it("builds Mermaid into the page when the project has it", async () => {
+    writeFileSync(join(root, "slides.md"), DIAGRAM);
+    installMermaid();
+    const { logger, warnings } = recordWarnings();
+    const outDir = join(root, "dist");
+    await build({
+      ...config(),
+      customLogger: logger,
+      build: { outDir, emptyOutDir: true },
+    });
+
+    expect(warnings).toEqual([]);
+    const scripts = readdirSync(join(outDir, "assets"))
+      .filter((name) => name.endsWith(".js"))
+      .map((name) => readFileSync(join(outDir, "assets", name), "utf8"));
+    expect(scripts.join("\n")).toContain("stand-in");
+    // In a file of its own, which the page loads at the first diagram.
+    expect(scripts.find((code) => code.includes("Flow"))).not.toContain(
+      "stand-in",
+    );
+  });
+
   it("prints the deck's problems and still builds", async () => {
     writeFileSync(join(root, "slides.md"), PROBLEMS);
     const { logger, warnings } = recordWarnings();
@@ -336,6 +413,48 @@ image: hills%20one.svg
     expect(readFileSync(join(outDir, "index.html"), "utf8")).toContain(
       "<title>Slides</title>",
     );
+  });
+});
+
+describe("findProblems", () => {
+  const lines = (source: string) =>
+    findProblems(parseDeck(source), source, { mermaid: false }).map(
+      (problem) => [problem.line, problem.slide],
+    );
+
+  it("finds each diagram, when the project has no Mermaid", () => {
+    const source = [
+      "# One",
+      "",
+      "```mermaid",
+      "pie",
+      "```",
+      "",
+      "---",
+      "",
+      "~~~ Mermaid {1}",
+      "pie",
+      "~~~",
+    ].join("\n");
+    expect(lines(source)).toEqual([
+      [3, 0],
+      [9, 1],
+    ]);
+    expect(findProblems(parseDeck(source), source)).toEqual([]);
+  });
+
+  it("skips a diagram that a code block shows the source of", () => {
+    const source = [
+      "``````md",
+      "```mermaid",
+      "pie",
+      "```",
+      "``````",
+      "",
+      "```mermaidjs",
+      "```",
+    ].join("\n");
+    expect(lines(source)).toEqual([]);
   });
 });
 

@@ -1,0 +1,13 @@
+/* A slide with `class: night` has its own colours. The diagram on it is
+   drawn in them. */
+[data-slide].night {
+  --deck-bg: #10182b;
+  --deck-fg: #e6ebf5;
+  --deck-muted: #9aa7c0;
+  --deck-accent: #f2b45a;
+  --deck-border: #2a3654;
+  --deck-surface: #1a2440;
+
+  background: var(--deck-bg);
+  color: var(--deck-fg);
+}

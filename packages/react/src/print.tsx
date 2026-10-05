@@ -2,6 +2,7 @@ import type { ColorScheme, CompileOptions } from "@slidewright/core";
 import type { CSSProperties } from "react";
 import type { DirectiveComponents } from "./context";
 import { canvasProperties, useCompiledDeck, useLayouts } from "./deck-state";
+import { MermaidContext, type MermaidLoader } from "./diagram";
 import type { Layout } from "./layouts";
 import { RenderedSlide } from "./slide";
 
@@ -17,6 +18,11 @@ export interface PrintDeckProps {
   layouts?: Readonly<Record<string, Layout>>;
   /** Components for `:::name` and `::name` directives, by name. */
   components?: DirectiveComponents;
+  /**
+   * Loads Mermaid, to draw `mermaid` code blocks as diagrams:
+   * `() => import("mermaid")`. Without it, they show as code.
+   */
+  mermaid?: MermaidLoader;
   /** Sanitising and remark/rehype plugins. Keep the object stable. */
   compileOptions?: CompileOptions;
   /** Overrides `colorScheme` from the headmatter. */
@@ -36,6 +42,7 @@ export function PrintDeck({
   steps = false,
   layouts,
   components = NO_COMPONENTS,
+  mermaid,
   compileOptions,
   colorScheme,
   className,
@@ -61,43 +68,45 @@ export function PrintDeck({
   });
 
   return (
-    <div
-      data-deck=""
-      data-deck-print=""
-      data-theme={theme}
-      data-color-scheme={colorScheme ?? deck.config.colorScheme}
-      className={className}
-      style={
-        {
-          ...canvasProperties(deck.config),
-          "--deck-page-width": `${pageWidth}px`,
-          "--deck-page-height": `${pageHeight}px`,
-          ...style,
-        } as CSSProperties
-      }
-      aria-label={title ?? "Slides"}
-    >
-      <style>{`@page { size: ${pageWidth}px ${pageHeight}px; margin: 0; }`}</style>
-      {pages.map(({ slide, entry, step }) => (
-        <div
-          key={`${slide.index}.${step}`}
-          data-deck-page=""
-          data-page-slide={slide.index}
-          data-page-step={steps ? step : undefined}
-        >
-          <div data-deck-canvas="" data-measured="">
-            <RenderedSlide
-              slide={slide}
-              entry={entry}
-              step={step}
-              layouts={allLayouts}
-              components={components}
-              label={`Slide ${slide.index + 1} of ${count}`}
-            />
+    <MermaidContext value={mermaid}>
+      <div
+        data-deck=""
+        data-deck-print=""
+        data-theme={theme}
+        data-color-scheme={colorScheme ?? deck.config.colorScheme}
+        className={className}
+        style={
+          {
+            ...canvasProperties(deck.config),
+            "--deck-page-width": `${pageWidth}px`,
+            "--deck-page-height": `${pageHeight}px`,
+            ...style,
+          } as CSSProperties
+        }
+        aria-label={title ?? "Slides"}
+      >
+        <style>{`@page { size: ${pageWidth}px ${pageHeight}px; margin: 0; }`}</style>
+        {pages.map(({ slide, entry, step }) => (
+          <div
+            key={`${slide.index}.${step}`}
+            data-deck-page=""
+            data-page-slide={slide.index}
+            data-page-step={steps ? step : undefined}
+          >
+            <div data-deck-canvas="" data-measured="">
+              <RenderedSlide
+                slide={slide}
+                entry={entry}
+                step={step}
+                layouts={allLayouts}
+                components={components}
+                label={`Slide ${slide.index + 1} of ${count}`}
+              />
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </MermaidContext>
   );
 }
 

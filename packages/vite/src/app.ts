@@ -4,7 +4,7 @@ import { Deck, PrintDeck } from "@slidewright/react";
 import "@slidewright/react/styles.css";
 import { createElement } from "react";
 import { createRoot } from "react-dom/client";
-import { markdown } from "virtual:slidewright/deck";
+import { markdown, mermaid } from "virtual:slidewright/deck";
 
 // `?print` shows every slide, one per printed page; `?print=steps` every step.
 const print = new URLSearchParams(location.search).get("print");
@@ -16,12 +16,14 @@ function render(source: string) {
     print === null
       ? createElement(Deck, {
           markdown: source,
+          mermaid,
           hash: true,
           keyboard: "global",
           style: { height: "100%" },
         })
       : createElement(PrintDeck, {
           markdown: source,
+          mermaid,
           steps: print === "steps",
         }),
   );

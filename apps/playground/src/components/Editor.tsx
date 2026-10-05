@@ -6,7 +6,7 @@ import { getSlideAtLine } from "@slidewright/core";
 import { Deck, Presenter, type DeckPosition } from "@slidewright/react";
 import { CheatSheet } from "./CheatSheet";
 import { registerImage } from "@/lib/image-registry";
-import { compileOptions } from "@/lib/compile-options";
+import { compileOptions, loadMermaid } from "@/lib/compile-options";
 import { parseSource, setSlideNotes } from "@/lib/deck-source";
 import { applySearchReplace } from "@/lib/search-replace";
 import { initUnocss } from "@/styles/unocss";
@@ -934,6 +934,7 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
               onPositionChange={setPosition}
               hash
               compileOptions={compileOptions}
+              mermaid={loadMermaid}
               style={{ flex: 1, minHeight: 0 }}
             />
           ) : (
@@ -943,6 +944,7 @@ export function Editor({ defaultValue, onChange }: EditorProps) {
               onPositionChange={setPosition}
               hash
               compileOptions={compileOptions}
+              mermaid={loadMermaid}
               style={{ flex: 1, minHeight: 0 }}
             />
           )}

@@ -23,11 +23,28 @@ export const LAYOUTS: readonly string[] = [
 
 /**
  * The deck's diagnostics, plus a warning for each slide whose layout the page
- * doesn't have, in line order.
+ * doesn't have, and for each diagram when the project has no Mermaid to draw
+ * it with. In line order.
  */
-export function findProblems(deck: Deck, source: string): Diagnostic[] {
+export function findProblems(
+  deck: Deck,
+  source: string,
+  { mermaid = true }: { mermaid?: boolean } = {},
+): Diagnostic[] {
   const lines = source.split(/\r?\n/);
   const problems = [...deck.diagnostics];
+
+  for (const line of mermaid ? [] : findDiagrams(lines)) {
+    problems.push({
+      severity: "warning",
+      message:
+        "This `mermaid` block shows as code: the project doesn't have Mermaid to draw the diagram. Add it with `npm install mermaid`.",
+      line,
+      slide: deck.slides.find(
+        ({ range }) => range.start <= line && line <= range.end,
+      )?.index,
+    });
+  }
 
   for (const slide of deck.slides) {
     if (LAYOUTS.includes(slide.layout)) continue;
@@ -48,6 +65,29 @@ export function findProblems(deck: Deck, source: string): Diagnostic[] {
     });
   }
   return problems.sort((a, b) => a.line - b.line);
+}
+
+/** The lines where a `mermaid` code block starts. */
+function findDiagrams(lines: readonly string[]): number[] {
+  const found: number[] = [];
+  let open: { mark: string; length: number } | undefined;
+  lines.forEach((text, index) => {
+    const fence = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(text);
+    if (!fence) return;
+    const marks = fence[1]!;
+    const info = fence[2]!.trim();
+    if (!open) {
+      open = { mark: marks[0]!, length: marks.length };
+      if (/^mermaid(?:\s|$)/i.test(info)) found.push(index + 1);
+    } else if (
+      marks[0] === open.mark &&
+      marks.length >= open.length &&
+      info === ""
+    ) {
+      open = undefined;
+    }
+  });
+  return found;
 }
 
 /** `slides.md:12: warning: message`, with the path relative to `cwd`. */

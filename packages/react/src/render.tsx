@@ -1,8 +1,9 @@
 import type { Element, ElementContent, Properties, Root } from "hast";
 import { toJsxRuntime, type Components } from "hast-util-to-jsx-runtime";
-import type { ComponentProps, ReactNode } from "react";
+import { useContext, type ComponentProps, type ReactNode } from "react";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import { CodeBlock, textContent } from "./code-block";
+import { Diagram, MermaidContext, isDiagram } from "./diagram";
 import { DIRECTIVE_TAG, Directive } from "./directive";
 import { Maths, isMaths } from "./maths";
 
@@ -16,18 +17,26 @@ type ElementProps<Tag extends "pre" | "code"> = ComponentProps<Tag> & {
   node?: Element;
 };
 
-/** A fenced code block, or display maths (`$$…$$` or a `math` fence). */
+const fenceContent = (code: Element) => textContent(code).replace(/\n$/, "");
+
+/**
+ * A fenced code block, display maths (`$$…$$` or a `math` fence), or a
+ * diagram (a `mermaid` fence, when the deck has Mermaid).
+ */
 function Pre({ node, children, ...rest }: ElementProps<"pre">) {
+  const mermaid = useContext(MermaidContext);
+
   const maths = node?.children.find(isMaths);
-  if (!maths) {
-    return (
-      <CodeBlock node={node} {...rest}>
-        {children}
-      </CodeBlock>
-    );
+  if (maths) return <Maths display source={fenceContent(maths)} {...rest} />;
+  const diagram = mermaid ? node?.children.find(isDiagram) : undefined;
+  if (mermaid && diagram) {
+    return <Diagram source={fenceContent(diagram)} load={mermaid} {...rest} />;
   }
-  const source = textContent(maths).replace(/\n$/, "");
-  return <Maths display source={source} {...rest} />;
+  return (
+    <CodeBlock node={node} {...rest}>
+      {children}
+    </CodeBlock>
+  );
 }
 
 /** Inline code, or inline maths (`$…$`). */

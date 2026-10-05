@@ -8,3 +8,6 @@ import { rehypePastedImages } from "./image-registry";
 export const compileOptions: CompileOptions = {
   rehypePlugins: [rehypePastedImages],
 };
+
+/** Loads Mermaid when the deck has its first diagram. */
+export const loadMermaid = () => import("mermaid");
