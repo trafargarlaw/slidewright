@@ -314,11 +314,6 @@ New checkout flow
 Inline directives (`:name`) are **not** part of the syntax, so text like
 `Note:this` or `10:30` stays as written.
 
-Components are React components. With the CLI, they come from a
-`components.tsx` file next to the deck; with the Vite plugin, from its
-`components` option; in a React app, from the `components` prop of `<Deck>`.
-See [Components](../packages/vite/README.md#components).
-
 ## HTML
 
 Inline and block HTML work as in GitHub Flavored Markdown, and any element can
