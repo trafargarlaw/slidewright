@@ -80,6 +80,11 @@ describe("getting slides ready", () => {
 
 ![](two.png)
 
+<picture>
+  <source srcset="two.avif" type="image/avif">
+  <img src="two.jpg" alt="">
+</picture>
+
 ---
 layout: image-right
 image: three.png
@@ -96,6 +101,7 @@ image: three.png
 ![](five.png)
 `;
     render(<Deck markdown={markdown} />);
+    // Not the image in the picture, where the browser can pick another one.
     await waitFor(() =>
       expect(decoded).toEqual(["two.png", "three.png", "four.png"]),
     );
@@ -107,22 +113,35 @@ image: three.png
       <Deck
         ref={ref}
         markdown={slides(
+          "# One",
           "![](kept.png)",
-          "# Two",
           "# Three",
           "# Four",
-          "# Five",
+          "![](later.png)",
+          "# Six",
           "![](far.png)",
         )}
       />,
     );
     await waitFor(() => expect(decoded).toEqual(["kept.png"]));
 
-    act(() => ref.current!.goTo(5));
+    act(() => ref.current!.goTo(6));
     await waitFor(() => expect(decoded).toEqual(["kept.png", "far.png"]));
-    act(() => ref.current!.goTo(0));
-    await tick(200);
-    expect(decoded).toEqual(["kept.png", "far.png"]);
+    act(() => ref.current!.goTo(1));
+    // The slides around it get ready, all but the kept image.
+    await waitFor(() =>
+      expect(decoded).toEqual(["kept.png", "far.png", "later.png"]),
+    );
+  });
+
+  it("lets go of the images when the deck goes", async () => {
+    const markdown = slides("# One", "![](freed.png)");
+    const { unmount } = render(<Deck markdown={markdown} />);
+    await waitFor(() => expect(decoded).toEqual(["freed.png"]));
+    unmount();
+
+    render(<Deck markdown={markdown} />);
+    await waitFor(() => expect(decoded).toEqual(["freed.png", "freed.png"]));
   });
 
   it("draws the diagrams of the next slides, which then show at once", async () => {
@@ -197,6 +216,31 @@ image: three.png
     expect(
       draw.mock.calls.map(([, source]) => source.split(" ").at(-1)),
     ).toEqual(["b", "g", "c", "d"]);
+  });
+
+  it("draws a diagram that comes on show before the others drawn ahead", async () => {
+    let finish = () => {};
+    draw.mockImplementationOnce(async (id) => {
+      await new Promise<void>((done) => (finish = done));
+      return { svg: `<svg id="${id}"></svg>` };
+    });
+    const ref = createRef<DeckHandle>();
+    render(
+      <Deck
+        ref={ref}
+        markdown={slides("# One", diagram("h"), diagram("i"), diagram("j"))}
+        mermaid={mermaid}
+      />,
+    );
+    await waitFor(() => expect(draw).toHaveBeenCalledOnce());
+
+    act(() => ref.current!.goTo(3));
+    finish();
+    await waitFor(() => expect(draw).toHaveBeenCalledTimes(3));
+    expect(
+      draw.mock.calls.map(([, source]) => source.split(" ").at(-1)),
+    ).toEqual(["h", "j", "i"]);
+    await waitFor(() => expect(drawn()).toHaveLength(1));
   });
 
   it("loads the languages of the code on the next slides", async () => {

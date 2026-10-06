@@ -1,6 +1,6 @@
 import type { Slide } from "@slidewright/core";
 import type { Element, Properties, Root, RootContent } from "hast";
-import { useEffect, type RefObject } from "react";
+import { useEffect, useState, type RefObject } from "react";
 import { drawAhead, isDiagram, type MermaidLoader } from "./diagram";
 import { loadLanguage } from "./highlighter";
 import { LruCache } from "./lru";
@@ -40,15 +40,10 @@ interface Needs {
   diagrams: string[];
 }
 
-// Per document, as the presenter view can be in a window of its own.
-const loadedImages = new WeakMap<
-  Document,
-  LruCache<string, HTMLImageElement>
->();
-
 /**
  * Gets the slides around `current` ready in idle time, and keeps the images
- * of `current` loaded. `canvas` is the element that the slides show in.
+ * it loads until the deck goes. `canvas` is the element that the slides
+ * show in.
  */
 export function usePreload(
   canvas: RefObject<HTMLElement | null>,
@@ -58,6 +53,12 @@ export function usePreload(
   current: number,
   mermaid: MermaidLoader | undefined,
 ): void {
+  // Per deck, so they are freed with it. The presenter view, which can be
+  // in a window of its own, has its own.
+  const [images] = useState(
+    () => new LruCache<string, HTMLImageElement>(IMAGE_LIMIT),
+  );
+
   useEffect(() => {
     const element = canvas.current;
     const view = element?.ownerDocument.defaultView;
@@ -68,7 +69,7 @@ export function usePreload(
         const slide = slides[index]!;
         const needs = findNeeds(slide, getSlide(index).tree, !!mermaid);
         for (const image of needs.images) {
-          loadImage(element.ownerDocument, image);
+          loadImage(images, element.ownerDocument, image);
         }
         for (const lang of needs.languages) loadLanguage(lang);
         if (needs.maths) loadKatex();
@@ -88,7 +89,7 @@ export function usePreload(
     }
     const handle = view.setTimeout(prepare, 100);
     return () => view.clearTimeout(handle);
-  }, [canvas, slides, getSlide, layouts, current, mermaid]);
+  }, [images, canvas, slides, getSlide, layouts, current, mermaid]);
 }
 
 /**
@@ -136,6 +137,10 @@ function findNeeds(slide: Slide, tree: Root, diagrams: boolean): Needs {
       }
     } else if (node.tagName === "code") {
       if (isMaths(node)) needs.maths = true;
+    } else if (node.tagName === "picture") {
+      // The browser picks one of its sources, which could be another image
+      // than its `img`.
+      return;
     } else if (node.tagName === "img") {
       needs.images.push(imageSource(node.properties));
     } else if (node.tagName === "video") {
@@ -172,13 +177,12 @@ function imageSource({
  * document reuses an image that it has loaded and still holds, without
  * asking the server again, so the slide's image shows at once.
  */
-function loadImage(document: Document, source: ImageSource): void {
+function loadImage(
+  images: LruCache<string, HTMLImageElement>,
+  document: Document,
+  source: ImageSource,
+): void {
   if (!source.src && !source.srcset) return;
-  let images = loadedImages.get(document);
-  if (!images) {
-    images = new LruCache(IMAGE_LIMIT);
-    loadedImages.set(document, images);
-  }
   const key = JSON.stringify(source);
   if (images.get(key)) return;
 
