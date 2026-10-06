@@ -115,7 +115,8 @@ From merge to production
   blank line, the keys are text on a slide of their own, and the build
   doesn't report it.
 - The frontmatter at the top of the file also holds the deck settings:
-  `title` (the name of the deck, and of its first slide), `theme`,
+  `title` (the name of the deck, and of its first slide), `theme`
+  (`default`, `paper`, `frost`, `contrast` or `vivid`, see [Style](#style)),
   `colorScheme` (`light` by default, `dark` or `auto`), `aspectRatio`
   (`16/9`), `canvasWidth` (`980`) and `defaults`, the frontmatter of every
   slide.
@@ -182,13 +183,26 @@ From merge to production
 
 ### Style
 
-`style.css` next to the deck loads after the theme. Set the theme on
-`[data-deck]`, and style slides with ordinary selectors:
+Choose a theme before you write CSS. `theme` in the headmatter selects one:
+
+| Theme      | For                                                          |
+| ---------- | ------------------------------------------------------------ |
+| `default`  | All decks: neutral greys and indigo.                         |
+| `paper`    | Talks that tell a story: warm paper and ink, serif headings. |
+| `frost`    | Technical talks: cool greys and teal.                        |
+| `contrast` | Bright rooms and low vision: black and white, bold headings. |
+| `vivid`    | Keynotes: pink and violet, section slides in colour.         |
+
+Each theme has light and dark colours, and keeps the size of the text.
+
+`style.css` next to the deck loads after the theme, and its rules win over
+it. Change theme properties on `[data-deck]`, and style slides with
+ordinary selectors:
 
 ```css
 [data-deck] {
   /* Links, quotes, the number of a `fact` slide and the progress bar. */
-  --deck-accent: #b45309;
+  --deck-accent: light-dark(#b45309, #fbbf24);
   --deck-font-sans: "Inter", sans-serif;
 }
 
@@ -203,7 +217,8 @@ From merge to production
 ```
 
 The slide is light by default: `--deck-bg` and `--deck-fg` are its
-background and its text, so choose an accent that reads on the background.
+background and its text. `light-dark()` gives a colour for each scheme, so
+choose an accent that reads on both backgrounds.
 Sizes are pixels of the slide, which is 980 × 551 and scaled to the screen.
 Every theme property and selector is in
 [Styling](references/react.md#styling).
@@ -211,7 +226,7 @@ Every theme property and selector is in
 ## What fits on a slide
 
 A slide cuts off what doesn't fit, and the build doesn't report it. With
-the default theme, a slide has room for a `#` heading of one line, about 30
+the built-in themes, a slide has room for a `#` heading of one line, about 30
 characters, and under it one of:
 
 - 8 bullets of one line, about 60 characters each,

@@ -1,5 +1,7 @@
 ---
 title: My talk
+# The look of the deck: default, paper, frost, contrast or vivid.
+theme: default
 layout: cover
 ---
 

@@ -47,8 +47,23 @@ have the same version. Each entry gives the packages that it changes.
   to a project with `npx skills add trafargarlaw/slidewright`. `create`: the
   README of a new project tells how.
 
+- `react`, `vite`, `cli`: Built-in themes. `theme` in the headmatter
+  selects `paper`, `frost`, `contrast` or `vivid`, as well as `default`.
+  Each theme has light and dark colours, fonts that most computers have,
+  and a look for some layouts. No theme changes the size of the text or
+  the padding, so a deck that fits with one theme fits with all of them.
+  Another name selects your own CSS for `[data-deck][data-theme="name"]`.
+  Before, `theme` had no effect.
+- `create`: A new deck has `theme: default`, with a comment that names the
+  other themes.
+
 ### Changed
 
+- `react`: The code comments of the default light theme are darker, for a
+  contrast of 4.5:1 or more.
+- `create`: The `style.css` of a new project no longer sets the accent
+  colour, so the accent of the theme shows. It has an example rule for a
+  slide class.
 - `core`: Text of the form `:set:name:` now compiles to
   `<span data-icon="set:name">`, with the text inside. A deck that shows
   such text as it is can put it in code.

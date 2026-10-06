@@ -87,7 +87,7 @@ layout: cover
 | Key           | Type                        | Default   | Meaning                                             |
 | ------------- | --------------------------- | --------- | --------------------------------------------------- |
 | `title`       | string                      |           | The title of the deck.                              |
-| `theme`       | string                      | `default` | The name of the theme.                              |
+| `theme`       | string                      | `default` | The name of the theme. See [Themes](#themes).       |
 | `colorScheme` | `light` \| `dark` \| `auto` | `light`   | The colour scheme.                                  |
 | `aspectRatio` | `16/9`, `4:3`, `1.6`, …     | `16/9`    | The aspect ratio of the slides.                     |
 | `canvasWidth` | number                      | `980`     | The width of a slide in CSS pixels, before scaling. |
@@ -95,6 +95,25 @@ layout: cover
 
 Slide keys in the headmatter, such as `layout` above, also apply to the
 first slide. The parser keeps unknown keys for renderers and plugins.
+
+### Themes
+
+`theme` gives the look of the deck: its colours, for light and for dark,
+its fonts, and the look of some layouts.
+
+| Theme      | Look                                                         |
+| ---------- | ------------------------------------------------------------ |
+| `default`  | Neutral greys and indigo                                     |
+| `paper`    | Warm paper and ink, serif headings                           |
+| `frost`    | Cool greys and teal, rounded corners, a glow on title slides |
+| `contrast` | Black and white, bold headings, a contrast of 7:1 or more    |
+| `vivid`    | Pink and violet, narrow headings, section slides in colour   |
+
+A theme doesn't change the size of the text, so a deck that fits with one
+theme fits with all of them. Another name is a theme of your own, written
+in CSS. A name that has no CSS gives the default theme. See
+[Themes](react.md#themes) in the README of
+`@slidewright/react`.
 
 ## Several files
 

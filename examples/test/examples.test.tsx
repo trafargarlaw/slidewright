@@ -23,6 +23,7 @@ const example = (...path: string[]) => join(import.meta.dirname, "..", ...path);
 const DECKS = {
   layouts: example("layouts", "slides.md"),
   code: example("code", "slides.md"),
+  themes: example("themes", "slides.md"),
   theme: example("theme", "slides.md"),
   diagrams: example("diagrams", "slides.md"),
   icons: example("icons", "slides.md"),
@@ -219,6 +220,7 @@ describe("build", () => {
   it.each([
     "layouts",
     "code",
+    "themes",
     "theme",
     "diagrams",
     "icons",
@@ -240,7 +242,8 @@ describe("build", () => {
       expect(existsSync(join(out, "hills.svg"))).toBe(true);
       expect(output()).toContain(".poster");
     }
-    if (name === "theme") expect(output()).toContain("#f2925a");
+    if (name === "themes") expect(output()).toMatch(/\[data-theme="?paper/);
+    if (name === "theme") expect(output()).toContain("#8fcf7e");
     if (name === "diagrams") {
       // Mermaid, from this workspace: a file for each kind of diagram.
       expect(

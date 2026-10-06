@@ -1,12 +1,13 @@
 ---
-title: Theme
+title: Your own theme
 description: A deck with its own colours, fonts and a layout made with CSS.
 icon: Palette
 ---
 
 import { ExampleDeck } from "@/components/examples";
 
-One stylesheet gives this deck its look:
+The [built-in themes](/docs/examples/themes) are a start. One stylesheet
+gives this deck a look of its own:
 
 - colours for the light and the dark colour schemes
 - a font for the headings
@@ -17,8 +18,8 @@ One stylesheet gives this deck its look:
 
 <ExampleDeck deck="examples/theme/slides.md" css="examples/theme/style.css" />
 
-The stylesheet loads after the default theme, so its rules apply without
-more specific selectors. See [Styling](/docs/reference/react#styling) for
+The rules of the stylesheet are not in the `slidewright` cascade layer, so
+they win over the theme without more specific selectors. See [Styling](/docs/reference/react#styling) for
 the theme properties and the selectors.
 
 ## Source

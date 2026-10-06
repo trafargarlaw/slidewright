@@ -14,6 +14,10 @@ Edit `slides.md`. When you save it, the open deck changes. Put images next
 to it, for example in `images/`. Show them with
 `![Description](images/photo.png)`. The build copies them into the site.
 
+To change the look of the deck, set `theme` at the top of `slides.md` to
+`default`, `paper`, `frost`, `contrast` or `vivid`. To change more, add
+rules to `style.css`.
+
 | Keys              | Action                                |
 | ----------------- | ------------------------------------- |
 | Arrows or `Space` | Move through the steps and the slides |

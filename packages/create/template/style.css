@@ -1,8 +1,11 @@
 /*
- * Loaded after the default theme. Set theme properties here, or style slide
- * content with ordinary CSS. The properties are listed at
+ * Loaded after the theme, so these rules win over it. Change theme
+ * properties here, or style slide content with ordinary CSS. The properties
+ * are listed at
  * https://github.com/trafargarlaw/slidewright/tree/master/packages/react#styling
  */
-[data-deck] {
-  --deck-accent: #2563eb;
+
+/* A slide with `class: dense` in its frontmatter. */
+[data-slide].dense {
+  font-size: 20px;
 }
