@@ -9,13 +9,17 @@ import {
 import { tmpdir } from "node:os";
 import { join, posix, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { icons } from "lucide-react";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   codeLines,
+  ICONS,
+  packageManagerTabs,
   PAGES,
   REPOSITORY,
   rewriteLinks,
   sync,
+  toManagers,
   toPage,
 } from "../lib/sync";
 import { anchors, prose } from "./markdown";
@@ -25,19 +29,28 @@ const repository = join(site, "..", "..");
 
 describe("toPage", () => {
   it("takes the title from the first heading", () => {
-    const page = toPage("docs/guide.md", "# The guide\n\nText.\n", "About it");
+    const page = toPage("docs/guide.md", "# The guide\n\nText.\n", {
+      description: "About it",
+      icon: "Map",
+    });
     expect(page).toBe(
       [
         "---",
         "# Generated from docs/guide.md. Edit that file instead.",
         'title: "The guide"',
         'description: "About it"',
+        "icon: Map",
         "---",
         "",
         "Text.",
         "",
       ].join("\n"),
     );
+  });
+
+  it("shows npm commands in a tab for each package manager", () => {
+    const page = toPage("a.md", "# A\n\n```sh\nnpm install x\n```\n");
+    expect(page).toContain('```sh tab="npm" tab-group="package-manager"');
   });
 
   it("quotes titles that YAML would read otherwise", () => {
@@ -120,6 +133,77 @@ describe("rewriteLinks", () => {
   });
 });
 
+describe("toManagers", () => {
+  it("writes npm commands for each package manager", () => {
+    expect(toManagers("npm install --save-dev @slidewright/cli")).toEqual({
+      npm: "npm install --save-dev @slidewright/cli",
+      pnpm: "pnpm add --save-dev @slidewright/cli",
+      yarn: "yarn add --dev @slidewright/cli",
+      bun: "bun add --dev @slidewright/cli",
+    });
+    expect(toManagers("npm install mermaid")?.pnpm).toBe("pnpm add mermaid");
+    expect(toManagers("npm install")?.yarn).toBe("yarn install");
+    expect(toManagers("npm run dev")?.bun).toBe("bun run dev");
+    expect(toManagers("npm create @slidewright my-talk")?.bun).toBe(
+      "bun create @slidewright my-talk",
+    );
+    expect(toManagers("cd my-talk")?.pnpm).toBe("cd my-talk");
+  });
+
+  it("leaves other commands alone", () => {
+    expect(toManagers("npx slidewright build")).toBeUndefined();
+    expect(toManagers("npm install -g x")).toBeUndefined();
+    expect(toManagers("npm ci")).toBeUndefined();
+    expect(toManagers("")).toBeUndefined();
+  });
+});
+
+describe("packageManagerTabs", () => {
+  it("makes a tab for each package manager", () => {
+    expect(packageManagerTabs("```sh\ncd talk\nnpm install\n```")).toBe(
+      [
+        '```sh tab="npm" tab-group="package-manager"',
+        "cd talk",
+        "npm install",
+        "```",
+        "",
+        '```sh tab="pnpm"',
+        "cd talk",
+        "pnpm install",
+        "```",
+        "",
+        '```sh tab="yarn"',
+        "cd talk",
+        "yarn install",
+        "```",
+        "",
+        '```sh tab="bun"',
+        "cd talk",
+        "bun install",
+        "```",
+      ].join("\n"),
+    );
+  });
+
+  it("leaves blocks with other commands, and other code, alone", () => {
+    const markdown = [
+      "```sh",
+      "npm install x",
+      "npx slidewright",
+      "```",
+      "````md",
+      "```sh",
+      "npm install x",
+      "```",
+      "````",
+      "```ts",
+      "npm install x",
+      "```",
+    ].join("\n");
+    expect(packageManagerTabs(markdown)).toBe(markdown);
+  });
+});
+
 describe("codeLines", () => {
   it("marks fenced blocks and their fences", () => {
     const lines = [
@@ -184,6 +268,16 @@ describe("sync", () => {
     }
   });
 
+  it("gives every page an icon that Lucide has", () => {
+    const pages = sitePages();
+    for (const [route, markdown] of pages) {
+      if (!route) continue;
+      const icon = /^icon: (\w+)$/m.exec(markdown)?.[1];
+      expect(icon && icon in icons, route).toBe(true);
+    }
+    expect(Object.keys(ICONS)).toEqual(Object.keys(PAGES));
+  });
+
   it("leaves unchanged files alone", () => {
     target = mkdtempSync(join(tmpdir(), "slidewright-docs-"));
     const page = join(target, "content/docs/reference/react.md");
@@ -203,7 +297,9 @@ function sitePages(): Map<string, string> {
   for (const [route, source] of Object.entries(PAGES)) {
     pages.set(
       `docs/${route}`,
-      toPage(source, readFileSync(join(repository, source), "utf8")),
+      toPage(source, readFileSync(join(repository, source), "utf8"), {
+        icon: ICONS[route],
+      }),
     );
   }
   const docs = join(site, "content", "docs");

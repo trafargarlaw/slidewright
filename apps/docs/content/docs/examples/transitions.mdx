@@ -1,0 +1,42 @@
+---
+title: Transitions
+description: Every transition between slides, for the whole deck and for one slide, and a transition made with CSS.
+icon: Clapperboard
+---
+
+import { ExampleDeck } from "@/components/examples";
+
+Click the deck, then press <kbd>→</kbd> to see each transition. Press
+
+<kbd>←</kbd> to see it play in the other direction.
+
+<ExampleDeck
+  deck="examples/transitions/slides.md"
+  css="examples/transitions/style.css"
+/>
+
+The headmatter gives the `fade` transition to every slide. A slide with its
+own `transition` key uses that transition. The last slide uses `turn`, a
+transition that the stylesheet makes.
+
+- [Transitions](/docs/reference/syntax#transitions) in the deck syntax
+  gives the names of the transitions.
+- [Your own transitions](/docs/reference/react#your-own-transitions) tells
+  how to make a transition with CSS.
+
+## Source
+
+<include cwd lang="md" meta='title="examples/transitions/slides.md"'>
+  ../../examples/transitions/slides.md
+</include>
+
+<include cwd lang="css" meta='title="examples/transitions/style.css"'>
+  ../../examples/transitions/style.css
+</include>
+
+To present this deck from a clone of the repository, run this command in
+the [`examples` folder](https://github.com/trafargarlaw/slidewright/tree/master/examples):
+
+```sh
+bun run dev transitions
+```

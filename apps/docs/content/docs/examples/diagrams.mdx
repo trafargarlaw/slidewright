@@ -1,0 +1,45 @@
+---
+title: Diagrams
+description: Mermaid diagrams in the colours of the deck, in a column, and on a slide with its own colours.
+icon: Workflow
+---
+
+import { ExampleDeck } from "@/components/examples";
+
+Each `mermaid` code block shows as a diagram. The diagram uses the colours
+and the font of its slide.
+
+<ExampleDeck
+  deck="examples/diagrams/slides.md"
+  css="examples/diagrams/style.css"
+/>
+
+The project of this deck has the `mermaid` package. Without it, a `mermaid`
+code block shows as code.
+
+- [Diagrams](/docs/reference/syntax#diagrams) in the deck syntax tells how
+  to write a diagram.
+- [Diagrams](/docs/reference/vite#diagrams) in the Vite plugin reference
+  tells how to add Mermaid to a project of the CLI.
+- [Diagrams](/docs/reference/react#diagrams) in the React reference tells
+  how to add Mermaid to a React app, and how to set the size of a diagram.
+
+## Source
+
+<include cwd lang="md" meta='title="examples/diagrams/slides.md"'>
+  ../../examples/diagrams/slides.md
+</include>
+
+The last slide has the class `night`. The stylesheet gives that slide its
+own colours, and the diagram uses them:
+
+<include cwd lang="css" meta='title="examples/diagrams/style.css"'>
+  ../../examples/diagrams/style.css
+</include>
+
+To present this deck from a clone of the repository, run this command in
+the [`examples` folder](https://github.com/trafargarlaw/slidewright/tree/master/examples):
+
+```sh
+bun run dev diagrams
+```

@@ -16,6 +16,9 @@ function subscribe(onChange: () => void): () => void {
 const siteScheme = (): ColorScheme =>
   document.documentElement.classList.contains("dark") ? "dark" : "light";
 
+/** Mermaid, which loads with the first diagram on a page. */
+export const loadMermaid = () => import("mermaid");
+
 /** The site's colour scheme; the system's while the page hydrates. */
 export function useSiteScheme(): ColorScheme {
   return useSyncExternalStore(subscribe, siteScheme, () => "auto");
@@ -30,7 +33,7 @@ export function DemoDeck({ css, ...props }: DeckProps & { css?: string }) {
     <Demo>
       {/* Scoped to the demo: other pages keep the styles after navigation. */}
       {css ? <style>{`@scope {\n${css}\n}`}</style> : null}
-      <Deck colorScheme={useSiteScheme()} {...props} />
+      <Deck colorScheme={useSiteScheme()} mermaid={loadMermaid} {...props} />
     </Demo>
   );
 }

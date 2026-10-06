@@ -1,17 +1,18 @@
 ---
 title: Code
 description: Code blocks with titles, line numbers, highlight stages and diffs.
+icon: Code
 ---
 
 import { ExampleDeck } from "@/components/examples";
 
-The "Walk through" slide highlights one line at each step, and its notes
-change with the steps: press <kbd>P</kbd> on that slide to see them.
+The "Walk through" slide highlights one line at each step. Its notes change
+with the steps too: go to that slide and press <kbd>P</kbd> to see them.
 
 <ExampleDeck deck="examples/code/slides.md" />
 
-The options go after the language of a code block. See
-[Code blocks](/docs/reference/syntax#code-blocks) for every option.
+The options of a code block go after its language. See
+[Code blocks](/docs/reference/syntax#code-blocks) for all the options.
 
 ## Source
 
@@ -19,5 +20,9 @@ The options go after the language of a code block. See
   ../../examples/code/slides.md
 </include>
 
-To present this deck from a clone of the repository, run `bun run dev code`
-in the [`examples` folder](https://github.com/trafargarlaw/slidewright/tree/master/examples).
+To present this deck from a clone of the repository, run this command in
+the [`examples` folder](https://github.com/trafargarlaw/slidewright/tree/master/examples):
+
+```sh
+bun run dev code
+```

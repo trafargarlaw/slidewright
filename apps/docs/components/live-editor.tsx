@@ -2,7 +2,7 @@
 import { getSlideAtLine, parseDeck } from "@slidewright/core";
 import { Deck, type DeckPosition, type DeckProps } from "@slidewright/react";
 import { useState } from "react";
-import { Demo, useSiteScheme } from "./demo-deck";
+import { Demo, loadMermaid, useSiteScheme } from "./demo-deck";
 
 /** A text area with the deck it renders, which shows the slide under the cursor. */
 export function LiveEditor({
@@ -35,6 +35,7 @@ export function LiveEditor({
         position={position}
         onPositionChange={setPosition}
         colorScheme={useSiteScheme()}
+        mermaid={loadMermaid}
       />
     </Demo>
   );
