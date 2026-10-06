@@ -111,7 +111,14 @@ export function Presenter({
   const [previewRef, previewSize] = useElementSize();
   const previewScale = previewSize ? previewSize.width / canvasWidth : null;
   const canvasRef = useRef<HTMLDivElement>(null);
-  usePreload(canvasRef, deck.slides, getSlide, current.slide, mermaid);
+  usePreload(
+    canvasRef,
+    deck.slides,
+    getSlide,
+    allLayouts,
+    current.slide,
+    mermaid,
+  );
 
   // The overview and fullscreen keys are left to the audience's deck.
   const handleKey = useCallback(
