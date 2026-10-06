@@ -70,10 +70,10 @@ slides.md:9: warning: Unknown layout "two-columns": the slide shows with the def
 
 ## Options
 
-| Option | Default     | Description                                                                                             |
-| ------ | ----------- | ------------------------------------------------------------------------------------------------------- |
-| `deck` | `slides.md` | The deck file, from the Vite root. It can bring in [other files](#several-files).                       |
-| `css`  |             | One or more stylesheets that load after the default theme, from the Vite root. See [Styling](#styling). |
+| Option | Default     | Description                                                                                     |
+| ------ | ----------- | ----------------------------------------------------------------------------------------------- |
+| `deck` | `slides.md` | The deck file, from the Vite root. It can bring in [other files](#several-files).               |
+| `css`  |             | One or more stylesheets that load after the theme, from the Vite root. See [Styling](#styling). |
 
 The type of the options is `SlidewrightOptions`.
 
@@ -173,8 +173,10 @@ readers.
 
 ## Styling
 
-The stylesheets in `css` load after the default theme. So they can set
-theme properties, and style the content of slides with usual selectors:
+To use a built-in theme, such as `paper`, `frost`, `contrast` or `vivid`,
+set `theme` in the headmatter of the deck. The stylesheets in `css` load
+after the theme, and their rules win over it. So they can change theme
+properties, and style the content of slides with usual selectors:
 
 ```css
 /* style.css */
@@ -189,7 +191,7 @@ theme properties, and style the content of slides with usual selectors:
 ```
 
 The [`@slidewright/react` README](react.md#styling) lists the
-theme properties and the selectors.
+themes, the theme properties and the selectors.
 
 ## Printing
 

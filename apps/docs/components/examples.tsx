@@ -9,6 +9,7 @@ import { createIconSetLoader, pickIcons } from "@repo/packages/vite/src/icons";
 import { DemoDeck } from "./demo-deck";
 import { LiveEditor } from "./live-editor";
 import { PartsEditor } from "./parts-editor";
+import { ThemePicker } from "./theme-picker";
 
 // Next runs in the site's folder.
 const repository = join(process.cwd(), "..", "..");
@@ -42,6 +43,12 @@ export async function ExampleDeck({
   return (
     <DemoDeck {...readDeck(deck)} css={css ? await read(css) : undefined} />
   );
+}
+
+/** The deck in `deck`, with a button for each built-in theme. */
+export function ThemesDeck({ deck }: { deck: string }) {
+  const { markdown, icons } = readDeck(deck);
+  return <ThemePicker markdown={markdown} icons={icons} />;
 }
 
 /**

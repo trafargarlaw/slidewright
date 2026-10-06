@@ -1,20 +1,20 @@
 /*
- * Loaded after the default theme, so these rules win over it. The theme
- * properties are listed in packages/react/README.md#styling.
+ * These rules are not in the `slidewright` layer, so they win over the
+ * theme. The theme properties are listed in packages/react/README.md#styling.
  */
 
 /* Colours for both schemes, and fonts. */
 [data-deck] {
-  --deck-bg: light-dark(#fbf7ef, #16181d);
-  --deck-fg: light-dark(#211e18, #ede7da);
-  --deck-muted: light-dark(#6d6556, #a39b8b);
-  --deck-accent: light-dark(#b8461b, #f2925a);
-  --deck-border: light-dark(#e4dccb, #2e3038);
-  --deck-surface: light-dark(#f2ebdd, #1f2128);
-  --deck-backdrop: light-dark(#e9e2d3, #0b0c0f);
+  --deck-bg: light-dark(#f5f6ef, #121610);
+  --deck-fg: light-dark(#1c2419, #e3e8dc);
+  --deck-muted: light-dark(#56604f, #9aa592);
+  --deck-accent: light-dark(#2d6a35, #8fcf7e);
+  --deck-border: light-dark(#dde2d2, #2a3226);
+  --deck-surface: light-dark(#ebeee2, #1a2018);
+  --deck-backdrop: light-dark(#e2e6d8, #080a07);
 
   --deck-font-heading:
-    "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    Rockwell, "Roboto Slab", "Zilla Slab", "DejaVu Serif", Georgia, serif;
   --deck-radius: 3px;
 }
 
@@ -48,7 +48,7 @@
   --deck-muted: color-mix(in srgb, var(--deck-bg) 75%, transparent);
   --deck-accent: var(--deck-bg);
 
-  background: light-dark(#b8461b, #f2925a);
+  background: light-dark(#2d6a35, #8fcf7e);
   color: var(--deck-bg);
 }
 
