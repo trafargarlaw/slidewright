@@ -381,6 +381,7 @@ describe("presenter in another window", () => {
 
     press("p");
 
-    expect(setTimeout).toHaveBeenCalledOnce();
+    // The timer waits for the next second there.
+    expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), 1000);
   });
 });

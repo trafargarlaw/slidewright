@@ -11,8 +11,8 @@ import {
 import { LruCache } from "./lru";
 
 // Mermaid is large, so the package doesn't depend on it: the app gives a
-// function that loads it. It loads with the first diagram, and draws each
-// diagram once for the colours it is shown in.
+// function that loads it. It loads with the first diagram, on show or drawn
+// ahead, and draws each diagram once for the colours it is shown in.
 
 /** The part of Mermaid that the deck uses. */
 interface Mermaid {
@@ -34,12 +34,21 @@ export const MermaidContext = createContext<MermaidLoader | undefined>(
 /** A drawn diagram, or the reason why it has none. */
 type Drawing = { id: string; svg: string } | { error: string };
 
+/** A diagram to draw, in the colours and font of `theme`. */
+interface Request {
+  key: string;
+  source: string;
+  theme: string;
+  load: MermaidLoader;
+}
+
 const drawings = new LruCache<string, Drawing>(200);
 const requested = new Set<string>();
+// Diagrams on show are drawn before those of the slides to come.
+const waiting = { shown: [] as Request[], ahead: [] as Request[] };
 const listeners = new Set<() => void>();
 let mermaid: Mermaid | undefined;
-// Mermaid's config is global, so diagrams are drawn one after the other.
-let queue: Promise<void> = Promise.resolve();
+let busy = false;
 let drawn = 0;
 let shown = 0;
 
@@ -48,17 +57,26 @@ function subscribe(listener: () => void): () => void {
   return () => listeners.delete(listener);
 }
 
-function draw(
-  key: string,
-  source: string,
-  theme: string,
-  load: MermaidLoader,
-): void {
-  if (requested.has(key)) return;
-  requested.add(key);
+function draw(request: Request, ahead: boolean): void {
+  if (!requested.has(request.key)) {
+    requested.add(request.key);
+    waiting[ahead ? "ahead" : "shown"].push(request);
+    if (!busy) void drawWaiting();
+  } else if (!ahead) {
+    // A diagram drawn ahead that comes on show before its turn.
+    const index = waiting.ahead.findIndex(({ key }) => key === request.key);
+    if (index !== -1) waiting.shown.push(...waiting.ahead.splice(index, 1));
+  }
+}
 
-  queue = queue.then(async () => {
-    let drawing: Drawing;
+const nextRequest = () => waiting.shown.shift() ?? waiting.ahead.shift();
+
+// Mermaid's config is global, so diagrams are drawn one after the other.
+async function drawWaiting(): Promise<void> {
+  busy = true;
+  for (let request = nextRequest(); request; request = nextRequest()) {
+    const { key, source, theme, load } = request;
+    let result: Drawing;
     try {
       mermaid ??= (await load()).default;
       mermaid.initialize({
@@ -70,16 +88,33 @@ function draw(
         suppressErrorRendering: true,
       });
       const id = `slidewright-diagram-${++drawn}`;
-      drawing = { id, svg: (await mermaid.render(id, source)).svg };
+      result = { id, svg: (await mermaid.render(id, source)).svg };
     } catch (error) {
-      drawing = {
+      result = {
         error: error instanceof Error ? error.message : String(error),
       };
     }
-    drawings.set(key, drawing);
+    drawings.set(key, result);
     requested.delete(key);
     for (const listener of listeners) listener();
-  });
+  }
+  busy = false;
+}
+
+/**
+ * Draws diagrams before they show, after those on show, in the colours and
+ * font of `place`: an element where their figures will be.
+ */
+export function drawAhead(
+  sources: readonly string[],
+  place: HTMLElement,
+  load: MermaidLoader,
+): void {
+  const theme = readTheme(place);
+  for (const source of sources) {
+    const key = `${theme}\n${source}`;
+    if (!drawings.get(key)) draw({ key, source, theme, load }, true);
+  }
 }
 
 type Rgba = [red: number, green: number, blue: number, alpha: number];
@@ -237,7 +272,7 @@ export function Diagram({ source, load, ...rest }: DiagramProps) {
   );
   useEffect(() => {
     if (key !== null && theme !== null && !drawings.get(key)) {
-      draw(key, source, theme, load);
+      draw({ key, source, theme, load }, false);
     }
   }, [key, source, theme, load]);
 

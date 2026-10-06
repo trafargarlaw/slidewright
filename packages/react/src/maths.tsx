@@ -21,7 +21,8 @@ function subscribe(listener: () => void): () => void {
   return () => listeners.delete(listener);
 }
 
-function loadKatex(): void {
+/** Starts loading KaTeX, once. */
+export function loadKatex(): void {
   if (status !== "idle") return;
   status = "loading";
 

@@ -165,7 +165,8 @@ export class SlideErrorBoundary extends Component<
   }
 }
 
-function toClassName(value: unknown): string | undefined {
+/** The `class` of a slide's frontmatter, as a `className`. */
+export function toClassName(value: unknown): string | undefined {
   if (typeof value === "string") return value || undefined;
   if (Array.isArray(value)) {
     const names = value.filter((name) => typeof name === "string");
