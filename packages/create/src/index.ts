@@ -23,6 +23,14 @@ export class UsageError extends Error {}
 
 export type PackageManager = "npm" | "pnpm" | "yarn" | "bun";
 
+/** The command that adds a dev dependency, for each package manager. */
+const ADD_DEV: Record<PackageManager, string> = {
+  npm: "npm install --save-dev",
+  pnpm: "pnpm add --save-dev",
+  yarn: "yarn add --dev",
+  bun: "bun add --dev",
+};
+
 /**
  * Creates a deck project in `folder`: the template, and a package.json that
  * depends on `@slidewright/cli` at `version`.
@@ -46,6 +54,7 @@ export function create(
   writeFileSync(
     readme,
     readFileSync(readme, "utf8")
+      .replaceAll("npm install --save-dev", ADD_DEV[packageManager])
       .replaceAll("npm install", `${packageManager} install`)
       .replaceAll("npm run", `${packageManager} run`),
   );
