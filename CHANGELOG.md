@@ -41,6 +41,12 @@ have the same version. Each entry gives the packages that it changes.
   problem with the file and the line that it is in. `core` has the new
   `joinDeck`, which makes one source from the files and reads them through
   a function that you give, so parsing still needs no file system.
+- `react`, `vite`, `cli`: Slides are ready before they show. While a slide
+  shows, the deck gets the next three slides ready, and the slide before
+  it: it loads and decodes their images, draws their diagrams, and loads
+  what colours their code and draws their maths. The deck keeps the images
+  that it has loaded, so a slide that you go back to does not load its
+  images again. Before, a slide loaded these things when it came on screen.
 - A skill for AI agents, in `skills/slidewright`. It teaches an agent such
   as Claude Code, Codex or Cursor to write and edit decks: the steps, the
   format in brief, how much fits on a slide, and the reference docs. Add it

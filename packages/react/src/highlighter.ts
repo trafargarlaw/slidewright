@@ -48,8 +48,12 @@ function loadHighlighter(): Promise<Highlighter> {
   return highlighterPromise;
 }
 
-function loadLanguage(lang: string): void {
-  if (languages.has(lang)) return;
+/**
+ * Starts loading a language, named in lower case, and the highlighter with
+ * it. Plain text needs neither.
+ */
+export function loadLanguage(lang: string): void {
+  if (PLAIN_TEXT.has(lang) || languages.has(lang)) return;
   languages.set(lang, "loading");
 
   void (async () => {
@@ -90,7 +94,7 @@ export function useTokens(code: string, lang: string): Highlighting {
   );
 
   useEffect(() => {
-    if (!PLAIN_TEXT.has(name)) loadLanguage(name);
+    loadLanguage(name);
   }, [name]);
 
   const status = loaded === -1 ? undefined : languages.get(name);

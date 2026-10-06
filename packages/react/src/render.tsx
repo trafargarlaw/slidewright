@@ -18,7 +18,9 @@ type ElementProps<Tag extends "pre" | "code"> = ComponentProps<Tag> & {
   node?: Element;
 };
 
-const fenceContent = (code: Element) => textContent(code).replace(/\n$/, "");
+/** The source in a fence, without its last line break. */
+export const fenceContent = (code: Element) =>
+  textContent(code).replace(/\n$/, "");
 
 /**
  * A fenced code block, display maths (`$$…$$` or a `math` fence), or a

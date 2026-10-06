@@ -37,6 +37,12 @@ it.
 You need React 19. The package has `"use client"`, and renders on the
 server. Code gets its colours and maths gets drawn after hydration.
 
+While a slide shows, the deck gets the next three slides ready, and the
+slide before it. It loads and decodes their images, draws their diagrams,
+and loads what colours their code and draws their maths. So a slide shows
+complete when the deck gets to it. The deck keeps the images that it has
+loaded, so a slide that you go back to shows its images at once.
+
 ## Props
 
 | Prop               | Default   | Description                                                                                                                         |
@@ -400,7 +406,7 @@ const loadMermaid = () => import("mermaid");
 <Deck markdown={markdown} mermaid={loadMermaid} />;
 ```
 
-Mermaid loads in its own chunk, with the first diagram that a deck shows.
+Mermaid loads in its own chunk, three slides before the first diagram.
 Without the `mermaid` prop, the block stays a code block. `Presenter` and
 `PrintDeck` take the same prop.
 

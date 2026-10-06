@@ -37,6 +37,7 @@ import {
   type NavigationAction,
 } from "./navigation";
 import { Overview } from "./overview";
+import { usePreload } from "./preload";
 import { Presenter } from "./presenter";
 import { usePresenterWindow } from "./presenter-window";
 import { Resources } from "./resources";
@@ -210,6 +211,7 @@ export function Deck({
     current,
     scale !== null && slideCount > 0,
   );
+  usePreload(canvasRef, deck.slides, getSlide, current.slide, mermaid);
 
   const latest = useRef({ current, slideCount, typed, selected, columns });
   useLayoutEffect(() => {

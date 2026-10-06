@@ -29,6 +29,7 @@ import {
   type KeyLike,
   type NavigationAction,
 } from "./navigation";
+import { usePreload } from "./preload";
 import { renderSlide } from "./render";
 import { Resources } from "./resources";
 import { RenderedSlide, SlideErrorBoundary } from "./slide";
@@ -109,6 +110,8 @@ export function Presenter({
     : null;
   const [previewRef, previewSize] = useElementSize();
   const previewScale = previewSize ? previewSize.width / canvasWidth : null;
+  const canvasRef = useRef<HTMLDivElement>(null);
+  usePreload(canvasRef, deck.slides, getSlide, current.slide, mermaid);
 
   // The overview and fullscreen keys are left to the audience's deck.
   const handleKey = useCallback(
@@ -177,6 +180,7 @@ export function Presenter({
           <div data-presenter-stage="">
             <div ref={viewportRef} data-deck-viewport="">
               <div
+                ref={canvasRef}
                 data-deck-canvas=""
                 data-measured={scale === null ? undefined : ""}
                 style={{ "--deck-scale": scale ?? 1 } as CSSProperties}
