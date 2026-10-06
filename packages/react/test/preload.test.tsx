@@ -1,6 +1,14 @@
 import { act, render, waitFor } from "@testing-library/react";
 import { createRef } from "react";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from "vitest";
 import { Deck, type DeckHandle, type MermaidLoader } from "../src";
 
 // Stand-ins for Shiki and KaTeX, which tell when the deck loads them.
@@ -123,6 +131,30 @@ image: three.png
       <Deck
         ref={ref}
         markdown={slides("# One", diagram("ahead"))}
+        mermaid={mermaid}
+      />,
+    );
+    await waitFor(() => expect(draw).toHaveBeenCalledOnce());
+    await tick();
+
+    act(() => ref.current!.next());
+    expect(drawn()).toHaveLength(1);
+    expect(draw).toHaveBeenCalledOnce();
+  });
+
+  it("draws a diagram ahead in the colours of its part of the layout", async () => {
+    // The `image` layout gives its content other colours. jsdom can't read
+    // colours, nor inherit them, so a font on the figure stands in for them.
+    const style = document.createElement("style");
+    style.textContent =
+      '[data-layout="image"] [data-part="content"] [data-diagram] { font-family: serif }';
+    document.head.append(style);
+    onTestFinished(() => style.remove());
+    const ref = createRef<DeckHandle>();
+    render(
+      <Deck
+        ref={ref}
+        markdown={`# One\n\n---\nlayout: image\n---\n\n${diagram("over")}`}
         mermaid={mermaid}
       />,
     );

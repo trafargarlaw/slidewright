@@ -211,7 +211,15 @@ export function Deck({
     current,
     scale !== null && slideCount > 0,
   );
-  usePreload(canvasRef, deck.slides, getSlide, current.slide, mermaid);
+  const allLayouts = useLayouts(layouts);
+  usePreload(
+    canvasRef,
+    deck.slides,
+    getSlide,
+    allLayouts,
+    current.slide,
+    mermaid,
+  );
 
   const latest = useRef({ current, slideCount, typed, selected, columns });
   useLayoutEffect(() => {
@@ -389,8 +397,6 @@ export function Deck({
   const onPointerCancel = () => {
     touchStart.current = null;
   };
-
-  const allLayouts = useLayouts(layouts);
 
   const slide = deck.slides[current.slide];
   // Gone when an edit removes it during its transition.

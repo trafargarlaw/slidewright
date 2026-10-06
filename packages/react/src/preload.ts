@@ -4,6 +4,7 @@ import { useEffect, type RefObject } from "react";
 import { drawAhead, isDiagram, type MermaidLoader } from "./diagram";
 import { loadLanguage } from "./highlighter";
 import { LruCache } from "./lru";
+import { builtinLayouts, resolveLayout, type Layout } from "./layouts";
 import { isMaths, loadKatex } from "./maths";
 import { fenceContent } from "./render";
 import { toClassName, type CompiledEntry } from "./slide";
@@ -53,6 +54,7 @@ export function usePreload(
   canvas: RefObject<HTMLElement | null>,
   slides: readonly Slide[],
   getSlide: (index: number) => CompiledEntry,
+  layouts: Readonly<Record<string, Layout>>,
   current: number,
   mermaid: MermaidLoader | undefined,
 ): void {
@@ -72,7 +74,8 @@ export function usePreload(
         if (needs.maths) loadKatex();
         // The slide on show draws its diagrams itself.
         if (mermaid && index !== current && needs.diagrams.length > 0) {
-          drawDiagrams(element, slide, needs.diagrams, mermaid);
+          const layout = resolveLayout(layouts, slide.layout);
+          drawDiagrams(element, slide, layout, needs.diagrams, mermaid);
         }
       }
     };
@@ -85,7 +88,7 @@ export function usePreload(
     }
     const handle = view.setTimeout(prepare, 100);
     return () => view.clearTimeout(handle);
-  }, [canvas, slides, getSlide, current, mermaid]);
+  }, [canvas, slides, getSlide, layouts, current, mermaid]);
 }
 
 /**
@@ -196,12 +199,13 @@ function loadImage(document: Document, source: ImageSource): void {
 
 /**
  * Draws a slide's diagrams ahead, in the colours and font of a stand-in for
- * the slide in the canvas. A diagram that its layout gives other colours is
- * drawn again when it shows.
+ * the slide in the canvas. A diagram that a custom layout gives other
+ * colours is drawn again when it shows.
  */
 function drawDiagrams(
   canvas: HTMLElement,
   slide: Slide,
+  layout: Layout,
   sources: readonly string[],
   load: MermaidLoader,
 ): void {
@@ -215,7 +219,16 @@ function drawDiagrams(
   standIn.style.display = "none";
   const figure = document.createElement("figure");
   figure.dataset.diagram = "";
-  standIn.append(figure);
+  // The image layouts put the content in a part of its own, which the
+  // `image` layout gives other colours.
+  if (layout === builtinLayouts.image) {
+    const content = document.createElement("div");
+    content.dataset.part = "content";
+    content.append(figure);
+    standIn.append(content);
+  } else {
+    standIn.append(figure);
+  }
   canvas.append(standIn);
   try {
     drawAhead(sources, figure, load);
