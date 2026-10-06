@@ -14,8 +14,7 @@ export default function NotFound() {
           This page doesn&apos;t exist
         </h1>
         <p className="mt-4 text-fd-muted-foreground">
-          It may have moved. Search the docs, or start again from one of these
-          pages.
+          Search the docs, or go to one of these pages.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Link
