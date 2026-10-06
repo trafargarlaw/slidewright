@@ -6,6 +6,20 @@
 @import "fumadocs-ui/css/neutral.css";
 @import "fumadocs-ui/css/preset.css";
 
+/* The accent of the default deck theme, for links, buttons and the page
+   that is open in the sidebar. */
+@theme {
+  --color-fd-primary: #4f46e5;
+  --color-fd-primary-foreground: #ffffff;
+  --color-fd-ring: #4f46e5;
+}
+
+.dark {
+  --color-fd-primary: #8f8aff;
+  --color-fd-primary-foreground: #0b0b16;
+  --color-fd-ring: #8f8aff;
+}
+
 html {
   scrollbar-gutter: stable;
 }

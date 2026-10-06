@@ -1,0 +1,56 @@
+---
+title: Several files
+description: A deck in several files, with chapters that have their own settings, and a file that a chapter brings in.
+icon: Files
+---
+
+import { ExampleDeck } from "@/components/examples";
+
+This deck is four files. `slides.md` names two chapters, and one of the
+chapters names a third file. The deck shows the slides of all the files,
+in order.
+
+<ExampleDeck
+  deck="examples/chapters/slides.md"
+  css="examples/chapters/style.css"
+/>
+
+A slide with `src` in its frontmatter stands for the slides of that file.
+See [Several files](/docs/reference/syntax#several-files) for the rules.
+
+## Source
+
+The deck file names the chapters. The `class` next to the second `src` goes
+to each slide of that chapter:
+
+<include cwd lang="md" meta='title="examples/chapters/slides.md"'>
+  ../../examples/chapters/slides.md
+</include>
+
+The first chapter:
+
+<include cwd lang="md" meta='title="examples/chapters/chapters/why.md"'>
+  ../../examples/chapters/chapters/why.md
+</include>
+
+The second chapter. Its `defaults` apply to its slides only, and its last
+slide brings in a file that other chapters can use too:
+
+<include cwd lang="md" meta='title="examples/chapters/chapters/how.md"'>
+  ../../examples/chapters/chapters/how.md
+</include>
+
+<include cwd lang="md" meta='title="examples/chapters/shared/questions.md"'>
+  ../../examples/chapters/shared/questions.md
+</include>
+
+<include cwd lang="css" meta='title="examples/chapters/style.css"'>
+  ../../examples/chapters/style.css
+</include>
+
+To present this deck from a clone of the repository, run this command in
+the [`examples` folder](https://github.com/trafargarlaw/slidewright/tree/master/examples):
+
+```sh
+bun run dev chapters
+```

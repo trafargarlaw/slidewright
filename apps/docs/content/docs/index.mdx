@@ -1,14 +1,20 @@
 ---
 title: Getting started
 description: Make a deck, present it, share it, and put it in a React app.
+icon: Rocket
 ---
 
+import { Atom, FileText, LayoutTemplate, SquareTerminal } from "lucide-react";
 import { ExampleEditor } from "@/components/examples";
 
-A Slidewright deck is one Markdown file. The `slidewright` command presents
-it in the browser, builds it into a static site and exports it to PDF.
+A Slidewright deck is a Markdown file. The `slidewright` command presents
+the deck in the browser. It also builds the deck into a static site, and
+exports the deck to PDF or PNG files.
 
 ## Make a deck
+
+Run these commands. They make a project in the `my-talk` folder, install
+its packages and present its deck:
 
 ```sh tab="npm" tab-group="package-manager"
 npm create @slidewright my-talk
@@ -38,66 +44,135 @@ bun install
 bun run dev
 ```
 
-The project has a `slides.md` to edit and a `style.css` for the theme.
-`npm run dev` serves the deck on [localhost:3030](http://localhost:3030).
-Save `slides.md` and the open deck changes at once, on the same slide.
+The deck shows at [localhost:3030](http://localhost:3030). The project has
+two files to edit:
 
-Requires Node.js 20.19, or 22.12 and later.
+- `slides.md`, the deck
+- `style.css`, the theme.
+
+When you save `slides.md`, the deck in the browser changes immediately, on
+the same slide.
+
+You need Node.js 20.19 or later in version 20, or Node.js 22.12 or later.
 
 ## Write slides
 
 A line with only `---` starts a new slide. A YAML block at the top of a
-slide sets its layout and other settings. HTML comments hold step markers
-and speaker notes, so the file still reads well as plain Markdown.
+slide gives its settings, such as its layout. HTML comments hold step
+markers and speaker notes, so the file is also easy to read as plain
+Markdown.
 
-Try it here:
+Edit the deck below. The slides change as you type:
 
 <ExampleEditor deck="apps/docs/decks/first.md" />
 
-The [deck syntax](/docs/reference/syntax) lists everything a deck can do, and
-the [examples](/docs/examples/layouts) show it on slides.
+### What a deck can hold
+
+| Feature                                               | What it does                                                  |
+| ----------------------------------------------------- | ------------------------------------------------------------- |
+| [Steps](/docs/reference/syntax#steps)                 | Show the content of a slide one part at a time.               |
+| [Speaker notes](/docs/reference/syntax#speaker-notes) | Give text to the presenter view only.                         |
+| [Layouts](/docs/reference/react#layouts)              | Arrange a slide: a cover, two columns, an image next to text. |
+| [Code blocks](/docs/reference/syntax#code-blocks)     | Highlight code, with line numbers, titles, diffs and stages.  |
+| [Maths](/docs/reference/syntax#maths)                 | Show LaTeX maths.                                             |
+| [Diagrams](/docs/reference/syntax#diagrams)           | Draw Mermaid diagrams in the colours of the slide.            |
+| [Icons](/docs/reference/syntax#icons)                 | Show icons from more than 200 Iconify sets.                   |
+| [Transitions](/docs/reference/syntax#transitions)     | Animate the change from one slide to the next.                |
+| [Several files](/docs/reference/syntax#several-files) | Keep the chapters of a long deck in different files.          |
+| [Styling](/docs/reference/react#styling)              | Change the colours, the fonts and the layouts with CSS.       |
+
+The [examples](/docs/examples/layouts) show these features on slides.
 
 ### With an AI agent
 
-A skill teaches the deck format to an agent such as Claude Code, Codex or
-Cursor, so that it can write and edit decks. Add it to the project:
+A skill teaches the deck format to an AI agent, such as Claude Code, Codex
+or Cursor. Then the agent can write and edit decks. To add the skill to
+your project, run this command:
 
 ```sh
 npx skills add trafargarlaw/slidewright
 ```
 
-It has the steps to make a deck, the format in brief, how much fits on a
-slide, and the reference pages of this site.
+The skill has the steps to make a deck, a short guide to the format, and
+the quantity of text that fits on a slide. It also has the reference pages
+of this site.
 
 ## Present
 
-| Keys                          | Action                             |
-| ----------------------------- | ---------------------------------- |
-| <kbd>→</kbd> <kbd>Space</kbd> | Next step, then next slide         |
-| <kbd>←</kbd>                  | Previous step, then previous slide |
-| <kbd>↓</kbd> <kbd>↑</kbd>     | Next or previous slide             |
-| <kbd>O</kbd>                  | Overview of every slide            |
-| <kbd>F</kbd>                  | Fullscreen                         |
-| <kbd>P</kbd>                  | Presenter view, in a second window |
+| Keys                            | Action                             |
+| ------------------------------- | ---------------------------------- |
+| <kbd>→</kbd> <kbd>Space</kbd>   | Next step, then next slide         |
+| <kbd>←</kbd>                    | Previous step, then previous slide |
+| <kbd>↓</kbd> <kbd>↑</kbd>       | Next or previous slide             |
+| A number, then <kbd>Enter</kbd> | Go to that slide                   |
+| <kbd>O</kbd>                    | Overview of all the slides         |
+| <kbd>F</kbd>                    | Fullscreen                         |
+| <kbd>P</kbd>                    | Presenter view, in a second window |
 
-The presenter view shows your notes, the next slide and a timer. It stays in
-step with the deck in the first window.
+The presenter view shows your notes, the next slide and a timer. It moves
+with the deck in the first window. See [Keyboard](/docs/reference/react#keyboard)
+for all the keys.
 
 ## Share
 
+To build the deck into a static site, run this command:
+
+```sh tab="npm" tab-group="package-manager"
+npm run build
+```
+
+```sh tab="pnpm"
+pnpm run build
+```
+
+```sh tab="yarn"
+yarn run build
+```
+
+```sh tab="bun"
+bun run build
+```
+
+The site goes into the `dist` folder. You can put it on any static host.
+See [Deploy](/docs/reference/cli#deploy).
+
+To export the deck, you need Playwright, which opens the deck in Chromium.
+Install it one time:
+
+```sh tab="npm" tab-group="package-manager"
+npm install --save-dev playwright-chromium
+```
+
+```sh tab="pnpm"
+pnpm add --save-dev playwright-chromium
+```
+
+```sh tab="yarn"
+yarn add --dev playwright-chromium
+```
+
+```sh tab="bun"
+bun add --dev playwright-chromium
+```
+
+To export the deck to `slides.pdf`, run this command:
+
 ```sh
-npm run build                # a static site in dist/, to host anywhere
-npx slidewright export       # slides.pdf
+npx slidewright export
+```
+
+To export each slide to a PNG image, run this command:
+
+```sh
 npx slidewright export --format png
 ```
 
-Export opens the deck in Chromium, so it needs Playwright:
-`npm install --save-dev playwright-chromium`. See the
-[CLI reference](/docs/reference/cli) for every option.
+See [Export](/docs/reference/cli#export) for all the options.
 
 ## Use in a React app
 
-The deck renderer is a React component. It needs no build plugin.
+The deck renderer is a React component. It needs no build plugin. Install
+it:
 
 ```sh tab="npm" tab-group="package-manager"
 npm install @slidewright/react
@@ -115,6 +190,8 @@ yarn add @slidewright/react
 bun add @slidewright/react
 ```
 
+Then show a deck:
+
 ```tsx
 import { Deck } from "@slidewright/react";
 import "@slidewright/react/styles.css";
@@ -124,7 +201,35 @@ export function Talk({ markdown }: { markdown: string }) {
 }
 ```
 
-The deck re-renders when `markdown` changes and stays on the same slide and
-step. The editor above is such a deck. See the
-[`@slidewright/react` reference](/docs/reference/react) for layouts, components
-and styling, and the [React example](/docs/examples/react) for an app.
+When `markdown` changes, the deck renders again and stays on the same slide
+and step. The editor above uses such a deck. See the
+[React app example](/docs/examples/react) for a full app.
+
+## Next steps
+
+<Cards>
+  <Card
+    icon={<FileText />}
+    title="Deck syntax"
+    href="/docs/reference/syntax"
+  >
+    All that a deck can hold, on top of GitHub Flavored Markdown.
+  </Card>
+  <Card
+    icon={<LayoutTemplate />}
+    title="Examples"
+    href="/docs/examples/layouts"
+  >
+    Decks that show each feature, with their source.
+  </Card>
+  <Card
+    icon={<SquareTerminal />}
+    title="Command line"
+    href="/docs/reference/cli"
+  >
+    Present, build and export a deck, and put it online.
+  </Card>
+  <Card icon={<Atom />} title="React" href="/docs/reference/react">
+    The props of `<Deck>`, layouts, components and styling.
+  </Card>
+</Cards>

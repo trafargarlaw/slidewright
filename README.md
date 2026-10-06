@@ -7,20 +7,29 @@ Write presentations in Markdown, render them with React.
 
 ![The playground: Markdown on the left, the slide it makes on the right](docs/playground.png)
 
-- **Markdown first.** One file, slides separated by `---`, per-slide
-  frontmatter, speaker notes, step-by-step reveals and code highlighting.
-- **Embeddable.** Drop `<Deck markdown={md} />` into any React app. The deck
-  re-renders as the markdown changes, so it works for live editors, docs
-  sites and CMS previews alike.
-- **A full toolchain.** A CLI to present, build static sites and export PDFs,
-  plus a browser editor with live preview.
+- **Markdown first.** A deck is one Markdown file. A line with only `---`
+  starts a new slide, and a YAML block gives the settings of a slide.
+  Speaker notes and step markers are HTML comments, so the file is also easy
+  to read on GitHub.
+- **All that a talk needs.** Steps, code with highlighted lines, LaTeX
+  maths, Mermaid diagrams, icons from Iconify, and transitions between
+  slides. A long deck can have its chapters in different files.
+- **In any React app.** `<Deck markdown={markdown} />` shows a deck. When
+  the Markdown changes, the deck changes too. So the deck works in live
+  editors, docs sites and CMS previews.
+- **A full toolchain.** A command line tool presents a deck, builds it into
+  a static site, and exports it to PDF or PNG files. A browser editor shows
+  the slides as you type.
 
 > [!WARNING]
-> Early release. Every API may change until 1.0. See the
-> [roadmap](docs/ROADMAP.md) for what is planned and in progress, and the
-> [changelog](CHANGELOG.md) for what changed in each version.
+> This is an early release. Every API can change before version 1.0. The
+> [roadmap](docs/ROADMAP.md) shows the work that is planned and in progress.
+> The [changelog](CHANGELOG.md) shows the changes in each version.
 
 ## Quick start
+
+Run these commands. They make a project in the `my-talk` folder, install its
+packages and present its deck at http://localhost:3030:
 
 ```sh
 npm create @slidewright my-talk
@@ -29,53 +38,62 @@ npm install
 npm run dev
 ```
 
-Requires Node.js 20.19, or 22.12 and later.
+You need Node.js 20.19 or later in version 20, or Node.js 22.12 or later.
+
+The [deck syntax](docs/syntax.md) tells what a deck can hold. The
+[examples](examples) show each feature on slides.
 
 ## With an AI agent
 
-The packages have no AI in them. Instead, a skill teaches the deck format to
-an agent such as Claude Code, Codex or Cursor, so that it can write and edit
-decks:
+The packages have no AI in them. A skill teaches the deck format to an AI
+agent, such as Claude Code, Codex or Cursor. Then the agent can write and
+edit decks. To add the skill to your project, run this command:
 
 ```sh
 npx skills add trafargarlaw/slidewright
 ```
 
-The skill is the [`skills/slidewright`](skills/slidewright) folder: the steps
-to make a deck, the format in brief, how much fits on a slide, and the
-reference docs.
+The skill is the [`skills/slidewright`](skills/slidewright) folder. It has
+the steps to make a deck, a short guide to the format, and the quantity of
+text that fits on a slide. It also has the reference docs.
 
 ## Repository layout
 
-| Path              | What it is                                  |
-| ----------------- | ------------------------------------------- |
-| `packages/core`   | Deck parser and slide compiler (no React)   |
-| `packages/react`  | `<Deck>` component, layouts and themes      |
-| `packages/vite`   | Vite plugin: serve and build a deck file    |
-| `packages/cli`    | `slidewright` command: dev, build, export   |
-| `packages/create` | `npm create @slidewright` project template  |
-| `apps/playground` | Browser editor with live preview            |
-| `apps/docs`       | Documentation site                          |
-| `examples/`       | [Example decks](examples) and a React app   |
-| `docs/`           | [Syntax reference](docs/syntax.md), roadmap |
-| `skills/`         | The deck format as a skill for AI agents    |
+| Path              | What it is                                                 |
+| ----------------- | ---------------------------------------------------------- |
+| `packages/core`   | [Deck parser and slide compiler](packages/core) (no React) |
+| `packages/react`  | [`<Deck>` component](packages/react), layouts and themes   |
+| `packages/vite`   | [Vite plugin](packages/vite): serve and build a deck file  |
+| `packages/cli`    | [`slidewright` command](packages/cli): dev, build, export  |
+| `packages/create` | [`npm create @slidewright`](packages/create) template      |
+| `apps/playground` | [Browser editor](apps/playground) with a live preview      |
+| `apps/docs`       | [Documentation site](apps/docs)                            |
+| `examples/`       | [Example decks](examples) and a React app                  |
+| `docs/`           | [Syntax reference](docs/syntax.md), roadmap and decisions  |
+| `skills/`         | The deck format as a skill for AI agents                   |
 
 ## Development
 
-Requires [Bun](https://bun.sh) 1.3+.
+You need [Bun](https://bun.sh) 1.3 or later. To install the dependencies,
+run this command at the root of the repository:
 
 ```sh
 bun install
-bun run dev        # start the playground on http://localhost:3000
-bun run docs       # start the documentation site on http://localhost:4321
-bun run typecheck  # type-check every workspace
-bun run test       # run unit tests
-bun run lint       # oxlint
-bun run fmt        # oxfmt
-bun run build      # build every workspace
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+Then run a script at the root:
+
+| Script              | What it does                                           |
+| ------------------- | ------------------------------------------------------ |
+| `bun run dev`       | Starts the playground at http://localhost:3000         |
+| `bun run docs`      | Starts the documentation site at http://localhost:4321 |
+| `bun run typecheck` | Checks the types of every workspace                    |
+| `bun run test`      | Runs the unit tests                                    |
+| `bun run lint`      | Finds problems in the code with oxlint                 |
+| `bun run fmt`       | Formats the code with oxfmt                            |
+| `bun run build`     | Builds every workspace                                 |
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before you open a pull request.
 
 ## License
 

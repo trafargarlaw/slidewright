@@ -1,19 +1,25 @@
 ---
 title: Theme
 description: A deck with its own colours, fonts and a layout made with CSS.
+icon: Palette
 ---
 
 import { ExampleDeck } from "@/components/examples";
 
-Everything comes from one stylesheet: colours for the light and dark schemes,
-a heading font, a layout made with CSS alone, a slide class, a styled
-directive and steps that slide up as they appear.
+One stylesheet gives this deck its look:
+
+- colours for the light and the dark colour schemes
+- a font for the headings
+- a layout made with CSS only
+- a class for one slide
+- a style for a directive
+- steps that move up as they show.
 
 <ExampleDeck deck="examples/theme/slides.md" css="examples/theme/style.css" />
 
-The stylesheet loads after the default theme, so its rules win without any
-extra specificity. See [Styling](/docs/reference/react#styling) for the theme
-properties and the selectors.
+The stylesheet loads after the default theme, so its rules apply without
+more specific selectors. See [Styling](/docs/reference/react#styling) for
+the theme properties and the selectors.
 
 ## Source
 
@@ -25,6 +31,11 @@ properties and the selectors.
   ../../examples/theme/slides.md
 </include>
 
-To present this deck from a clone of the repository, run `bun run dev theme`
-in the [`examples` folder](https://github.com/trafargarlaw/slidewright/tree/master/examples).
-A `style.css` next to a deck loads automatically.
+To present this deck from a clone of the repository, run this command in
+the [`examples` folder](https://github.com/trafargarlaw/slidewright/tree/master/examples):
+
+```sh
+bun run dev theme
+```
+
+The CLI loads a `style.css` that is next to the deck.

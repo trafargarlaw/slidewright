@@ -1,0 +1,39 @@
+---
+title: Icons
+description: Icons from two Iconify sets, in the text, sized and coloured with CSS, and shown in steps.
+icon: Shapes
+---
+
+import { ExampleDeck } from "@/components/examples";
+
+Each `:set:name:` in the text shows as an icon. An icon has the height and
+the colour of the text around it.
+
+<ExampleDeck deck="examples/icons/slides.md" css="examples/icons/style.css" />
+
+The project of this deck has two icon sets: `@iconify-json/lucide` and
+`@iconify-json/logos`. Without its set, an icon shows as its source text.
+
+- [Icons](/docs/reference/syntax#icons) in the deck syntax tells how to
+  write an icon.
+- [Icons](/docs/reference/vite#icons) in the Vite plugin reference tells how
+  to add an icon set to a project of the CLI.
+- [Icons](/docs/reference/react#icons) in the React reference tells how to
+  give icon sets to `<Deck>`, and how to add your own icons.
+
+## Source
+
+<include cwd lang="md" meta='title="examples/icons/slides.md"'>
+  ../../examples/icons/slides.md
+</include>
+
+<include cwd lang="css" meta='title="examples/icons/style.css"'>
+  ../../examples/icons/style.css
+</include>
+
+To present this deck from a clone of the repository, run this command in
+the [`examples` folder](https://github.com/trafargarlaw/slidewright/tree/master/examples):
+
+```sh
+bun run dev icons
+```

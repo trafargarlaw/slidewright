@@ -52,6 +52,9 @@ have the same version. Each entry gives the packages that it changes.
 - `core`: Text of the form `:set:name:` now compiles to
   `<span data-icon="set:name">`, with the text inside. A deck that shows
   such text as it is can put it in code.
+- `create`: The README of a new project gives each command in its own code
+  block, and tells how to export. Its command that installs Playwright is
+  correct for pnpm, Yarn and Bun too.
 
 ## 0.1.4 - 2026-10-05
 

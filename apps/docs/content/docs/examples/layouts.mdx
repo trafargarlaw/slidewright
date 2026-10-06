@@ -1,22 +1,23 @@
 ---
 title: Layouts
 description: Every built-in layout, one slide each.
+icon: LayoutTemplate
 ---
 
 import { ExampleDeck } from "@/components/examples";
 
-Click the deck and use the arrow keys, or press <kbd>O</kbd> to see every
-slide at once.
+Click the deck, then use the arrow keys. Press <kbd>O</kbd> to see all the
+slides at the same time.
 
 <ExampleDeck
   deck="examples/layouts/slides.md"
   css="examples/layouts/style.css"
 />
 
-A slide picks its layout with `layout:` in its frontmatter. The image layouts
-read the picture from `image:` and its description from `imageAlt:`. See
-[Layouts](/docs/reference/react#layouts) for what each layout does, and how to add
-your own.
+A slide sets its layout with the `layout` key in its frontmatter. The image
+layouts get the picture from the `image` key, and its description from the
+`imageAlt` key. See [Layouts](/docs/reference/react#layouts) for what each
+layout does, and how to add your own layouts.
 
 ## Source
 
@@ -24,11 +25,15 @@ your own.
   ../../examples/layouts/slides.md
 </include>
 
-The `full` slide uses a class from the deck's stylesheet:
+The `full` slide uses a class from the stylesheet of the deck:
 
 <include cwd lang="css" meta='title="examples/layouts/style.css"'>
   ../../examples/layouts/style.css
 </include>
 
-To present this deck from a clone of the repository, run `bun run dev layouts`
-in the [`examples` folder](https://github.com/trafargarlaw/slidewright/tree/master/examples).
+To present this deck from a clone of the repository, run this command in
+the [`examples` folder](https://github.com/trafargarlaw/slidewright/tree/master/examples):
+
+```sh
+bun run dev layouts
+```

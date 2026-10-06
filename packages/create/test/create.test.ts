@@ -68,7 +68,17 @@ describe("create", () => {
     create("talk", { version: "0.1.0", packageManager: "pnpm" });
     const readme = read("talk", "README.md");
     expect(readme).toContain("pnpm install\npnpm run dev");
+    expect(readme).toContain("pnpm add --save-dev playwright-chromium");
     expect(readme).not.toMatch(/^npm /m);
+  });
+
+  it.each([
+    ["npm", "npm install --save-dev playwright-chromium"],
+    ["yarn", "yarn add --dev playwright-chromium"],
+    ["bun", "bun add --dev playwright-chromium"],
+  ] as const)("adds a dev dependency with %s", (packageManager, command) => {
+    create("talk", { version: "0.1.0", packageManager });
+    expect(read("talk", "README.md")).toContain(command);
   });
 
   it("fills an empty folder, and leaves a folder with files alone", () => {
