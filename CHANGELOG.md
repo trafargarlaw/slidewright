@@ -56,6 +56,13 @@ have the same version. Each entry gives the packages that it changes.
   block, and tells how to export. Its command that installs Playwright is
   correct for pnpm, Yarn and Bun too.
 
+### Fixed
+
+- `react`: The presenter window has the theme of the deck. Before, a theme
+  in the `className` or the `style` of `<Deck>` didn't get to the window,
+  so the presenter showed the default theme. The window now gets the class
+  of the deck and the custom properties of its `style`.
+
 ## 0.1.4 - 2026-10-05
 
 ### Fixed

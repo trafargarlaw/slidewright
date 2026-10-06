@@ -129,7 +129,25 @@ export interface DeckHandle {
 
 const NO_COMPONENTS: DirectiveComponents = {};
 const NO_ICONS: readonly IconSet[] = [];
-const PRESENTER_WINDOW_STYLE: CSSProperties = { height: "100dvh" };
+// The presenter fills its window, whatever size the deck's class gives it.
+const PRESENTER_WINDOW_STYLE: CSSProperties = {
+  width: "100%",
+  maxWidth: "none",
+  height: "100dvh",
+  maxHeight: "none",
+  margin: 0,
+};
+
+/**
+ * The style of the presenter in its window: the custom properties in the
+ * deck's `style`, such as theme colours, and not the deck's size.
+ */
+function presenterWindowStyle(style: CSSProperties = {}): CSSProperties {
+  const custom = Object.entries(style).filter(([name]) =>
+    name.startsWith("--"),
+  );
+  return { ...Object.fromEntries(custom), ...PRESENTER_WINDOW_STYLE };
+}
 
 /**
  * Renders a Markdown deck: one slide at a time, scaled to fit, with step
@@ -545,7 +563,8 @@ export function Deck({
           {slideCount > 0 ? status : ""}
         </div>
       </div>
-      {/* Outside the deck, so its events don't bubble through the deck's. */}
+      {/* Outside the deck, so its events don't bubble through the deck's.
+          With the deck's class, so it has the deck's theme. */}
       {presenterWindow.popup
         ? createPortal(
             <Presenter
@@ -559,7 +578,8 @@ export function Deck({
               compileOptions={compileOptions}
               colorScheme={colorScheme}
               keyboard="global"
-              style={PRESENTER_WINDOW_STYLE}
+              className={className}
+              style={presenterWindowStyle(style)}
             />,
             presenterWindow.popup.document.body,
           )
