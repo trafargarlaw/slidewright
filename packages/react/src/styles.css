@@ -1,9 +1,11 @@
 /*
- * Deck chrome, built-in layouts and the default theme.
+ * Deck chrome, built-in layouts, the default theme and the built-in themes.
  *
  * Everything lives in the `slidewright` cascade layer, so any rule in your
  * own (unlayered) CSS wins without specificity fights. To theme a deck, set
- * the `--deck-*` custom properties on `[data-deck]` or a parent element.
+ * the `--deck-*` custom properties on `[data-deck]` or on a class of the
+ * deck. A parent element can't set them: the rule below sets them on the
+ * deck itself.
  */
 
 /* KaTeX's styles and fonts, for maths. */
@@ -44,7 +46,7 @@
     /* Code colours, used by the syntax highlighter. */
     --deck-code-foreground: var(--deck-fg);
     --deck-code-background: var(--deck-surface);
-    --deck-code-token-comment: light-dark(#6e7781, #8b949e);
+    --deck-code-token-comment: light-dark(#59636e, #8b949e);
     --deck-code-token-keyword: light-dark(#cf222e, #ff7b72);
     --deck-code-token-string: light-dark(#0a3069, #a5d6ff);
     --deck-code-token-string-expression: light-dark(#116329, #7ee787);
@@ -69,6 +71,178 @@
     [data-deck] {
       --deck-step-duration: 0ms;
     }
+  }
+
+  /* Built-in themes -------------------------------------------------------- */
+
+  /* `theme: <name>` in the headmatter selects one. A theme sets colours for
+     the two schemes, and can set fonts and style slides. It keeps the size
+     of the text and the padding, so a deck fits with each theme. See
+     docs/adr/0002-a-theme-is-css.md. */
+
+  /* paper: warm paper and ink, with serif headings. */
+  [data-deck][data-theme="paper"] {
+    --deck-bg: light-dark(#fbf8f1, #1b1916);
+    --deck-fg: light-dark(#29241d, #ece5d8);
+    --deck-muted: light-dark(#685f50, #a89f8e);
+    --deck-accent: light-dark(#a6411b, #ee9563);
+    --deck-border: light-dark(#e5dccb, #37322b);
+    --deck-surface: light-dark(#f3ecdf, #25221e);
+    --deck-backdrop: light-dark(#e8e0d0, #0f0e0c);
+
+    --deck-font-heading:
+      "Iowan Old Style", "Palatino Linotype", Palatino, "URW Palladio L", P052,
+      Georgia, serif;
+    --deck-radius: 4px;
+
+    --deck-code-token-comment: light-dark(#73695a, #968d7c);
+    --deck-code-token-keyword: light-dark(#a6411b, #f0a27a);
+    --deck-code-token-string: light-dark(#466520, #b8cf8c);
+    --deck-code-token-string-expression: light-dark(#2b6455, #8fcfb6);
+    --deck-code-token-constant: light-dark(#7f4d00, #e6bf6c);
+    --deck-code-token-function: light-dark(#753c82, #d6a8e2);
+    --deck-code-token-parameter: light-dark(#8c4c0e, #f2b778);
+    --deck-code-token-punctuation: light-dark(#685f50, #a89f8e);
+    --deck-code-token-link: light-dark(#1b5f78, #7cc2da);
+    --deck-code-added: light-dark(#3b7220, #9fcf6f);
+    --deck-code-removed: light-dark(#a6311b, #f08a72);
+  }
+
+  [data-deck][data-theme="paper"] [data-slide] :where(h1, h2, h3, h4, h5, h6) {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  [data-deck][data-theme="paper"] [data-layout="quote"] :where(blockquote) {
+    font-family: var(--deck-font-heading);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  /* frost: cool greys and teal, with rounded corners and a glow on cover
+     and section slides. */
+  [data-deck][data-theme="frost"] {
+    --deck-bg: light-dark(#f7f9fc, #0f1520);
+    --deck-fg: light-dark(#1b2533, #e2e8f0);
+    --deck-muted: light-dark(#566477, #8f9db0);
+    --deck-accent: light-dark(#0a6c7e, #5ccbdc);
+    --deck-border: light-dark(#dbe3ed, #243042);
+    --deck-surface: light-dark(#edf2f8, #172030);
+    --deck-backdrop: light-dark(#e1e8f1, #070a10);
+
+    --deck-font-heading:
+      Avenir, "Avenir Next LT Pro", Montserrat, Corbel, "URW Gothic",
+      source-sans-pro, sans-serif;
+    --deck-radius: 14px;
+
+    --deck-code-token-comment: light-dark(#5a687a, #7f8da0);
+    --deck-code-token-keyword: light-dark(#3f51c8, #81a1c1);
+    --deck-code-token-string: light-dark(#2a6f4f, #a3be8c);
+    --deck-code-token-string-expression: light-dark(#0a6c7e, #8fbcbb);
+    --deck-code-token-constant: light-dark(#8a3fa0, #b48ead);
+    --deck-code-token-function: light-dark(#1d5f9e, #88c0d0);
+    --deck-code-token-parameter: light-dark(#a1480c, #d08770);
+    --deck-code-token-punctuation: light-dark(#566477, #9aa8b8);
+    --deck-code-token-link: light-dark(#0a6c7e, #88c0d0);
+    --deck-code-added: light-dark(#2a6f4f, #a3be8c);
+    --deck-code-removed: light-dark(#b4232f, #e88388);
+  }
+
+  [data-deck][data-theme="frost"] [data-slide] :where(h1, h2, h3, h4, h5, h6) {
+    font-weight: 600;
+  }
+
+  [data-deck][data-theme="frost"]
+    :is([data-layout="cover"], [data-layout="section"]) {
+    background-image: radial-gradient(
+      circle at 85% 10%,
+      color-mix(in srgb, var(--deck-accent) 18%, transparent),
+      transparent 60%
+    );
+  }
+
+  /* contrast: black and white with bold headings, for bright rooms and for
+     people with low vision. */
+  [data-deck][data-theme="contrast"] {
+    --deck-bg: light-dark(#ffffff, #000000);
+    --deck-fg: light-dark(#000000, #ffffff);
+    --deck-muted: light-dark(#383838, #d4d4d4);
+    --deck-accent: light-dark(#0030c2, #ffd60a);
+    --deck-border: light-dark(#595959, #a6a6a6);
+    --deck-surface: light-dark(#f0f0f0, #1a1a1a);
+    --deck-backdrop: light-dark(#d4d4d4, #2b2b2b);
+    --deck-dim-opacity: 0.5;
+
+    --deck-code-token-comment: light-dark(#4a4a4a, #bdbdbd);
+    --deck-code-token-keyword: light-dark(#a3001b, #ff9e9e);
+    --deck-code-token-string: light-dark(#005c12, #8fff9f);
+    --deck-code-token-string-expression: light-dark(#004e66, #8ff0ff);
+    --deck-code-token-constant: light-dark(#0030c2, #a8d1ff);
+    --deck-code-token-function: light-dark(#6200a8, #e2b8ff);
+    --deck-code-token-parameter: light-dark(#7d3300, #ffc78a);
+    --deck-code-token-punctuation: light-dark(#262626, #e6e6e6);
+    --deck-code-token-link: light-dark(#0030c2, #ffd60a);
+    --deck-code-added: light-dark(#005c12, #8fff9f);
+    --deck-code-removed: light-dark(#a3001b, #ff9e9e);
+  }
+
+  [data-deck][data-theme="contrast"]
+    [data-slide]
+    :where(h1, h2, h3, h4, h5, h6) {
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  [data-deck][data-theme="contrast"] [data-slide] :where(a) {
+    text-decoration-thickness: 0.1em;
+  }
+
+  /* vivid: strong colour and condensed headings, for keynotes. Section
+     slides are in the accent colour. */
+  [data-deck][data-theme="vivid"] {
+    --deck-bg: light-dark(#fdfbff, #120d22);
+    --deck-fg: light-dark(#1a1330, #f3eefe);
+    --deck-muted: light-dark(#5c5372, #a9a0c2);
+    --deck-accent: light-dark(#c80f56, #ff5c9d);
+    --deck-border: light-dark(#e9e3f4, #2c2445);
+    --deck-surface: light-dark(#f4effc, #1d1633);
+    --deck-backdrop: light-dark(#ebe4f6, #07050d);
+
+    --deck-font-heading:
+      Bahnschrift, "DIN Alternate", "Franklin Gothic Medium",
+      "Nimbus Sans Narrow", sans-serif-condensed, sans-serif;
+
+    --deck-code-token-comment: light-dark(#6a6280, #8e86a8);
+    --deck-code-token-keyword: light-dark(#c80f56, #ff7aab);
+    --deck-code-token-string: light-dark(#09714f, #7ee2b8);
+    --deck-code-token-string-expression: light-dark(#086680, #7fd7f0);
+    --deck-code-token-constant: light-dark(#6235c4, #b69cff);
+    --deck-code-token-function: light-dark(#4a2fb0, #c9b8ff);
+    --deck-code-token-parameter: light-dark(#a24a05, #ffb86b);
+    --deck-code-token-punctuation: light-dark(#5c5372, #a9a0c2);
+    --deck-code-token-link: light-dark(#c80f56, #ff5c9d);
+    --deck-code-added: light-dark(#09714f, #7ee2b8);
+    --deck-code-removed: light-dark(#c80f56, #ff7aab);
+  }
+
+  [data-deck][data-theme="vivid"] [data-slide] :where(h1, h2, h3, h4, h5, h6) {
+    letter-spacing: 0;
+  }
+
+  [data-deck][data-theme="vivid"] [data-layout="cover"] :where(h1) {
+    color: var(--deck-accent);
+  }
+
+  [data-deck][data-theme="vivid"] [data-layout="section"] {
+    background-color: var(--deck-accent);
+    color: var(--deck-bg);
+  }
+
+  /* On the accent colour, the accent and the second text colour are the
+     colour of the text. */
+  [data-deck][data-theme="vivid"] [data-layout="section"] > * {
+    --deck-accent: var(--deck-bg);
+    --deck-muted: var(--deck-bg);
   }
 
   /* Deck ------------------------------------------------------------------- */

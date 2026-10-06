@@ -4,6 +4,7 @@
 | -------------------------- | ---------------------------------------------------------------------------------------------- |
 | [layouts](layouts)         | Each built-in layout on one slide, with an image next to the deck                              |
 | [code](code)               | Code blocks: titles, line numbers, highlight stages, diffs and notes for each step             |
+| [themes](themes)           | One deck in a built-in theme. Change `theme:` to see the others                                |
 | [theme](theme)             | A deck with its own look: colours, fonts, a layout made in CSS and slide classes               |
 | [diagrams](diagrams)       | Mermaid diagrams in the colours of the deck, in a column, and on a slide with its own colours  |
 | [icons](icons)             | Icons from two Iconify sets: in text, with a size and a colour from CSS, and shown in steps    |

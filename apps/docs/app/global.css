@@ -40,6 +40,37 @@ html > body[data-scroll-locked] {
   border-radius: 0.5rem;
 }
 
+/* The buttons above a deck that change its theme. */
+.theme-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.theme-picker button {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--color-fd-border);
+  border-radius: 999px;
+  color: var(--color-fd-muted-foreground);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.theme-picker button:hover {
+  color: var(--color-fd-foreground);
+}
+
+.theme-picker button[aria-pressed="true"] {
+  border-color: var(--color-fd-primary);
+  background: var(--color-fd-primary);
+  color: var(--color-fd-primary-foreground);
+}
+
+.theme-picker + .demo {
+  margin-top: 0.75rem;
+}
+
 /* The editor above its deck: the content column is too narrow to put them
    side by side. */
 .live-editor {

@@ -5,7 +5,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { StrictMode, createRef, useState } from "react";
+import { StrictMode, createRef, useState, type CSSProperties } from "react";
 import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { Deck, type DeckHandle, type DeckPosition } from "../src";
 
@@ -339,6 +339,24 @@ describe("presenter window styles", () => {
     root.removeAttribute("lang");
     await waitFor(() => expect(copy.hasAttribute("lang")).toBe(false));
     expect(copy.className).toBe("");
+  });
+
+  it("gives the presenter the deck's class and custom properties", () => {
+    const { popup } = stubWindowOpen();
+    render(
+      <Deck
+        markdown={TALK}
+        className="brand"
+        style={{ height: "400px", "--deck-accent": "red" } as CSSProperties}
+      />,
+    );
+    press("p");
+    const presenter = presenterIn(popup())!;
+
+    expect(presenter.className).toBe("brand");
+    expect(presenter.style.getPropertyValue("--deck-accent")).toBe("red");
+    // The deck's size is not for the window.
+    expect(presenter.style.height).not.toBe("400px");
   });
 });
 

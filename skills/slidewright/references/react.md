@@ -197,8 +197,20 @@ The window copies these from the page, and follows their changes:
   page
 - the attributes of the `<html>` element, such as a dark mode class.
 
-The window doesn't copy rules that a script adds with `insertRule`. Some
-CSS-in-JS libraries add rules in this way in production.
+The presenter in the window gets the `className` of the deck, and the
+custom properties in its `style`, such as `--deck-accent`. So it has the
+theme of the deck. It doesn't get the other properties of `style`, because
+it fills the window.
+
+The window doesn't copy:
+
+- `<style>` elements in the body of the page
+- rules that a script adds with `insertRule`. Some CSS-in-JS libraries add
+  rules in this way in production.
+
+The presenter in the window is not in the parent elements of the deck. So
+a rule that selects the deck through a parent element, such as
+`.page [data-deck]`, doesn't apply in the window.
 
 Browsers open windows only after a click or a key press. A popup blocker
 can also stop the window. `presenter={false}` removes the key and the
@@ -553,8 +565,9 @@ transition: turn
 
 ## Styling
 
-`styles.css` has the deck controls, the built-in layouts and the default
-theme. All of them are in the `slidewright` cascade layer. A rule in your
+`styles.css` has the deck controls, the built-in layouts, the default
+theme and the [built-in themes](#themes). All of them are in the
+`slidewright` cascade layer. A rule in your
 own CSS that is not in a layer has priority over them.
 
 For maths, `styles.css` imports the stylesheet and the fonts of KaTeX
@@ -572,8 +585,8 @@ preflight reset comes first, and the utilities still have priority:
 @import "tailwindcss";
 ```
 
-To give a deck a theme, set custom properties on `[data-deck]` or on a
-parent element:
+To give a deck a theme, set custom properties on `[data-deck]`, or on a
+class that you give to the deck:
 
 ```css
 .my-deck {
@@ -584,6 +597,13 @@ parent element:
   --deck-font-size: 26px;
 }
 ```
+
+```tsx
+<Deck markdown={markdown} className="my-deck" />
+```
+
+Don't set them on a parent element of the deck. The default theme sets
+them on `[data-deck]`, so the deck doesn't get the values of its parent.
 
 | Property                                   | Controls                                      |
 | ------------------------------------------ | --------------------------------------------- |
@@ -607,6 +627,53 @@ parent element:
 
 The colours use `light-dark()`. So a theme can give the colours of the two
 schemes in one value.
+
+### Themes
+
+`styles.css` has four themes in addition to the default theme. To use one,
+set `theme` in the headmatter:
+
+```md
+---
+theme: paper
+---
+```
+
+| Theme      | Look                                                         | For                                      |
+| ---------- | ------------------------------------------------------------ | ---------------------------------------- |
+| `default`  | Neutral greys and indigo                                     | All decks                                |
+| `paper`    | Warm paper and ink, serif headings                           | Talks that tell a story                  |
+| `frost`    | Cool greys and teal, rounded corners, a glow on title slides | Technical talks                          |
+| `contrast` | Black and white, bold headings, a contrast of 7:1 or more    | Bright rooms, and people with low vision |
+| `vivid`    | Pink and violet, narrow headings, section slides in colour   | Keynotes                                 |
+
+Each theme has colours for light and for dark. In each theme, text has a
+contrast of 4.5:1 or more on its background, and the main text has 7:1 or
+more. A theme doesn't change the size of the text or the padding, so a deck
+that fits with one theme fits with all of them. The fonts are fonts that
+most computers have, so a deck doesn't download fonts. If a computer
+doesn't have the first font of the list, the next font shows.
+
+A name that is not a built-in theme gives the default theme. To make a
+theme with a name of your own, put its properties on
+`[data-deck][data-theme="name"]`. Then `theme: name` selects it:
+
+```css
+[data-deck][data-theme="forest"] {
+  --deck-bg: light-dark(#f5f6ef, #121610);
+  --deck-fg: light-dark(#1c2419, #e3e8dc);
+  --deck-accent: light-dark(#2d6a35, #8fcf7e);
+  --deck-font-heading: Rockwell, "Roboto Slab", Georgia, serif;
+}
+
+[data-deck][data-theme="forest"] [data-layout="section"] {
+  background: var(--deck-surface);
+}
+```
+
+Your rules win over a built-in theme. So a rule on `[data-deck]` that sets
+one property changes that property in each theme. The theme keeps its
+other properties.
 
 ### Selectors
 

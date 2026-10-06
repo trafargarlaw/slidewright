@@ -206,7 +206,8 @@ talk/
 - A slide with `src: chapters/why.md` in its frontmatter stands for the
   slides of that file. So a long deck can be in several files. The folder
   can have any name. See [Several files](syntax.md#several-files).
-- A `style.css` next to the deck loads after the default theme. See
+- A `style.css` next to the deck loads after the theme, and its rules win
+  over it. `theme` in the headmatter selects a built-in theme. See
   [Styling](vite.md#styling).
 - When the project has Mermaid, the page draws `mermaid` code blocks as
   diagrams. To install Mermaid, run `npm install --save-dev mermaid`. See

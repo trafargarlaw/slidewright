@@ -1,0 +1,55 @@
+---
+title: Themes
+description: One deck in each built-in theme.
+icon: SwatchBook
+---
+
+import { ThemesDeck } from "@/components/examples";
+
+Click a theme to see the deck in it. The colour scheme of the site, light
+or dark, is also the colour scheme of the deck.
+
+<ThemesDeck deck="examples/themes/slides.md" />
+
+| Theme      | Look                                                         | For                                      |
+| ---------- | ------------------------------------------------------------ | ---------------------------------------- |
+| `default`  | Neutral greys and indigo                                     | All decks                                |
+| `paper`    | Warm paper and ink, serif headings                           | Talks that tell a story                  |
+| `frost`    | Cool greys and teal, rounded corners, a glow on title slides | Technical talks                          |
+| `contrast` | Black and white, bold headings, a contrast of 7:1 or more    | Bright rooms, and people with low vision |
+| `vivid`    | Pink and violet, narrow headings, section slides in colour   | Keynotes                                 |
+
+To use a theme, set `theme` in the headmatter, the frontmatter of the first
+slide:
+
+```md
+---
+theme: frost
+---
+```
+
+Each theme has colours for light and for dark. The `colorScheme` key
+selects one, and `auto` follows the system. To change a colour of the
+theme, set its property in your stylesheet. Your rules win over the theme:
+
+```css title="style.css"
+[data-deck] {
+  --deck-accent: light-dark(#0f766e, #5eead4);
+}
+```
+
+See [Themes](/docs/reference/react#themes) for the properties, and for how
+to make a theme with a name of its own.
+
+## Source
+
+<include cwd lang="md" meta='title="examples/themes/slides.md"'>
+  ../../examples/themes/slides.md
+</include>
+
+To present this deck from a clone of the repository, run this command in
+the [`examples` folder](https://github.com/trafargarlaw/slidewright/tree/master/examples):
+
+```sh
+bun run dev themes
+```
