@@ -42,8 +42,11 @@ bun run --filter @slidewright/docs start
     commands and `cd`.
 - The tests check that each link between pages goes to a page and a
   heading that exist. They also check that each page has a Lucide icon.
-- `lib/layout.shared.tsx` has the name of the site and its links.
+- `lib/layout.shared.tsx` has the name of the site, its logo and its links.
   `lib/shared.ts` has the repository for the "Open in GitHub" links.
+- `components/logo.tsx` is a copy of `app/icon.svg`. `app/global.css` and
+  the OG images in `app/og/` have the accent colour. When you change one of
+  these, change the others.
 
 ## Writing pages
 

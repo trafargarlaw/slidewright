@@ -19,6 +19,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { CopyCommand } from "@/components/copy-command";
 import { ExampleDeck } from "@/components/examples";
+import { Logo } from "@/components/logo";
+import { gitConfig } from "@/lib/shared";
 
 const InlineCode = ({ children }: { children: ReactNode }) => (
   <code className="rounded bg-fd-muted px-1 py-0.5 font-mono text-[0.9em]">
@@ -27,7 +29,7 @@ const InlineCode = ({ children }: { children: ReactNode }) => (
 );
 
 const Kbd = ({ children }: { children: ReactNode }) => (
-  <kbd className="rounded border bg-fd-card px-1.5 font-mono text-[0.85em]">
+  <kbd className="rounded border bg-fd-card px-1.5 text-[0.85em]">
     {children}
   </kbd>
 );
@@ -59,13 +61,13 @@ export default function HomePage() {
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <Link
           href="/docs"
-          className="rounded-full bg-fd-primary px-5 py-2 font-medium text-fd-primary-foreground"
+          className="rounded-full bg-fd-primary px-5 py-2 font-medium text-fd-primary-foreground transition-colors hover:bg-fd-primary/85"
         >
           Get started
         </Link>
         <Link
           href="/docs/examples/layouts"
-          className="rounded-full border px-5 py-2 font-medium hover:bg-fd-accent"
+          className="rounded-full border px-5 py-2 font-medium transition-colors hover:bg-fd-accent"
         >
           See the examples
         </Link>
@@ -78,8 +80,8 @@ export default function HomePage() {
       />
       <p className="text-fd-muted-foreground">
         This is the deck that <InlineCode>npm create @slidewright</InlineCode>{" "}
-        gives you. Click it, then use the arrow keys. Press <Kbd>O</Kbd> to see
-        all the slides.
+        gives you. Click it, then use the arrow keys, or swipe on a touch
+        screen. Press <Kbd>O</Kbd> to see all the slides.
       </p>
 
       <Section title="All that a talk needs">
@@ -187,6 +189,32 @@ export default function HomePage() {
           <CopyCommand command="npx skills add trafargarlaw/slidewright" />
         </div>
       </Section>
+
+      <footer className="mt-16 flex flex-wrap items-center gap-x-6 gap-y-2 border-t pt-6 text-sm text-fd-muted-foreground">
+        <span className="flex items-center gap-2 font-medium text-fd-foreground">
+          <Logo className="size-5" />
+          Slidewright
+        </span>
+        <span>MIT licence</span>
+        <nav className="flex gap-4 sm:ms-auto">
+          {footerLinks.map(([text, href]) => (
+            <a
+              key={href}
+              href={href}
+              className="transition-colors hover:text-fd-foreground"
+            >
+              {text}
+            </a>
+          ))}
+        </nav>
+      </footer>
     </main>
   );
 }
+
+const repository = `https://github.com/${gitConfig.user}/${gitConfig.repo}`;
+const footerLinks = [
+  ["Roadmap", "/docs/roadmap"],
+  ["npm", "https://www.npmjs.com/org/slidewright"],
+  ["GitHub", repository],
+] as const;
