@@ -17,7 +17,11 @@ import { LruCache } from "./lru";
 /** The part of Mermaid that the deck uses. */
 interface Mermaid {
   initialize(config: Record<string, unknown>): void;
-  render(id: string, source: string): Promise<{ svg: string }>;
+  render(
+    id: string,
+    source: string,
+    container?: HTMLElement,
+  ): Promise<{ svg: string }>;
 }
 
 /**
@@ -88,7 +92,20 @@ async function drawWaiting(): Promise<void> {
         suppressErrorRendering: true,
       });
       const id = `slidewright-diagram-${++drawn}`;
-      result = { id, svg: (await mermaid.render(id, source)).svg };
+      // Mermaid draws in the page to measure the text, at the end of the
+      // body unless it is given a place. There the drawing makes the page
+      // longer for a moment, and can bring a scroll bar that resizes the
+      // deck. This place is out of sight and out of the page's flow.
+      const place = document.createElement("div");
+      place.setAttribute("aria-hidden", "true");
+      place.style.cssText =
+        "position: fixed; top: 0; left: 0; width: 100%; visibility: hidden; pointer-events: none";
+      document.body.append(place);
+      try {
+        result = { id, svg: (await mermaid.render(id, source, place)).svg };
+      } finally {
+        place.remove();
+      }
     } catch (error) {
       result = {
         error: error instanceof Error ? error.message : String(error),

@@ -8,7 +8,9 @@ const FLOW = "```mermaid\nflowchart LR\n  a --> b\n```";
 // A stand-in for Mermaid, which needs a browser to measure text. The deck
 // keeps the first Mermaid that loads, so every test shares this one.
 const initialize = vi.fn();
-const draw = vi.fn(async (id: string, source: string) => {
+const draw = vi.fn<
+  (id: string, source: string, place?: HTMLElement) => Promise<{ svg: string }>
+>(async (id, source) => {
   if (source.includes("oops")) throw new Error("Parse error on line 1");
   return {
     svg: `<svg id="${id}"><style>#${id} .node{}</style><text>${source}</text></svg>`,
@@ -85,6 +87,28 @@ describe("diagrams", () => {
     }
     // Drawn for the first test, and kept.
     expect(draw).not.toHaveBeenCalled();
+  });
+
+  it("draws out of sight, so the page doesn't grow while Mermaid draws", async () => {
+    let place: HTMLElement | undefined;
+    let inPage = false;
+    draw.mockImplementationOnce(async (id, source, element) => {
+      place = element;
+      inPage = !!place && document.body.contains(place);
+      return { svg: `<svg id="${id}"><text>${source}</text></svg>` };
+    });
+    render(
+      <Deck
+        markdown={"```mermaid\nflowchart LR\n  out --> sight\n```"}
+        mermaid={mermaid}
+      />,
+    );
+    await waitFor(() => expect(drawn()).toHaveLength(1));
+
+    expect(inPage).toBe(true);
+    expect(place?.style.position).toBe("fixed");
+    expect(place?.style.visibility).toBe("hidden");
+    expect(place?.isConnected).toBe(false);
   });
 
   it("keeps the source of a diagram with a mistake, with the message", async () => {
