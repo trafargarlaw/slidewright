@@ -165,8 +165,8 @@ From merge to production
 - `:lucide:rocket:` is an icon from an [Iconify](https://icon-sets.iconify.design)
   set, and a `mermaid` code block is a diagram, which shrinks to fit its
   slide. Each needs a package in the project:
-  `npm install @iconify-json/lucide` for the `lucide` icons, and
-  `npm install mermaid`. Without the package, the source text shows and the
+  `npm install --save-dev @iconify-json/lucide` for the `lucide` icons,
+  and `npm install --save-dev mermaid`. Without the package, the source text shows and the
   build prints a warning. With it, the build reports a name that the set
   doesn't have.
 - HTML works, with `class` and `style`. Leave a blank line between an HTML

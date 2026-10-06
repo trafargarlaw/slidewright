@@ -1,34 +1,46 @@
 # @slidewright/create
 
-Starts a Markdown deck project.
+Makes a project for a Markdown deck. To make a project in the `my-talk`
+folder, run this command:
 
 ```sh
 npm create @slidewright my-talk
-# or: pnpm create @slidewright, yarn create @slidewright, bun create @slidewright
 ```
 
-Without a folder name, the command asks for one in a terminal, and uses
-`my-talk` elsewhere. The folder must be empty or not exist yet. It gets:
+The command also works with pnpm, Yarn and Bun: `pnpm create @slidewright`,
+`yarn create @slidewright` and `bun create @slidewright`.
+
+Without a folder name, the command asks for one in a terminal. When there
+is no terminal, it uses `my-talk`. The folder must be empty, or not exist.
+The command puts these files in it:
 
 ```text
 my-talk/
 ├── slides.md      # a starter deck that shows the main features
 ├── style.css      # theme properties, loaded after the default theme
 ├── package.json   # dev, build and export scripts with @slidewright/cli
-├── README.md
+├── README.md      # the commands, for the package manager that you used
 └── .gitignore
 ```
 
-Then install and present:
+To install the packages and present the deck at http://localhost:3030, run
+these commands:
 
 ```sh
 cd my-talk
 npm install
-npm run dev     # present on http://localhost:3030
-npm run build   # build a static site into dist/
+npm run dev
 ```
 
-Requires Node.js 20.19, or 22.12 and later.
+To build the deck into a static site in the `dist` folder, run this command
+in the project:
 
-See [`@slidewright/cli`](../cli/README.md) for the commands and the
-[deck syntax reference](../../docs/syntax.md) for the deck format.
+```sh
+npm run build
+```
+
+You need Node.js 20.19 or later in version 20, or Node.js 22.12 or later.
+
+[`@slidewright/cli`](../cli/README.md) tells the commands, and how to export
+the deck to PDF. The [deck syntax reference](../../docs/syntax.md) tells the
+deck format.

@@ -1,20 +1,24 @@
 # @slidewright/vite
 
-A Vite plugin that turns a Markdown deck into a presentation. The plugin
-provides the page, so a project needs only the deck: no `index.html` and no
-React code.
+A Vite plugin that makes a presentation from a Markdown deck. The plugin
+gives the page, so a project needs only the deck. It needs no `index.html`
+and no React code.
 
-- `vite` serves the deck. Edits to the deck update the open page in place,
-  on the same slide and step.
+- `vite` serves the deck. When you save the deck, the open page changes
+  immediately, on the same slide and step.
 - `vite build` writes a static site that works from any folder of any host.
 
-The deck format is documented in the [deck syntax reference](../../docs/syntax.md).
+The [deck syntax reference](../../docs/syntax.md) tells the deck format.
 
 ## Usage
+
+Install Vite and the plugin:
 
 ```sh
 npm install --save-dev vite @slidewright/vite
 ```
+
+Add the plugin to the Vite config:
 
 ```ts
 // vite.config.ts
@@ -26,20 +30,37 @@ export default defineConfig({
 });
 ```
 
-Then run `vite` to present, and `vite build` to build. The page renders
-the deck with [`@slidewright/react`](../react/README.md), keeps the position
-in the URL hash and listens to the keyboard anywhere on the page.
+To present the deck, run this command:
 
-Requires Vite 8.
+```sh
+npx vite
+```
+
+To build the deck into a static site in the `dist` folder, run this command:
+
+```sh
+npx vite build
+```
+
+The page renders the deck with [`@slidewright/react`](../react/README.md).
+It keeps the position in the URL hash, and takes keys from all the page.
+
+You need Vite 8.
 
 ### Problems in the deck
 
-The plugin prints problems in the deck as warnings, with the file and line:
-invalid frontmatter, unknown layouts, highlight ranges that code blocks
-skip, icons that the project doesn't have, and
-[files of the deck](#several-files) that are missing. It prints them when
-Vite starts and again when a saved change gives different problems. The deck
-still renders, and the build still succeeds.
+The plugin prints problems in the deck as warnings, with the file and the
+line. These are the problems:
+
+- frontmatter that is not valid
+- unknown layouts
+- highlight ranges that are not in their code block
+- icons that the project doesn't have
+- [files of the deck](#several-files) that are missing.
+
+The plugin prints the problems when Vite starts. When you save a change
+that gives different problems, it prints them again. The deck still
+renders, and the build still succeeds.
 
 ```text
 slides.md:9: warning: Unknown layout "two-columns": the slide shows with the default layout. The layouts are default, center, …
@@ -47,17 +68,17 @@ slides.md:9: warning: Unknown layout "two-columns": the slide shows with the def
 
 ## Options
 
-| Option | Default     | Description                                                                                                 |
-| ------ | ----------- | ----------------------------------------------------------------------------------------------------------- |
-| `deck` | `slides.md` | The deck file, relative to the Vite root. It can bring in [other files](#several-files).                    |
-| `css`  |             | One or more stylesheets loaded after the default theme, relative to the Vite root. See [Styling](#styling). |
+| Option | Default     | Description                                                                                             |
+| ------ | ----------- | ------------------------------------------------------------------------------------------------------- |
+| `deck` | `slides.md` | The deck file, from the Vite root. It can bring in [other files](#several-files).                       |
+| `css`  |             | One or more stylesheets that load after the default theme, from the Vite root. See [Styling](#styling). |
 
 The type of the options is `SlidewrightOptions`.
 
 ## Several files
 
-A deck can keep its chapters in files of their own. A slide with `src` in
-its frontmatter stands for the slides of that file:
+A deck can keep its chapters in different files. A slide with `src` in its
+frontmatter stands for the slides of that file:
 
 ```md
 ---
@@ -65,18 +86,21 @@ src: chapters/why.md
 ---
 ```
 
-There is nothing to configure. The plugin joins the files into one deck, and
-a saved change to any of them shows in the open page, on the same slide and
-step. The rules are in the
-[deck syntax reference](../../docs/syntax.md#several-files).
+You don't have to configure anything. The plugin joins the files into one
+deck. When you save a change to one of the files, the open page shows it,
+on the same slide and step. The
+[deck syntax reference](../../docs/syntax.md#several-files) gives the
+rules.
 
-- The path of `src` is from the folder of the file that has it. A path that
-  starts with `/` is from the Vite root.
-- A problem in a chapter is printed with the chapter's file and line.
-- A file that doesn't exist is printed as an error, and its slides are left
-  out. The page gets them when the file is there.
-- The paths of images and other [files](#files) are from the Vite root in
-  every file of the deck, not from the folder of a chapter.
+- The path of `src` starts from the folder of the file that has it. A path
+  that starts with `/` starts from the Vite root.
+- The plugin prints a problem in a chapter with the file and the line of
+  the chapter.
+- When a file doesn't exist, the plugin prints an error, and leaves out the
+  slides of the file. When the file is there, the page gets its slides.
+- In all the files of the deck, the paths of images and other
+  [files](#files) start from the Vite root. They don't start from the
+  folder of a chapter.
 
 ```text
 slides.md:8: error: No file `chapters/intro.md`: its slides are left out. The path is from the folder of this file.
@@ -85,12 +109,14 @@ chapters/why.md:12: warning: Unknown layout "two-columns": the slide shows with 
 
 ## Diagrams
 
-A `mermaid` code block is drawn as a diagram when the project has
-[Mermaid](https://mermaid.js.org):
+The page draws a `mermaid` code block as a diagram when the project has
+[Mermaid](https://mermaid.js.org). Install it:
 
 ```sh
 npm install --save-dev mermaid
 ```
+
+Then write a diagram in the deck:
 
 ````md
 ```mermaid
@@ -99,48 +125,54 @@ flowchart LR
 ```
 ````
 
-There is nothing to configure. The page loads Mermaid with the first diagram
-that it shows, and the build puts Mermaid in files of their own. Diagrams
-take the colours and the font of their slide, and export waits for them.
+You don't have to configure anything. The page loads Mermaid with the first
+diagram that it shows. The build puts Mermaid in separate files. Diagrams
+get the colours and the font of their slide, and export waits for them.
 
 Without Mermaid, the block shows as code, and the plugin prints a warning
-with the line of each diagram. Restart Vite after you install Mermaid.
+with the line of each diagram. After you install Mermaid, start Vite again.
 
-How diagrams are sized and themed is in the
-[`@slidewright/react` README](../react/README.md#diagrams).
+The [`@slidewright/react` README](../react/README.md#diagrams) tells how to
+set the size and the colours of diagrams.
 
 ## Icons
 
 `:set:name:` in the text of the deck is an icon from an
-[Iconify](https://icon-sets.iconify.design) set. Install the sets that the
-deck uses, each as `@iconify-json/<set>`:
+[Iconify](https://icon-sets.iconify.design) set. Install each set that the
+deck uses, as `@iconify-json/<set>`. For example, to install the `lucide`
+set, run this command:
 
 ```sh
 npm install --save-dev @iconify-json/lucide
 ```
 
+Then write an icon in the deck:
+
 ```md
 # :lucide:rocket: Launch day
 ```
 
-There is nothing to configure. The plugin reads the deck and gives the page
-only the icons that it uses, not their sets, which have thousands. A set
-that you install while Vite runs is found the next time the deck changes.
+You don't have to configure anything. The plugin reads the deck, and gives
+the page only the icons that the deck uses. The page doesn't get all the
+set, which has thousands of icons. When you install a set while Vite runs,
+the plugin finds it at the next change to the deck.
 
-An icon whose set is not installed, or whose name the set doesn't have,
-shows as its source text, and the plugin prints a warning with its line:
+Some icons show as their source text: an icon of a set that is not
+installed, or a name that the set doesn't have. For each one, the plugin
+prints a warning with its line:
 
 ```text
 slides.md:3: warning: The icon `:lucide:rockt:` shows as text: the `lucide` icons have no `rockt`. The names are at https://icon-sets.iconify.design/lucide/.
 ```
 
-How icons are sized, coloured and named for screen readers is in the
-[`@slidewright/react` README](../react/README.md#icons).
+The [`@slidewright/react` README](../react/README.md#icons) tells how to set
+the size and the colour of icons, and how to give them a name for screen
+readers.
 
 ## Styling
 
-Stylesheets in `css` load after the default theme, so they can set theme
-properties and style slide content with ordinary selectors:
+The stylesheets in `css` load after the default theme. So they can set
+theme properties, and style the content of slides with usual selectors:
 
 ```css
 /* style.css */
@@ -154,40 +186,44 @@ properties and style slide content with ordinary selectors:
 }
 ```
 
-The theme properties and selectors are listed in the
-[`@slidewright/react` README](../react/README.md#styling).
+The [`@slidewright/react` README](../react/README.md#styling) lists the
+theme properties and the selectors.
 
 ## Printing
 
-Add `?print` to the address of the deck to see every slide at full size,
-one after the other. Print the page, or save it as a PDF, from the browser:
-each slide gets its own page, sized to the slide. `?print=steps` gives each
-step its own page.
+Add `?print` to the address of the deck. The page then shows all the slides
+at full size, one after the other. To get a PDF, print the page or save it
+as a PDF from the browser. Each slide gets its own page, with the size of
+the slide. With `?print=steps`, each step gets its own page.
 
 To export a PDF or PNG files from the command line, use
 [`slidewright export`](../cli/README.md#export).
 
 ## Files
 
-Refer to images and other files from the deck with a path from the Vite
+To show images and other files in the deck, write their path from the Vite
 root:
 
 ```md
 ![Architecture](images/architecture.png)
 ```
 
-The dev server serves them, and the build copies each file that the deck
-refers to into the site, at the same path. The build finds them in Markdown
-images and links, in the `src`, `poster` and `href` attributes of HTML, in
-the attributes of directives, and in the `image` of a slide.
+The dev server serves these files. The build copies each file that the
+deck refers to into the site, at the same path. The build finds the files
+in these places:
 
-Files in the project's `public` folder go to the root of the site as they
-are, as in any Vite project. Refer to them by name: `![Logo](logo.svg)` shows
-`public/logo.svg`.
+- Markdown images and links
+- the `src`, `poster` and `href` attributes of HTML
+- the attributes of directives
+- the `image` of a slide.
 
-The plugin sets Vite's `base` to `./` when the config doesn't set it, so the
-built site works from any folder, such as `https://user.github.io/talk/`. A
-path that starts with `/` points to the root of the host, so it breaks when
-the site is in a folder.
+Files in the `public` folder of the project go to the root of the site with
+no change, as in all Vite projects. Refer to them by name:
+`![Logo](logo.svg)` shows `public/logo.svg`.
 
-The plugin replaces any `index.html` in the project with its own page.
+When the config doesn't set the Vite `base`, the plugin sets it to `./`. So
+the built site works from any folder, such as
+`https://user.github.io/talk/`. A path that starts with `/` goes to the root
+of the host. So it breaks when the site is in a folder.
+
+The plugin replaces an `index.html` in the project with its own page.
