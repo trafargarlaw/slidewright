@@ -189,8 +189,20 @@ The window copies these from the page, and follows their changes:
   page
 - the attributes of the `<html>` element, such as a dark mode class.
 
-The window doesn't copy rules that a script adds with `insertRule`. Some
-CSS-in-JS libraries add rules in this way in production.
+The presenter in the window gets the `className` of the deck, and the
+custom properties in its `style`, such as `--deck-accent`. So it has the
+theme of the deck. It doesn't get the other properties of `style`, because
+it fills the window.
+
+The window doesn't copy:
+
+- `<style>` elements in the body of the page
+- rules that a script adds with `insertRule`. Some CSS-in-JS libraries add
+  rules in this way in production.
+
+The presenter in the window is not in the parent elements of the deck. So
+a rule that selects the deck through a parent element, such as
+`.page [data-deck]`, doesn't apply in the window.
 
 Browsers open windows only after a click or a key press. A popup blocker
 can also stop the window. `presenter={false}` removes the key and the
@@ -564,8 +576,8 @@ preflight reset comes first, and the utilities still have priority:
 @import "tailwindcss";
 ```
 
-To give a deck a theme, set custom properties on `[data-deck]` or on a
-parent element:
+To give a deck a theme, set custom properties on `[data-deck]`, or on a
+class that you give to the deck:
 
 ```css
 .my-deck {
@@ -576,6 +588,13 @@ parent element:
   --deck-font-size: 26px;
 }
 ```
+
+```tsx
+<Deck markdown={markdown} className="my-deck" />
+```
+
+Don't set them on a parent element of the deck. The default theme sets
+them on `[data-deck]`, so the deck doesn't get the values of its parent.
 
 | Property                                   | Controls                                      |
 | ------------------------------------------ | --------------------------------------------- |

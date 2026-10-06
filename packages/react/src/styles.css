@@ -3,7 +3,9 @@
  *
  * Everything lives in the `slidewright` cascade layer, so any rule in your
  * own (unlayered) CSS wins without specificity fights. To theme a deck, set
- * the `--deck-*` custom properties on `[data-deck]` or a parent element.
+ * the `--deck-*` custom properties on `[data-deck]` or on a class of the
+ * deck. A parent element can't set them: the rule below sets them on the
+ * deck itself.
  */
 
 /* KaTeX's styles and fonts, for maths. */
